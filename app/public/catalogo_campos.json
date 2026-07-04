@@ -1,0 +1,3233 @@
+{
+ "ACTA_A01_AVISO_PREVIO.docx": {
+  "total": 11,
+  "auto": 4,
+  "llena": 6,
+  "calc": 1,
+  "campos": [
+   {
+    "campo": "PERSONA_ATENDIO",
+    "label": "Persona que atendió",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "general"
+   },
+   {
+    "campo": "VINCULO",
+    "label": "Vínculo con el usuario",
+    "origen": "llena",
+    "tipo": "select",
+    "grupo": "general",
+    "opciones": [
+     "Administrado",
+     "Familiar",
+     "Otros"
+    ]
+   },
+   {
+    "campo": "OBS_ACTA",
+    "label": "Observaciones",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "COD_RECLAMO",
+    "label": "Código de reclamo",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "codigo"
+   },
+   {
+    "campo": "SUMINISTRO",
+    "label": "Suministro",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "suministro"
+   },
+   {
+    "campo": "RECLAMANTE",
+    "label": "Reclamante",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "solicitante"
+   },
+   {
+    "campo": "DIRECCION",
+    "label": "Dirección",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "direccion"
+   },
+   {
+    "campo": "FECHA_ACTA",
+    "label": "Fecha del acta",
+    "origen": "llena",
+    "tipo": "date",
+    "grupo": "general"
+   },
+   {
+    "campo": "HORA_ACTA",
+    "label": "Hora del acta",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "general"
+   },
+   {
+    "campo": "INSPECTOR",
+    "label": "Inspector",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "firma"
+   },
+   {
+    "campo": "FOLIO",
+    "label": "Folio",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Foliado automático al consolidar el expediente"
+   }
+  ]
+ },
+ "ACTA_A02_DERECHO_CONTRASTE.docx": {
+  "total": 10,
+  "auto": 3,
+  "llena": 6,
+  "calc": 1,
+  "campos": [
+   {
+    "campo": "DECISION_CONTRASTE",
+    "label": "¿Solicita contrastación?",
+    "origen": "llena",
+    "tipo": "select",
+    "grupo": "general",
+    "opciones": [
+     "No solicita",
+     "Solicita"
+    ]
+   },
+   {
+    "campo": "OBS_ACTA",
+    "label": "Observaciones",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "COD_RECLAMO",
+    "label": "Código de reclamo",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "codigo"
+   },
+   {
+    "campo": "SUMINISTRO",
+    "label": "Suministro",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "suministro"
+   },
+   {
+    "campo": "RECLAMANTE",
+    "label": "Reclamante",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "solicitante"
+   },
+   {
+    "campo": "SERIE_MEDIDOR",
+    "label": "Serie del medidor",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "general"
+   },
+   {
+    "campo": "FECHA_ACTA",
+    "label": "Fecha del acta",
+    "origen": "llena",
+    "tipo": "date",
+    "grupo": "general"
+   },
+   {
+    "campo": "HORA_ACTA",
+    "label": "Hora del acta",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "general"
+   },
+   {
+    "campo": "INSPECTOR",
+    "label": "Inspector",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "firma"
+   },
+   {
+    "campo": "FOLIO",
+    "label": "Folio",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Foliado automático al consolidar el expediente"
+   }
+  ]
+ },
+ "ACTA_TRATO_DIRECTO.docx": {
+  "total": 14,
+  "auto": 6,
+  "llena": 6,
+  "calc": 1,
+  "campos": [
+   {
+    "campo": "RECLAMANTE",
+    "label": "Reclamante",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "solicitante"
+   },
+   {
+    "campo": "DNI",
+    "label": "DNI",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "dni"
+   },
+   {
+    "campo": "REPRESENTANTE_ELSE",
+    "label": "Representante ELSE",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "firma"
+   },
+   {
+    "campo": "PUNTOS_TRATADOS",
+    "label": "Puntos tratados",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "ANALISIS_TECNICO",
+    "label": "Análisis técnico",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "TEXTO_ACUERDO",
+    "label": "Texto del acuerdo",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "OBS_ACTA",
+    "label": "Observaciones",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "COD_RECLAMO",
+    "label": "Código de reclamo",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "codigo"
+   },
+   {
+    "campo": "N_OSINERG",
+    "label": "N° OSINERG",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "n_osinerg"
+   },
+   {
+    "campo": "SUMINISTRO",
+    "label": "Suministro",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "suministro"
+   },
+   {
+    "campo": "MATERIA",
+    "label": "Materia",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "materia"
+   },
+   {
+    "campo": "FECHA_REUNION",
+    "label": "Fecha de la reunión",
+    "origen": "llena",
+    "tipo": "date",
+    "grupo": "general"
+   },
+   {
+    "campo": "LUGAR",
+    "label": "Lugar",
+    "origen": "fijo",
+    "tipo": "text",
+    "grupo": "general",
+    "valor": "Cusco"
+   },
+   {
+    "campo": "FOLIO",
+    "label": "Folio",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Foliado automático al consolidar el expediente"
+   }
+  ]
+ },
+ "CARATULA_INDICE.docx": {
+  "total": 18,
+  "auto": 5,
+  "llena": 1,
+  "calc": 12,
+  "campos": [
+   {
+    "campo": "N_OSINERG",
+    "label": "N° OSINERG",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "n_osinerg"
+   },
+   {
+    "campo": "COD_RECLAMO",
+    "label": "Código de reclamo",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "codigo"
+   },
+   {
+    "campo": "RECLAMANTE",
+    "label": "Reclamante",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "solicitante"
+   },
+   {
+    "campo": "SUMINISTRO",
+    "label": "Suministro",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "suministro"
+   },
+   {
+    "campo": "MATERIA",
+    "label": "Materia",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "materia"
+   },
+   {
+    "campo": "N_RESOLUCION",
+    "label": "N° Resolución",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Correlativo C-####-AAAA (backend)"
+   },
+   {
+    "campo": "SENTIDO_FALLO",
+    "label": "Sentido del fallo",
+    "origen": "llena",
+    "tipo": "select",
+    "grupo": "general",
+    "opciones": [
+     "FUNDADO",
+     "INFUNDADO",
+     "FUNDADO EN PARTE",
+     "IMPROCEDENTE",
+     "INADMISIBLE"
+    ]
+   },
+   {
+    "campo": "FOLIO_1",
+    "label": "Folio 1",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Foliado automático al consolidar el expediente"
+   },
+   {
+    "campo": "FOLIO_2",
+    "label": "Folio 2",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Foliado automático al consolidar el expediente"
+   },
+   {
+    "campo": "FOLIO_3",
+    "label": "Folio 3",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Foliado automático al consolidar el expediente"
+   },
+   {
+    "campo": "FOLIO_4",
+    "label": "Folio 4",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Foliado automático al consolidar el expediente"
+   },
+   {
+    "campo": "FOLIO_5",
+    "label": "Folio 5",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Foliado automático al consolidar el expediente"
+   },
+   {
+    "campo": "FOLIO_6",
+    "label": "Folio 6",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Foliado automático al consolidar el expediente"
+   },
+   {
+    "campo": "FOLIO_7",
+    "label": "Folio 7",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Foliado automático al consolidar el expediente"
+   },
+   {
+    "campo": "FOLIO_8",
+    "label": "Folio 8",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Foliado automático al consolidar el expediente"
+   },
+   {
+    "campo": "FOLIO_9",
+    "label": "Folio 9",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Foliado automático al consolidar el expediente"
+   },
+   {
+    "campo": "FOLIO_10",
+    "label": "Folio 10",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Foliado automático al consolidar el expediente"
+   },
+   {
+    "campo": "FOLIO",
+    "label": "Folio",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Foliado automático al consolidar el expediente"
+   }
+  ]
+ },
+ "CARTA_RECLAMANTE.docx": {
+  "total": 15,
+  "auto": 7,
+  "llena": 5,
+  "calc": 2,
+  "campos": [
+   {
+    "campo": "N_CARTA",
+    "label": "N° de carta",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Correlativo de carta (backend)"
+   },
+   {
+    "campo": "LUGAR",
+    "label": "Lugar",
+    "origen": "fijo",
+    "tipo": "text",
+    "grupo": "general",
+    "valor": "Cusco"
+   },
+   {
+    "campo": "FECHA_CARTA",
+    "label": "Fecha de la carta",
+    "origen": "llena",
+    "tipo": "date",
+    "grupo": "general"
+   },
+   {
+    "campo": "RECLAMANTE",
+    "label": "Reclamante",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "solicitante"
+   },
+   {
+    "campo": "SUMINISTRO",
+    "label": "Suministro",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "suministro"
+   },
+   {
+    "campo": "DIRECCION",
+    "label": "Dirección",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "direccion"
+   },
+   {
+    "campo": "ASUNTO_CARTA",
+    "label": "Asunto",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "general"
+   },
+   {
+    "campo": "COD_RECLAMO",
+    "label": "Código de reclamo",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "codigo"
+   },
+   {
+    "campo": "N_OSINERG",
+    "label": "N° OSINERG",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "n_osinerg"
+   },
+   {
+    "campo": "MATERIA",
+    "label": "Materia",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "materia"
+   },
+   {
+    "campo": "PERIODO_RECLAMADO",
+    "label": "Período reclamado",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "periodo"
+   },
+   {
+    "campo": "CUERPO_CARTA",
+    "label": "Cuerpo de la carta",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "FIRMANTE",
+    "label": "Firmante",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "firma"
+   },
+   {
+    "campo": "CARGO_FIRMANTE",
+    "label": "Cargo del firmante",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "firma"
+   },
+   {
+    "campo": "FOLIO",
+    "label": "Folio",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Foliado automático al consolidar el expediente"
+   }
+  ]
+ },
+ "CEDULA_NOTIFICACION.docx": {
+  "total": 18,
+  "auto": 7,
+  "llena": 8,
+  "calc": 3,
+  "campos": [
+   {
+    "campo": "N_CEDULA",
+    "label": "N° de cédula",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Correlativo de cédula (backend)"
+   },
+   {
+    "campo": "N_RESOLUCION",
+    "label": "N° Resolución",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Correlativo C-####-AAAA (backend)"
+   },
+   {
+    "campo": "FECHA_NOTIFICACION",
+    "label": "Fecha de notificación",
+    "origen": "llena",
+    "tipo": "date",
+    "grupo": "general"
+   },
+   {
+    "campo": "HORA_NOTIFICACION",
+    "label": "Hora de notificación",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "general"
+   },
+   {
+    "campo": "RECEPTOR",
+    "label": "Recibido por",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "firma"
+   },
+   {
+    "campo": "VINCULO",
+    "label": "Vínculo con el usuario",
+    "origen": "llena",
+    "tipo": "select",
+    "grupo": "general",
+    "opciones": [
+     "Administrado",
+     "Familiar",
+     "Otros"
+    ]
+   },
+   {
+    "campo": "CARACTERISTICAS_INMUEBLE",
+    "label": "Características del inmueble",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "MODALIDAD_NOTIF",
+    "label": "Modalidad de notificación",
+    "origen": "llena",
+    "tipo": "select",
+    "grupo": "general",
+    "opciones": [
+     "Personal",
+     "Bajo puerta",
+     "Notarial"
+    ]
+   },
+   {
+    "campo": "OBS_NOTIF",
+    "label": "Observaciones",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "COD_RECLAMO",
+    "label": "Código de reclamo",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "codigo"
+   },
+   {
+    "campo": "N_OSINERG",
+    "label": "N° OSINERG",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "n_osinerg"
+   },
+   {
+    "campo": "SUMINISTRO",
+    "label": "Suministro",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "suministro"
+   },
+   {
+    "campo": "RECLAMANTE",
+    "label": "Reclamante",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "solicitante"
+   },
+   {
+    "campo": "DNI",
+    "label": "DNI",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "dni"
+   },
+   {
+    "campo": "DIRECCION",
+    "label": "Dirección",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "direccion"
+   },
+   {
+    "campo": "MATERIA",
+    "label": "Materia",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "materia"
+   },
+   {
+    "campo": "NOTIFICADOR",
+    "label": "Notificador",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "firma"
+   },
+   {
+    "campo": "FOLIO",
+    "label": "Folio",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Foliado automático al consolidar el expediente"
+   }
+  ]
+ },
+ "INFORME_CAMPO.docx": {
+  "total": 29,
+  "auto": 5,
+  "llena": 20,
+  "calc": 4,
+  "campos": [
+   {
+    "campo": "INSPECTOR",
+    "label": "Inspector",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "firma"
+   },
+   {
+    "campo": "TIPO_INSPECCION",
+    "label": "Tipo de inspección",
+    "origen": "llena",
+    "tipo": "select",
+    "grupo": "general",
+    "opciones": [
+     "Simple",
+     "Con contraste",
+     "Megado"
+    ]
+   },
+   {
+    "campo": "LECTURA_INSPECCION",
+    "label": "Lectura en inspección (kWh)",
+    "origen": "llena",
+    "tipo": "num",
+    "grupo": "general"
+   },
+   {
+    "campo": "SERIE_MEDIDOR",
+    "label": "Serie del medidor",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "general"
+   },
+   {
+    "campo": "ESTADO_MEDIDOR",
+    "label": "Estado del medidor",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "general"
+   },
+   {
+    "campo": "CARACTERISTICAS_INMUEBLE",
+    "label": "Características del inmueble",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "OBS_INSPECCION",
+    "label": "Observaciones del inspector",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "COD_RECLAMO",
+    "label": "Código de reclamo",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "codigo"
+   },
+   {
+    "campo": "N_OSINERG",
+    "label": "N° OSINERG",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "n_osinerg"
+   },
+   {
+    "campo": "RECLAMANTE",
+    "label": "Reclamante",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "solicitante"
+   },
+   {
+    "campo": "SUMINISTRO",
+    "label": "Suministro",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "suministro"
+   },
+   {
+    "campo": "DIRECCION",
+    "label": "Dirección",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "direccion"
+   },
+   {
+    "campo": "FECHA_INSPECCION",
+    "label": "Fecha/hora de inspección",
+    "origen": "llena",
+    "tipo": "date",
+    "grupo": "general"
+   },
+   {
+    "campo": "CARGA_1",
+    "label": "Carga 1",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "CANT_1",
+    "label": "Cant 1",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "POT_1",
+    "label": "Pot 1",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "HORAS_1",
+    "label": "Horas 1",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "KWH_1",
+    "label": "Kwh 1",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "tabla",
+    "hint": "cant×pot×días×horas/1000"
+   },
+   {
+    "campo": "CARGA_2",
+    "label": "Carga 2",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "CANT_2",
+    "label": "Cant 2",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "POT_2",
+    "label": "Pot 2",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "HORAS_2",
+    "label": "Horas 2",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "KWH_2",
+    "label": "Kwh 2",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "tabla",
+    "hint": "cant×pot×días×horas/1000"
+   },
+   {
+    "campo": "CARGA_3",
+    "label": "Carga 3",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "CANT_3",
+    "label": "Cant 3",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "POT_3",
+    "label": "Pot 3",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "HORAS_3",
+    "label": "Horas 3",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "KWH_3",
+    "label": "Kwh 3",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "tabla",
+    "hint": "cant×pot×días×horas/1000"
+   },
+   {
+    "campo": "FOLIO",
+    "label": "Folio",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Foliado automático al consolidar el expediente"
+   }
+  ]
+ },
+ "INFORME_ELEVACION.docx": {
+  "total": 18,
+  "auto": 6,
+  "llena": 10,
+  "calc": 2,
+  "campos": [
+   {
+    "campo": "N_RESOLUCION",
+    "label": "N° Resolución",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Correlativo C-####-AAAA (backend)"
+   },
+   {
+    "campo": "FECHA_RESOLUCION",
+    "label": "Fecha de la resolución",
+    "origen": "llena",
+    "tipo": "date",
+    "grupo": "general"
+   },
+   {
+    "campo": "SENTIDO_FALLO",
+    "label": "Sentido del fallo",
+    "origen": "llena",
+    "tipo": "select",
+    "grupo": "general",
+    "opciones": [
+     "FUNDADO",
+     "INFUNDADO",
+     "FUNDADO EN PARTE",
+     "IMPROCEDENTE",
+     "INADMISIBLE"
+    ]
+   },
+   {
+    "campo": "RECLAMANTE",
+    "label": "Reclamante",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "solicitante"
+   },
+   {
+    "campo": "MATERIA",
+    "label": "Materia",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "materia"
+   },
+   {
+    "campo": "PERIODO_RECLAMADO",
+    "label": "Período reclamado",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "periodo"
+   },
+   {
+    "campo": "FECHA_APELACION",
+    "label": "Fecha de apelación",
+    "origen": "llena",
+    "tipo": "date",
+    "grupo": "general"
+   },
+   {
+    "campo": "ARGUMENTOS_APELACION",
+    "label": "Argumentos de la apelación",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "POSICION_EMPRESA",
+    "label": "Posición de la empresa",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "RECOMENDACION",
+    "label": "Recomendación",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "general"
+   },
+   {
+    "campo": "RELACION_DOCUMENTOS",
+    "label": "Relación de documentos",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "N_FOJAS",
+    "label": "N° total de fojas",
+    "origen": "llena",
+    "tipo": "num",
+    "grupo": "general"
+   },
+   {
+    "campo": "COD_RECLAMO",
+    "label": "Código de reclamo",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "codigo"
+   },
+   {
+    "campo": "N_OSINERG",
+    "label": "N° OSINERG",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "n_osinerg"
+   },
+   {
+    "campo": "SUMINISTRO",
+    "label": "Suministro",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "suministro"
+   },
+   {
+    "campo": "ANALISTA_LEGAL",
+    "label": "Analista Legal",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "firma"
+   },
+   {
+    "campo": "COORDINADOR",
+    "label": "Coordinador",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "firma"
+   },
+   {
+    "campo": "FOLIO",
+    "label": "Folio",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Foliado automático al consolidar el expediente"
+   }
+  ]
+ },
+ "OFICIO_ELEVACION.docx": {
+  "total": 12,
+  "auto": 4,
+  "llena": 4,
+  "calc": 3,
+  "campos": [
+   {
+    "campo": "N_OFICIO",
+    "label": "N° de oficio",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Correlativo de oficio (backend)"
+   },
+   {
+    "campo": "LUGAR",
+    "label": "Lugar",
+    "origen": "fijo",
+    "tipo": "text",
+    "grupo": "general",
+    "valor": "Cusco"
+   },
+   {
+    "campo": "FECHA_OFICIO",
+    "label": "Fecha del oficio",
+    "origen": "llena",
+    "tipo": "date",
+    "grupo": "general"
+   },
+   {
+    "campo": "COD_RECLAMO",
+    "label": "Código de reclamo",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "codigo"
+   },
+   {
+    "campo": "N_OSINERG",
+    "label": "N° OSINERG",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "n_osinerg"
+   },
+   {
+    "campo": "RECLAMANTE",
+    "label": "Reclamante",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "solicitante"
+   },
+   {
+    "campo": "SUMINISTRO",
+    "label": "Suministro",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "suministro"
+   },
+   {
+    "campo": "N_RESOLUCION",
+    "label": "N° Resolución",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Correlativo C-####-AAAA (backend)"
+   },
+   {
+    "campo": "FECHA_RESOLUCION",
+    "label": "Fecha de la resolución",
+    "origen": "llena",
+    "tipo": "date",
+    "grupo": "general"
+   },
+   {
+    "campo": "N_FOJAS",
+    "label": "N° total de fojas",
+    "origen": "llena",
+    "tipo": "num",
+    "grupo": "general"
+   },
+   {
+    "campo": "COORDINADOR",
+    "label": "Coordinador",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "firma"
+   },
+   {
+    "campo": "FOLIO",
+    "label": "Folio",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Foliado automático al consolidar el expediente"
+   }
+  ]
+ },
+ "REPORTE_1.docx": {
+  "total": 52,
+  "auto": 8,
+  "llena": 38,
+  "calc": 6,
+  "campos": [
+   {
+    "campo": "LECTURA_INSPECCION",
+    "label": "Lectura en inspección (kWh)",
+    "origen": "llena",
+    "tipo": "num",
+    "grupo": "general"
+   },
+   {
+    "campo": "FECHA_INSPECCION",
+    "label": "Fecha/hora de inspección",
+    "origen": "llena",
+    "tipo": "date",
+    "grupo": "general"
+   },
+   {
+    "campo": "ESTADO_MEDIDOR",
+    "label": "Estado del medidor",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "general"
+   },
+   {
+    "campo": "SERIE_MEDIDOR",
+    "label": "Serie del medidor",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "general"
+   },
+   {
+    "campo": "OBS_INSPECCION",
+    "label": "Observaciones del inspector",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "CONCLUSION_REPORTE1",
+    "label": "Conclusión de la evaluación",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "CT_TOTAL",
+    "label": "Consumo Teórico CT (kWh)",
+    "origen": "calc",
+    "tipo": "num",
+    "grupo": "general",
+    "hint": "Suma de la tabla de cargas"
+   },
+   {
+    "campo": "CONSUMO_RECLAMADO",
+    "label": "Consumo reclamado (kWh)",
+    "origen": "auto",
+    "tipo": "num",
+    "grupo": "general",
+    "reclamo_key": "consumo_reclamado"
+   },
+   {
+    "campo": "CONSUMO_PROMEDIO",
+    "label": "Consumo promedio Cp (kWh)",
+    "origen": "calc",
+    "tipo": "num",
+    "grupo": "general",
+    "hint": "Promedio del histórico (Anexo A)"
+   },
+   {
+    "campo": "N_OSINERG",
+    "label": "N° OSINERG",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "n_osinerg"
+   },
+   {
+    "campo": "COD_RECLAMO",
+    "label": "Código de reclamo",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "codigo"
+   },
+   {
+    "campo": "RECLAMANTE",
+    "label": "Reclamante",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "solicitante"
+   },
+   {
+    "campo": "SUMINISTRO",
+    "label": "Suministro",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "suministro"
+   },
+   {
+    "campo": "DIRECCION",
+    "label": "Dirección",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "direccion"
+   },
+   {
+    "campo": "TARIFA",
+    "label": "Tarifa",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "tarifa"
+   },
+   {
+    "campo": "PERIODO_RECLAMADO",
+    "label": "Período reclamado",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "periodo"
+   },
+   {
+    "campo": "LECT_ANTERIOR",
+    "label": "Lectura anterior",
+    "origen": "llena",
+    "tipo": "num",
+    "grupo": "general"
+   },
+   {
+    "campo": "LECT_ACTUAL",
+    "label": "Lectura actual",
+    "origen": "llena",
+    "tipo": "num",
+    "grupo": "general"
+   },
+   {
+    "campo": "TIPO_LECTURA",
+    "label": "Tipo de lectura",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "general"
+   },
+   {
+    "campo": "CARGA_1",
+    "label": "Carga 1",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "CANT_1",
+    "label": "Cant 1",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "POT_1",
+    "label": "Pot 1",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "DIAS_1",
+    "label": "Dias 1",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "HORAS_1",
+    "label": "Horas 1",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "KWH_1",
+    "label": "Kwh 1",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "tabla",
+    "hint": "cant×pot×días×horas/1000"
+   },
+   {
+    "campo": "CARGA_2",
+    "label": "Carga 2",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "CANT_2",
+    "label": "Cant 2",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "POT_2",
+    "label": "Pot 2",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "DIAS_2",
+    "label": "Dias 2",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "HORAS_2",
+    "label": "Horas 2",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "KWH_2",
+    "label": "Kwh 2",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "tabla",
+    "hint": "cant×pot×días×horas/1000"
+   },
+   {
+    "campo": "CARGA_3",
+    "label": "Carga 3",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "CANT_3",
+    "label": "Cant 3",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "POT_3",
+    "label": "Pot 3",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "DIAS_3",
+    "label": "Dias 3",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "HORAS_3",
+    "label": "Horas 3",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "KWH_3",
+    "label": "Kwh 3",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "tabla",
+    "hint": "cant×pot×días×horas/1000"
+   },
+   {
+    "campo": "HMES_1",
+    "label": "Hmes 1",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "HFECHA_1",
+    "label": "Hfecha 1",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "HLECT_1",
+    "label": "Hlect 1",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "HCONS_1",
+    "label": "Hcons 1",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "HMES_2",
+    "label": "Hmes 2",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "HFECHA_2",
+    "label": "Hfecha 2",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "HLECT_2",
+    "label": "Hlect 2",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "HCONS_2",
+    "label": "Hcons 2",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "HMES_3",
+    "label": "Hmes 3",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "HFECHA_3",
+    "label": "Hfecha 3",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "HLECT_3",
+    "label": "Hlect 3",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "HCONS_3",
+    "label": "Hcons 3",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "EVALUADOR",
+    "label": "Evaluador",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "firma"
+   },
+   {
+    "campo": "SUPERVISOR_ELSE",
+    "label": "V°B° Supervisión ELSE",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "firma"
+   },
+   {
+    "campo": "FOLIO",
+    "label": "Folio",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Foliado automático al consolidar el expediente"
+   }
+  ]
+ },
+ "RES_FUNDADO.docx": {
+  "total": 48,
+  "auto": 13,
+  "llena": 25,
+  "calc": 9,
+  "campos": [
+   {
+    "campo": "N_RESOLUCION",
+    "label": "N° Resolución",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Correlativo C-####-AAAA (backend)"
+   },
+   {
+    "campo": "LUGAR",
+    "label": "Lugar",
+    "origen": "fijo",
+    "tipo": "text",
+    "grupo": "general",
+    "valor": "Cusco"
+   },
+   {
+    "campo": "FECHA_RESOLUCION",
+    "label": "Fecha de la resolución",
+    "origen": "llena",
+    "tipo": "date",
+    "grupo": "general"
+   },
+   {
+    "campo": "FECHA_RECLAMO",
+    "label": "Fecha del reclamo",
+    "origen": "auto",
+    "tipo": "date",
+    "grupo": "general",
+    "reclamo_key": "fecha_reclamo"
+   },
+   {
+    "campo": "COD_RECLAMO",
+    "label": "Código de reclamo",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "codigo"
+   },
+   {
+    "campo": "N_OSINERG",
+    "label": "N° OSINERG",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "n_osinerg"
+   },
+   {
+    "campo": "RECLAMANTE",
+    "label": "Reclamante",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "solicitante"
+   },
+   {
+    "campo": "DNI",
+    "label": "DNI",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "dni"
+   },
+   {
+    "campo": "SUMINISTRO",
+    "label": "Suministro",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "suministro"
+   },
+   {
+    "campo": "MATERIA",
+    "label": "Materia",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "materia"
+   },
+   {
+    "campo": "PERIODO_RECLAMADO",
+    "label": "Período reclamado",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "periodo"
+   },
+   {
+    "campo": "DIAS_NO_CONTABILIZADOS",
+    "label": "Dias No Contabilizados",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "N_MESES_PROMEDIO",
+    "label": "N° meses del promedio",
+    "origen": "llena",
+    "tipo": "num",
+    "grupo": "general"
+   },
+   {
+    "campo": "CONSUMO_PROMEDIO",
+    "label": "Consumo promedio Cp (kWh)",
+    "origen": "calc",
+    "tipo": "num",
+    "grupo": "general",
+    "hint": "Promedio del histórico (Anexo A)"
+   },
+   {
+    "campo": "CONSUMO_RECLAMADO",
+    "label": "Consumo reclamado (kWh)",
+    "origen": "auto",
+    "tipo": "num",
+    "grupo": "general",
+    "reclamo_key": "consumo_reclamado"
+   },
+   {
+    "campo": "CT_TOTAL",
+    "label": "Consumo Teórico CT (kWh)",
+    "origen": "calc",
+    "tipo": "num",
+    "grupo": "general",
+    "hint": "Suma de la tabla de cargas"
+   },
+   {
+    "campo": "DIFERENCIA_KWH",
+    "label": "Diferencia a refacturar (kWh)",
+    "origen": "calc",
+    "tipo": "num",
+    "grupo": "general",
+    "hint": "Consumo reclamado − consumo promedio"
+   },
+   {
+    "campo": "MONTO_DEVOLUCION",
+    "label": "Monto a devolver (S/)",
+    "origen": "calc",
+    "tipo": "num",
+    "grupo": "general",
+    "hint": "Diferencia kWh × tarifa vigente"
+   },
+   {
+    "campo": "N_CARTA_PRUEBA",
+    "label": "N° carta derecho a prueba",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "general"
+   },
+   {
+    "campo": "TARIFA",
+    "label": "Tarifa",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "tarifa"
+   },
+   {
+    "campo": "DIRECCION",
+    "label": "Dirección",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "direccion"
+   },
+   {
+    "campo": "DISTRITO",
+    "label": "Distrito",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "distrito"
+   },
+   {
+    "campo": "MONTO_RECLAMADO",
+    "label": "Monto en reclamo (S/)",
+    "origen": "auto",
+    "tipo": "num",
+    "grupo": "general",
+    "reclamo_key": "monto"
+   },
+   {
+    "campo": "FECHA_LECTURA",
+    "label": "Fecha de lectura",
+    "origen": "llena",
+    "tipo": "date",
+    "grupo": "general"
+   },
+   {
+    "campo": "HORA_LECTURA",
+    "label": "Hora de lectura",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "general"
+   },
+   {
+    "campo": "LECTURA_INSPECCION",
+    "label": "Lectura en inspección (kWh)",
+    "origen": "llena",
+    "tipo": "num",
+    "grupo": "general"
+   },
+   {
+    "campo": "OBS_LECTURA",
+    "label": "Observación de lectura",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "CARGA_1",
+    "label": "Carga 1",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "CANT_1",
+    "label": "Cant 1",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "POT_1",
+    "label": "Pot 1",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "DIAS_1",
+    "label": "Dias 1",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "HORAS_1",
+    "label": "Horas 1",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "KWH_1",
+    "label": "Kwh 1",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "tabla",
+    "hint": "cant×pot×días×horas/1000"
+   },
+   {
+    "campo": "CARGA_2",
+    "label": "Carga 2",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "CANT_2",
+    "label": "Cant 2",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "POT_2",
+    "label": "Pot 2",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "DIAS_2",
+    "label": "Dias 2",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "HORAS_2",
+    "label": "Horas 2",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "KWH_2",
+    "label": "Kwh 2",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "tabla",
+    "hint": "cant×pot×días×horas/1000"
+   },
+   {
+    "campo": "CARGA_3",
+    "label": "Carga 3",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "CANT_3",
+    "label": "Cant 3",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "POT_3",
+    "label": "Pot 3",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "DIAS_3",
+    "label": "Dias 3",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "HORAS_3",
+    "label": "Horas 3",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "KWH_3",
+    "label": "Kwh 3",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "tabla",
+    "hint": "cant×pot×días×horas/1000"
+   },
+   {
+    "campo": "FIRMANTE",
+    "label": "Firmante",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "firma"
+   },
+   {
+    "campo": "CARGO_FIRMANTE",
+    "label": "Cargo del firmante",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "firma"
+   },
+   {
+    "campo": "FOLIO",
+    "label": "Folio",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Foliado automático al consolidar el expediente"
+   }
+  ]
+ },
+ "RES_FUNDADO_PARTE.docx": {
+  "total": 36,
+  "auto": 12,
+  "llena": 18,
+  "calc": 5,
+  "campos": [
+   {
+    "campo": "N_RESOLUCION",
+    "label": "N° Resolución",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Correlativo C-####-AAAA (backend)"
+   },
+   {
+    "campo": "LUGAR",
+    "label": "Lugar",
+    "origen": "fijo",
+    "tipo": "text",
+    "grupo": "general",
+    "valor": "Cusco"
+   },
+   {
+    "campo": "FECHA_RESOLUCION",
+    "label": "Fecha de la resolución",
+    "origen": "llena",
+    "tipo": "date",
+    "grupo": "general"
+   },
+   {
+    "campo": "FECHA_RECLAMO",
+    "label": "Fecha del reclamo",
+    "origen": "auto",
+    "tipo": "date",
+    "grupo": "general",
+    "reclamo_key": "fecha_reclamo"
+   },
+   {
+    "campo": "COD_RECLAMO",
+    "label": "Código de reclamo",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "codigo"
+   },
+   {
+    "campo": "N_OSINERG",
+    "label": "N° OSINERG",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "n_osinerg"
+   },
+   {
+    "campo": "RECLAMANTE",
+    "label": "Reclamante",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "solicitante"
+   },
+   {
+    "campo": "DNI",
+    "label": "DNI",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "dni"
+   },
+   {
+    "campo": "SUMINISTRO",
+    "label": "Suministro",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "suministro"
+   },
+   {
+    "campo": "MATERIA",
+    "label": "Materia",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "materia"
+   },
+   {
+    "campo": "PERIODO_RECLAMADO",
+    "label": "Período reclamado",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "periodo"
+   },
+   {
+    "campo": "DIAS_NO_CONTABILIZADOS",
+    "label": "Dias No Contabilizados",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "MES_ERROR_LECTURA",
+    "label": "Mes Error Lectura",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "general"
+   },
+   {
+    "campo": "N_MESES_ACUMULACION",
+    "label": "N° meses de acumulación",
+    "origen": "llena",
+    "tipo": "num",
+    "grupo": "general"
+   },
+   {
+    "campo": "INICIO_ACUMULACION",
+    "label": "Inicio de acumulación",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "general"
+   },
+   {
+    "campo": "FIN_ACUMULACION",
+    "label": "Fin de acumulación",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "general"
+   },
+   {
+    "campo": "VIR_KWH",
+    "label": "VIR acumulado (kWh)",
+    "origen": "llena",
+    "tipo": "num",
+    "grupo": "general"
+   },
+   {
+    "campo": "SERIE_MEDIDOR",
+    "label": "Serie del medidor",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "general"
+   },
+   {
+    "campo": "RESULTADO_PRUEBA",
+    "label": "Resultado prueba medidor",
+    "origen": "llena",
+    "tipo": "select",
+    "grupo": "general",
+    "opciones": [
+     "CONFORME",
+     "NO CONFORME"
+    ]
+   },
+   {
+    "campo": "N_CERTIFICADO",
+    "label": "N° certificado INACAL",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "general"
+   },
+   {
+    "campo": "CONSUMO_CORRECTO",
+    "label": "Consumo correcto (kWh)",
+    "origen": "llena",
+    "tipo": "num",
+    "grupo": "general"
+   },
+   {
+    "campo": "CONSUMO_PROMEDIO",
+    "label": "Consumo promedio Cp (kWh)",
+    "origen": "calc",
+    "tipo": "num",
+    "grupo": "general",
+    "hint": "Promedio del histórico (Anexo A)"
+   },
+   {
+    "campo": "DIFERENCIA_KWH",
+    "label": "Diferencia a refacturar (kWh)",
+    "origen": "calc",
+    "tipo": "num",
+    "grupo": "general",
+    "hint": "Consumo reclamado − consumo promedio"
+   },
+   {
+    "campo": "MONTO_AMPARADO",
+    "label": "Monto amparado (S/)",
+    "origen": "calc",
+    "tipo": "num",
+    "grupo": "general",
+    "hint": "Exceso amparado × tarifa"
+   },
+   {
+    "campo": "N_CUOTAS",
+    "label": "N° de cuotas",
+    "origen": "llena",
+    "tipo": "num",
+    "grupo": "general"
+   },
+   {
+    "campo": "FUNDAMENTO_AMPARO",
+    "label": "Fundamento de la parte amparada",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "FUNDAMENTO_NO_AMPARO",
+    "label": "Fundamento de la parte no amparada",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "EXTREMO_FUNDADO",
+    "label": "Extremo fundado",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "general"
+   },
+   {
+    "campo": "EXTREMO_INFUNDADO",
+    "label": "Extremo infundado",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "general"
+   },
+   {
+    "campo": "TARIFA",
+    "label": "Tarifa",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "tarifa"
+   },
+   {
+    "campo": "DIRECCION",
+    "label": "Dirección",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "direccion"
+   },
+   {
+    "campo": "DISTRITO",
+    "label": "Distrito",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "distrito"
+   },
+   {
+    "campo": "MONTO_RECLAMADO",
+    "label": "Monto en reclamo (S/)",
+    "origen": "auto",
+    "tipo": "num",
+    "grupo": "general",
+    "reclamo_key": "monto"
+   },
+   {
+    "campo": "FIRMANTE",
+    "label": "Firmante",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "firma"
+   },
+   {
+    "campo": "CARGO_FIRMANTE",
+    "label": "Cargo del firmante",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "firma"
+   },
+   {
+    "campo": "FOLIO",
+    "label": "Folio",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Foliado automático al consolidar el expediente"
+   }
+  ]
+ },
+ "RES_IMPROCEDENTE.docx": {
+  "total": 23,
+  "auto": 12,
+  "llena": 8,
+  "calc": 2,
+  "campos": [
+   {
+    "campo": "N_RESOLUCION",
+    "label": "N° Resolución",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Correlativo C-####-AAAA (backend)"
+   },
+   {
+    "campo": "LUGAR",
+    "label": "Lugar",
+    "origen": "fijo",
+    "tipo": "text",
+    "grupo": "general",
+    "valor": "Cusco"
+   },
+   {
+    "campo": "FECHA_RESOLUCION",
+    "label": "Fecha de la resolución",
+    "origen": "llena",
+    "tipo": "date",
+    "grupo": "general"
+   },
+   {
+    "campo": "FECHA_RECLAMO",
+    "label": "Fecha del reclamo",
+    "origen": "auto",
+    "tipo": "date",
+    "grupo": "general",
+    "reclamo_key": "fecha_reclamo"
+   },
+   {
+    "campo": "COD_RECLAMO",
+    "label": "Código de reclamo",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "codigo"
+   },
+   {
+    "campo": "N_OSINERG",
+    "label": "N° OSINERG",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "n_osinerg"
+   },
+   {
+    "campo": "RECLAMANTE",
+    "label": "Reclamante",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "solicitante"
+   },
+   {
+    "campo": "DNI",
+    "label": "DNI",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "dni"
+   },
+   {
+    "campo": "SUMINISTRO",
+    "label": "Suministro",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "suministro"
+   },
+   {
+    "campo": "MATERIA",
+    "label": "Materia",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "materia"
+   },
+   {
+    "campo": "FECHA_INSPECCION",
+    "label": "Fecha/hora de inspección",
+    "origen": "llena",
+    "tipo": "date",
+    "grupo": "general"
+   },
+   {
+    "campo": "DETALLE_VERIFICACION",
+    "label": "Detalle Verificacion",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "general"
+   },
+   {
+    "campo": "PERIODO_RECLAMADO",
+    "label": "Período reclamado",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "periodo"
+   },
+   {
+    "campo": "DIAS_NO_CONTABILIZADOS",
+    "label": "Dias No Contabilizados",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "DETALLE_MATERIA",
+    "label": "Detalle de la materia",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "FUNDAMENTO_IMPROCEDENCIA",
+    "label": "Fundamento de improcedencia",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "TARIFA",
+    "label": "Tarifa",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "tarifa"
+   },
+   {
+    "campo": "DIRECCION",
+    "label": "Dirección",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "direccion"
+   },
+   {
+    "campo": "DISTRITO",
+    "label": "Distrito",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "distrito"
+   },
+   {
+    "campo": "MONTO_RECLAMADO",
+    "label": "Monto en reclamo (S/)",
+    "origen": "auto",
+    "tipo": "num",
+    "grupo": "general",
+    "reclamo_key": "monto"
+   },
+   {
+    "campo": "FIRMANTE",
+    "label": "Firmante",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "firma"
+   },
+   {
+    "campo": "CARGO_FIRMANTE",
+    "label": "Cargo del firmante",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "firma"
+   },
+   {
+    "campo": "FOLIO",
+    "label": "Folio",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Foliado automático al consolidar el expediente"
+   }
+  ]
+ },
+ "RES_INADMISIBLE.docx": {
+  "total": 21,
+  "auto": 12,
+  "llena": 6,
+  "calc": 2,
+  "campos": [
+   {
+    "campo": "N_RESOLUCION",
+    "label": "N° Resolución",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Correlativo C-####-AAAA (backend)"
+   },
+   {
+    "campo": "LUGAR",
+    "label": "Lugar",
+    "origen": "fijo",
+    "tipo": "text",
+    "grupo": "general",
+    "valor": "Cusco"
+   },
+   {
+    "campo": "FECHA_RESOLUCION",
+    "label": "Fecha de la resolución",
+    "origen": "llena",
+    "tipo": "date",
+    "grupo": "general"
+   },
+   {
+    "campo": "FECHA_RECLAMO",
+    "label": "Fecha del reclamo",
+    "origen": "auto",
+    "tipo": "date",
+    "grupo": "general",
+    "reclamo_key": "fecha_reclamo"
+   },
+   {
+    "campo": "COD_RECLAMO",
+    "label": "Código de reclamo",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "codigo"
+   },
+   {
+    "campo": "N_OSINERG",
+    "label": "N° OSINERG",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "n_osinerg"
+   },
+   {
+    "campo": "RECLAMANTE",
+    "label": "Reclamante",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "solicitante"
+   },
+   {
+    "campo": "DNI",
+    "label": "DNI",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "dni"
+   },
+   {
+    "campo": "SUMINISTRO",
+    "label": "Suministro",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "suministro"
+   },
+   {
+    "campo": "MATERIA",
+    "label": "Materia",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "materia"
+   },
+   {
+    "campo": "PERIODO_RECLAMADO",
+    "label": "Período reclamado",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "periodo"
+   },
+   {
+    "campo": "DIAS_NO_CONTABILIZADOS",
+    "label": "Dias No Contabilizados",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "FECHA_OBSERVACION",
+    "label": "Fecha de observación",
+    "origen": "llena",
+    "tipo": "date",
+    "grupo": "general"
+   },
+   {
+    "campo": "DEFECTO_FORMAL",
+    "label": "Defecto formal no subsanado",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "TARIFA",
+    "label": "Tarifa",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "tarifa"
+   },
+   {
+    "campo": "DIRECCION",
+    "label": "Dirección",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "direccion"
+   },
+   {
+    "campo": "DISTRITO",
+    "label": "Distrito",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "distrito"
+   },
+   {
+    "campo": "MONTO_RECLAMADO",
+    "label": "Monto en reclamo (S/)",
+    "origen": "auto",
+    "tipo": "num",
+    "grupo": "general",
+    "reclamo_key": "monto"
+   },
+   {
+    "campo": "FIRMANTE",
+    "label": "Firmante",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "firma"
+   },
+   {
+    "campo": "CARGO_FIRMANTE",
+    "label": "Cargo del firmante",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "firma"
+   },
+   {
+    "campo": "FOLIO",
+    "label": "Folio",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Foliado automático al consolidar el expediente"
+   }
+  ]
+ },
+ "RES_INFUNDADO.docx": {
+  "total": 29,
+  "auto": 13,
+  "llena": 12,
+  "calc": 3,
+  "campos": [
+   {
+    "campo": "N_RESOLUCION",
+    "label": "N° Resolución",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Correlativo C-####-AAAA (backend)"
+   },
+   {
+    "campo": "LUGAR",
+    "label": "Lugar",
+    "origen": "fijo",
+    "tipo": "text",
+    "grupo": "general",
+    "valor": "Cusco"
+   },
+   {
+    "campo": "FECHA_RESOLUCION",
+    "label": "Fecha de la resolución",
+    "origen": "llena",
+    "tipo": "date",
+    "grupo": "general"
+   },
+   {
+    "campo": "FECHA_RECLAMO",
+    "label": "Fecha del reclamo",
+    "origen": "auto",
+    "tipo": "date",
+    "grupo": "general",
+    "reclamo_key": "fecha_reclamo"
+   },
+   {
+    "campo": "COD_RECLAMO",
+    "label": "Código de reclamo",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "codigo"
+   },
+   {
+    "campo": "N_OSINERG",
+    "label": "N° OSINERG",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "n_osinerg"
+   },
+   {
+    "campo": "RECLAMANTE",
+    "label": "Reclamante",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "solicitante"
+   },
+   {
+    "campo": "DNI",
+    "label": "DNI",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "dni"
+   },
+   {
+    "campo": "SUMINISTRO",
+    "label": "Suministro",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "suministro"
+   },
+   {
+    "campo": "MATERIA",
+    "label": "Materia",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "materia"
+   },
+   {
+    "campo": "PERIODO_RECLAMADO",
+    "label": "Período reclamado",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "periodo"
+   },
+   {
+    "campo": "LECTURA_INSPECCION",
+    "label": "Lectura en inspección (kWh)",
+    "origen": "llena",
+    "tipo": "num",
+    "grupo": "general"
+   },
+   {
+    "campo": "DIAS_NO_CONTABILIZADOS",
+    "label": "Dias No Contabilizados",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "FECHA_INSPECCION",
+    "label": "Fecha/hora de inspección",
+    "origen": "llena",
+    "tipo": "date",
+    "grupo": "general"
+   },
+   {
+    "campo": "OBS_INSPECCION",
+    "label": "Observaciones del inspector",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "CONSUMO_RECLAMADO",
+    "label": "Consumo reclamado (kWh)",
+    "origen": "auto",
+    "tipo": "num",
+    "grupo": "general",
+    "reclamo_key": "consumo_reclamado"
+   },
+   {
+    "campo": "CONSUMO_PROMEDIO",
+    "label": "Consumo promedio Cp (kWh)",
+    "origen": "calc",
+    "tipo": "num",
+    "grupo": "general",
+    "hint": "Promedio del histórico (Anexo A)"
+   },
+   {
+    "campo": "N_MESES_PROMEDIO",
+    "label": "N° meses del promedio",
+    "origen": "llena",
+    "tipo": "num",
+    "grupo": "general"
+   },
+   {
+    "campo": "DIFERENCIA_PCT",
+    "label": "Diferencia Pct",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "general"
+   },
+   {
+    "campo": "N_CARTA_PRUEBA",
+    "label": "N° carta derecho a prueba",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "general"
+   },
+   {
+    "campo": "RESULTADO_CONTRASTE",
+    "label": "Resultado de contrastación",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "ANALISIS_ARGUMENTO",
+    "label": "Análisis del argumento del usuario",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "TARIFA",
+    "label": "Tarifa",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "tarifa"
+   },
+   {
+    "campo": "DIRECCION",
+    "label": "Dirección",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "direccion"
+   },
+   {
+    "campo": "DISTRITO",
+    "label": "Distrito",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "distrito"
+   },
+   {
+    "campo": "MONTO_RECLAMADO",
+    "label": "Monto en reclamo (S/)",
+    "origen": "auto",
+    "tipo": "num",
+    "grupo": "general",
+    "reclamo_key": "monto"
+   },
+   {
+    "campo": "FIRMANTE",
+    "label": "Firmante",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "firma"
+   },
+   {
+    "campo": "CARGO_FIRMANTE",
+    "label": "Cargo del firmante",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "firma"
+   },
+   {
+    "campo": "FOLIO",
+    "label": "Folio",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Foliado automático al consolidar el expediente"
+   }
+  ]
+ },
+ "RES_SUSPENSION_OFICIO.docx": {
+  "total": 24,
+  "auto": 12,
+  "llena": 9,
+  "calc": 2,
+  "campos": [
+   {
+    "campo": "N_RESOLUCION",
+    "label": "N° Resolución",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Correlativo C-####-AAAA (backend)"
+   },
+   {
+    "campo": "LUGAR",
+    "label": "Lugar",
+    "origen": "fijo",
+    "tipo": "text",
+    "grupo": "general",
+    "valor": "Cusco"
+   },
+   {
+    "campo": "FECHA_RESOLUCION",
+    "label": "Fecha de la resolución",
+    "origen": "llena",
+    "tipo": "date",
+    "grupo": "general"
+   },
+   {
+    "campo": "FECHA_RECLAMO",
+    "label": "Fecha del reclamo",
+    "origen": "auto",
+    "tipo": "date",
+    "grupo": "general",
+    "reclamo_key": "fecha_reclamo"
+   },
+   {
+    "campo": "RECLAMANTE",
+    "label": "Reclamante",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "solicitante"
+   },
+   {
+    "campo": "DNI",
+    "label": "DNI",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "dni"
+   },
+   {
+    "campo": "SUMINISTRO",
+    "label": "Suministro",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "suministro"
+   },
+   {
+    "campo": "COD_RECLAMO",
+    "label": "Código de reclamo",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "codigo"
+   },
+   {
+    "campo": "N_OSINERG",
+    "label": "N° OSINERG",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "n_osinerg"
+   },
+   {
+    "campo": "MATERIA",
+    "label": "Materia",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "materia"
+   },
+   {
+    "campo": "MONTO_RECLAMADO",
+    "label": "Monto en reclamo (S/)",
+    "origen": "auto",
+    "tipo": "num",
+    "grupo": "general",
+    "reclamo_key": "monto"
+   },
+   {
+    "campo": "PERIODO_RECLAMADO",
+    "label": "Período reclamado",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "periodo"
+   },
+   {
+    "campo": "DIAS_NO_CONTABILIZADOS",
+    "label": "Dias No Contabilizados",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "FECHA_PRUEBA1",
+    "label": "Fecha prueba 1 (contraste)",
+    "origen": "llena",
+    "tipo": "date",
+    "grupo": "general"
+   },
+   {
+    "campo": "FECHA_PRUEBA2",
+    "label": "Fecha prueba 2 (aislamiento)",
+    "origen": "llena",
+    "tipo": "date",
+    "grupo": "general"
+   },
+   {
+    "campo": "RESULTADO_PRUEBAS",
+    "label": "Resultado de las pruebas",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "INICIO_HISTORIAL",
+    "label": "Inicio del historial",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "general"
+   },
+   {
+    "campo": "FUNDAMENTO_SUSPENSION",
+    "label": "Fundamento de la suspensión",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "TARIFA",
+    "label": "Tarifa",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "tarifa"
+   },
+   {
+    "campo": "DIRECCION",
+    "label": "Dirección",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "direccion"
+   },
+   {
+    "campo": "DISTRITO",
+    "label": "Distrito",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "distrito"
+   },
+   {
+    "campo": "FIRMANTE",
+    "label": "Firmante",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "firma"
+   },
+   {
+    "campo": "CARGO_FIRMANTE",
+    "label": "Cargo del firmante",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "firma"
+   },
+   {
+    "campo": "FOLIO",
+    "label": "Folio",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Foliado automático al consolidar el expediente"
+   }
+  ]
+ },
+ "RES_VARIOS.docx": {
+  "total": 27,
+  "auto": 12,
+  "llena": 12,
+  "calc": 2,
+  "campos": [
+   {
+    "campo": "N_RESOLUCION",
+    "label": "N° Resolución",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Correlativo C-####-AAAA (backend)"
+   },
+   {
+    "campo": "LUGAR",
+    "label": "Lugar",
+    "origen": "fijo",
+    "tipo": "text",
+    "grupo": "general",
+    "valor": "Cusco"
+   },
+   {
+    "campo": "FECHA_RESOLUCION",
+    "label": "Fecha de la resolución",
+    "origen": "llena",
+    "tipo": "date",
+    "grupo": "general"
+   },
+   {
+    "campo": "FECHA_RECLAMO",
+    "label": "Fecha del reclamo",
+    "origen": "auto",
+    "tipo": "date",
+    "grupo": "general",
+    "reclamo_key": "fecha_reclamo"
+   },
+   {
+    "campo": "COD_RECLAMO",
+    "label": "Código de reclamo",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "codigo"
+   },
+   {
+    "campo": "N_OSINERG",
+    "label": "N° OSINERG",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "n_osinerg"
+   },
+   {
+    "campo": "RECLAMANTE",
+    "label": "Reclamante",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "solicitante"
+   },
+   {
+    "campo": "DNI",
+    "label": "DNI",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "dni"
+   },
+   {
+    "campo": "SUMINISTRO",
+    "label": "Suministro",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "suministro"
+   },
+   {
+    "campo": "MATERIA",
+    "label": "Materia",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "materia"
+   },
+   {
+    "campo": "PERIODO_RECLAMADO",
+    "label": "Período reclamado",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "periodo"
+   },
+   {
+    "campo": "DIAS_NO_CONTABILIZADOS",
+    "label": "Dias No Contabilizados",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "tabla"
+   },
+   {
+    "campo": "DESCRIPCION_RECLAMO",
+    "label": "Descripción del reclamo",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "FECHA_INSPECCION",
+    "label": "Fecha/hora de inspección",
+    "origen": "llena",
+    "tipo": "date",
+    "grupo": "general"
+   },
+   {
+    "campo": "N_COLINDANTES",
+    "label": "N° de colindantes encuestados",
+    "origen": "llena",
+    "tipo": "num",
+    "grupo": "general"
+   },
+   {
+    "campo": "RESULTADO_ENCUESTA",
+    "label": "Resultado de la encuesta",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "ANALISIS_VARIOS",
+    "label": "Análisis",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "SENTIDO_FALLO",
+    "label": "Sentido del fallo",
+    "origen": "llena",
+    "tipo": "select",
+    "grupo": "general",
+    "opciones": [
+     "FUNDADO",
+     "INFUNDADO",
+     "FUNDADO EN PARTE",
+     "IMPROCEDENTE",
+     "INADMISIBLE"
+    ]
+   },
+   {
+    "campo": "DETALLE_FALLO",
+    "label": "Detalle del fallo",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "ACCION_CORRECTIVA",
+    "label": "Acción correctiva",
+    "origen": "llena",
+    "tipo": "textarea",
+    "grupo": "general"
+   },
+   {
+    "campo": "TARIFA",
+    "label": "Tarifa",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "tarifa"
+   },
+   {
+    "campo": "DIRECCION",
+    "label": "Dirección",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "direccion"
+   },
+   {
+    "campo": "DISTRITO",
+    "label": "Distrito",
+    "origen": "auto",
+    "tipo": "text",
+    "grupo": "general",
+    "reclamo_key": "distrito"
+   },
+   {
+    "campo": "MONTO_RECLAMADO",
+    "label": "Monto en reclamo (S/)",
+    "origen": "auto",
+    "tipo": "num",
+    "grupo": "general",
+    "reclamo_key": "monto"
+   },
+   {
+    "campo": "FIRMANTE",
+    "label": "Firmante",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "firma"
+   },
+   {
+    "campo": "CARGO_FIRMANTE",
+    "label": "Cargo del firmante",
+    "origen": "llena",
+    "tipo": "text",
+    "grupo": "firma"
+   },
+   {
+    "campo": "FOLIO",
+    "label": "Folio",
+    "origen": "calc",
+    "tipo": "text",
+    "grupo": "general",
+    "hint": "Foliado automático al consolidar el expediente"
+   }
+  ]
+ }
+}

@@ -1,0 +1,91 @@
+import { useState } from "react";
+import { Card, Kpi, toast } from "./ui.jsx";
+import { TicketCard, SemaforoPlazo, InfoBoton } from "./Ticket.jsx";
+import { abiertos, vencidos, porVencer, tareaPrioritaria, agrupaPorEtapa } from "../lib/tickets.js";
+
+export default function MiDia({ perfil, misReclamos, tickets = [], recByCode = {}, onEstadoTicket, setSelExp, onCerrarDia }) {
+  const ab = abiertos(tickets);
+  const venc = vencidos(tickets);
+  const pv = porVencer(tickets, 2);
+  const prio = tareaPrioritaria(tickets);
+  const grupos = agrupaPorEtapa(ab);
+  const recDe = t => recByCode[t.reclamo];
+  // abre el expediente EN la etapa del ticket: ahí se sube evidencia, se llenan datos y se marca hecho
+  const abrir = t => { const r = recDe(t); if (r) setSelExp(r.id, t.etapa); else toast("Este ticket apunta a un expediente que no está en la lista (¿recarga la página?)"); };
+
+  return <>
+    <Card style={{ marginBottom: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+        <div><h3 style={{ margin: 0 }}>Hola, {perfil.nombre.split(" ")[0]}</h3><div className="muted" style={{ fontSize: 12 }}>Tu jornada · {ab.length} caso(s) en tu etapa · abre uno y trabaja todo ahí: evidencia, datos, documento y «terminé» — al terminar, el caso pasa solo al siguiente</div></div>
+        <button className="btn" title="Enviar tu reporte de hoy al Coordinador" onClick={() => { onCerrarDia(); toast("Día cerrado. Reporte enviado al Coordinador."); }}>Cerrar mi día</button>
+      </div>
+    </Card>
+
+    {/* ¿QUÉ HAGO AHORA? — una sola tarea prioritaria */}
+    {prio ? (
+      <Card style={{ marginBottom: 14, borderLeft: `4px solid ${prio.vencido ? "#C0392B" : "#C9821B"}` }}>
+        <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".06em", color: "#8a97a8", fontWeight: 700, marginBottom: 8 }}>
+          Tu próxima tarea {prio.vencido ? "· ⚠ vencida" : ""}
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <SemaforoPlazo t={prio} big />
+          <b style={{ fontSize: 16, color: "#e6eaf0" }}>{prio.etapa}</b>
+          <InfoBoton etapa={prio.etapa} rol={perfil.rol} t={prio} />
+        </div>
+        <div className="muted" style={{ fontSize: 12.5, margin: "6px 0 10px" }}>
+          <span className="mono">{recDe(prio)?.osinerg || "…" + prio.reclamo.slice(-6)}</span>
+          {recDe(prio)?.solicitante ? " · " + recDe(prio).solicitante : ""}
+          {prio.penalidadItem && prio.penalidadItem !== "—" && <> · ⚠ penalidad {prio.penalidadItem} (plazo {prio.plazoHabiles} días háb.)</>}
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button className="btn sm" style={{ background: "#1F4E8C", color: "#fff", border: 0, fontWeight: 600 }} onClick={() => abrir(prio)}>Abrir y trabajar</button>
+          {prio.estado !== "hecho" && <button className="btn sm" onClick={() => onEstadoTicket?.(prio, "hecho")}>Marcar etapa hecha</button>}
+        </div>
+      </Card>
+    ) : (
+      <Card style={{ marginBottom: 14 }}>
+        {tickets.length
+          ? <div className="muted">Sin tareas abiertas. Todo al día. 🎉</div>
+          : <div className="muted">Aún no tienes tickets asignados. No hace falta que busques nada: el trabajo te llegará solo cuando un expediente entre a la etapa del flujo que te corresponde.</div>}
+      </Card>
+    )}
+
+    {/* mini-KPIs (sin montos) */}
+    <div className="grid g4">
+      <Kpi label="Abiertas" value={ab.length} sub="en mi bandeja" s="verde" />
+      <Kpi label="Por vencer (≤2d)" value={pv.length} sub="atención" s={pv.length ? "ambar" : "verde"} />
+      <Kpi label="Vencidas" value={venc.length} sub="urgente" s={venc.length ? "rojo" : "verde"} />
+      <Kpi label="Expedientes" value={misReclamos.length} sub="míos" s="verde" />
+    </div>
+
+    {/* tickets por etapa, colapsables — solo la etapa urgente abierta por defecto */}
+    <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
+      {grupos.map(g => <GrupoEtapa key={g.etapa} g={g} perfil={perfil} recByCode={recByCode} onEstado={onEstadoTicket} onAbrir={abrir} defAbierto={g.urgente} />)}
+      {!grupos.length && <Card><div className="muted">No tienes tickets abiertos.</div></Card>}
+    </div>
+  </>;
+}
+
+function GrupoEtapa({ g, perfil, recByCode, onEstado, onAbrir, defAbierto }) {
+  const [open, setOpen] = useState(defAbierto);
+  return (
+    <Card style={{ padding: 0 }}>
+      <div onClick={() => setOpen(o => !o)} style={{
+        display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", cursor: "pointer",
+        borderLeft: `4px solid ${g.urgente ? "#C9821B" : "#1e3a8a"}`,
+      }}>
+        <span style={{ color: "#94a3b8", width: 14 }}>{open ? "▾" : "▸"}</span>
+        <b style={{ color: "#e2e8f0", fontSize: 13 }}>{g.etapa}</b>
+        <span className="muted" style={{ fontSize: 11 }}>{g.abiertos} abierta(s)</span>
+        {g.urgente && <span style={{ marginLeft: "auto", fontSize: 11, color: "#fbbf24" }}>⚠ urgente</span>}
+      </div>
+      {open && (
+        <div style={{ padding: "0 12px 12px", display: "grid", gap: 8 }}>
+          {g.tickets.map(t => (
+            <TicketCard key={t.id} t={t} rec={recByCode[t.reclamo]} perfil={perfil} onEstado={onEstado} onAbrir={onAbrir} />
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
