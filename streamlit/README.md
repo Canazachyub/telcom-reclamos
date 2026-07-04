@@ -57,20 +57,16 @@ edita los valores. Sin ese archivo, la app usa los valores por defecto de
 
 ## Cómo desplegar GRATIS en Streamlit Community Cloud (desde GitHub)
 
-1. **Sube el proyecto a un repo de GitHub** (puede ser privado). Solo necesitas
-   que la carpeta `90_Dashboard/streamlit/` esté en el repo — Streamlit Cloud
-   permite indicar la ruta del archivo principal dentro del repo.
-   - Si el repo completo de "CUSCO RECLAMOS" tiene archivos sensibles (bases del
-     contrato, PDFs de reclamantes, etc.), sube el repo como **privado** o crea
-     un repo aparte solo con `90_Dashboard/streamlit/`.
+1. **El repo ya existe**: `Canazachyub/telcom-reclamos` (espejo público, sin
+   datos ni claves; se actualiza con `90_Dashboard/sync_a_nube.ps1`).
 2. Entra a **https://share.streamlit.io** (Streamlit Community Cloud) e inicia
    sesión con tu cuenta de GitHub.
 3. Clic en **"New app"** (o **"Create app"**).
 4. Elige:
-   - **Repository**: el repo que subiste.
-   - **Branch**: `main` (o la que uses).
-   - **Main file path**: `90_Dashboard/streamlit/app.py`
-     (ajusta la ruta si tu repo tiene otra raíz).
+   - **Repository**: `Canazachyub/telcom-reclamos` · **Branch**: `main`
+   - **Main file path**: `streamlit/app.py`
+   - **App URL (subdominio)**: escribe `telcom-herramientas` para que quede
+     `https://telcom-herramientas.streamlit.app` (el dashboard ya enlaza ahí).
 5. En **"Advanced settings" → Python version**: elige `3.12` (o la más cercana
    disponible) para igualar el entorno local.
 6. En **"Advanced settings" → Secrets**, pega el contenido de
