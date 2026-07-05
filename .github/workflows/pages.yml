@@ -42,5 +42,14 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      # Pages falla intermitentemente con "Deployment failed, try again later" —
+      # el primer intento tolera el error y el segundo reintenta tras 30 s.
       - id: deployment
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+      - name: Esperar antes del reintento
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 30
+      - id: reintento
+        if: steps.deployment.outcome == 'failure'
         uses: actions/deploy-pages@v4
