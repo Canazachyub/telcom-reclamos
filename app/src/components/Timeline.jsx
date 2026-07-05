@@ -8,7 +8,7 @@ export default function Timeline({ ticketDe, estadoPos, onSel }) {
       {FLUJO.map((s, i) => {
         const tk = ticketDe(s.etapa);
         const est = tk ? (tk.hecho ? "hecho" : tk.estado === "en_proceso" ? "proceso" : tk.estado === "observado" ? "observado" : "pend") : estadoPos(i);
-        const col = est === "hecho" ? "#1E8E5A" : est === "proceso" ? "#2C6FC0" : est === "observado" ? "#C9821B" : "var(--mut)";
+        const col = est === "hecho" ? "#E3001B" : est === "proceso" ? "#2C6FC0" : est === "observado" ? "#C9821B" : "var(--mut)";
         const ic = est === "hecho" ? "✓" : est === "proceso" ? "◐" : est === "observado" ? "!" : "○";
         const venc = tk && tk.abierto && tk.vencido;
         return (

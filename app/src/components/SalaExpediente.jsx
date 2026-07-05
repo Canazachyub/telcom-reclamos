@@ -16,15 +16,16 @@ function copiar(txt, etiqueta){
   try{ navigator.clipboard.writeText(String(txt)); toast("Copiado: "+etiqueta); }catch(e){ toast("No se pudo copiar"); }
 }
 
-// fecha ISO/Date -> "05/07 13:52" (hora local, legible)
-function fmtCuando(v){
+// fecha ISO/Date -> "05/07 13:52" (hora local, legible) — la usa también el Drawer (bitácora)
+export function fmtCuando(v){
   const d = new Date(v);
   if(isNaN(d)) return String(v||"").slice(0,16);
   const p = n => ("0"+n).slice(-2);
   return p(d.getDate())+"/"+p(d.getMonth()+1)+" "+p(d.getHours())+":"+p(d.getMinutes());
 }
 
-// registro crudo de la bitácora -> frase humana (nada de JSON en pantalla)
+// registro crudo de la bitácora -> frase humana (nada de JSON en pantalla) — exportado para el Drawer
+export function humanizarRegistro(r){ return humanizar(r); }
 function humanizar(r){
   const raw = typeof r.detalle==="string" ? r.detalle : "";
   let d={}; try{ const j=JSON.parse(raw); if(j && typeof j==="object") d=j; }catch(e){}

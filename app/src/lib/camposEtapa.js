@@ -13,6 +13,8 @@ export const CAMPOS_ETAPA = {
       { k: "TARIFA", label: "Tarifa (BT5B…)", tipo: "text" },
       { k: "PERIODO_RECLAMADO", label: "Período reclamado", tipo: "text", ph: "Marzo 2026" },
       { k: "MONTO_RECLAMADO", label: "Monto en reclamo (S/)", tipo: "num" },
+      // — transcripción SIELSE (§5 memoria)
+      { k: "N_SOLICITUD_SIELSE", label: "N° de Solicitud SIELSE", tipo: "text", ph: "el número que SIELSE asigna al Guardar la Solicitud (ej. 2026001…)" },
     ],
   },
   "Evaluación": {
@@ -26,6 +28,10 @@ export const CAMPOS_ETAPA = {
       { k: "LECT_ANTERIOR", label: "Lectura anterior (kWh)", tipo: "num" },
       { k: "LECT_ACTUAL", label: "Lectura actual (kWh)", tipo: "num" },
       { k: "CONCLUSION_REPORTE1", label: "Conclusión del Reporte 1", tipo: "textarea" },
+      // — transcripción SIELSE (§5 memoria)
+      { k: "N_OSINERG_SIELSE", label: "Correlativo OSINERG (al Admitir)", tipo: "text", ph: "se genera al pulsar Admitir en SIELSE" },
+      { k: "FECHA_ADMISION_SIELSE", label: "Fecha de admisión (SIELSE)", tipo: "date", ph: "dd/mm/aaaa — arranca el reloj de plazos" },
+      { k: "DIRECCION_NOTIFICACION", label: "Dirección de notificación", tipo: "text", ph: "la registrada en la pestaña Reclamo de SIELSE" },
     ],
   },
   "Campo": {
@@ -57,6 +63,9 @@ export const CAMPOS_ETAPA = {
       { k: "POT_3", label: "Pot. 3 (W)", tipo: "num" },
       { k: "DIAS_3", label: "Días/mes 3", tipo: "num" },
       { k: "HORAS_3", label: "Horas/día 3", tipo: "num" },
+      // — transcripción SIELSE (§5 memoria)
+      { k: "N_OT_SIELSE", label: "N° de Orden de Trabajo", tipo: "text", ph: "OT generada en SIELSE para la inspección" },
+      { k: "FECHA_INFORME_OT", label: "Fecha en que se informó el resultado en SIELSE", tipo: "date", ph: "dd/mm/aaaa — plazo ≤2 d háb (penalidad 5.1)" },
     ],
   },
   "SIELSE": {
@@ -66,6 +75,10 @@ export const CAMPOS_ETAPA = {
       { k: "N_CARTA_PRUEBA", label: "N° carta / refacturación (prueba)", tipo: "text" },
       { k: "FECHA_SIELSE", label: "Fecha informado en SIELSE", tipo: "date" },
       { k: "OBS_SIELSE", label: "Observación", tipo: "textarea" },
+      // — transcripción SIELSE (§5 memoria)
+      { k: "COMPROBANTES_DISPUTA", label: "Recibos en disputa (números)", tipo: "text", ph: "los agregados en Recibo en Reclamo" },
+      { k: "MONTO_ACEPTADO", label: "Monto aceptado por el cliente (S/)", tipo: "num", ph: "para la refacturación" },
+      { k: "FECHA_PROCEDENCIA", label: "Fecha de Procedente (SIELSE)", tipo: "date", ph: "dd/mm/aaaa — pasa a EN ATENCIÓN" },
     ],
   },
   "Resolución": {
@@ -79,6 +92,9 @@ export const CAMPOS_ETAPA = {
       { k: "ANALISIS_ARGUMENTO", label: "Análisis / fundamento clave", tipo: "textarea" },
       { k: "FIRMANTE", label: "Firmante", tipo: "text" },
       { k: "CARGO_FIRMANTE", label: "Cargo del firmante", tipo: "text" },
+      // — transcripción SIELSE (§5 memoria)
+      { k: "FECHA_EMISION_RES", label: "Fecha de emisión de la resolución", tipo: "date", ph: "dd/mm/aaaa — la que se registra en Con Resolución" },
+      { k: "SENTIDO_RESOLUCION", label: "Tipo de Resolución (SIELSE)", tipo: "select", opciones: ["Fundado", "Fundado en Parte", "Infundado", "Improcedente", "Suspensión de Oficio", "Inadmisible"] },
     ],
   },
   "Firmas": {
@@ -88,6 +104,8 @@ export const CAMPOS_ETAPA = {
       { k: "VB_SUPERVISOR", label: "V°B° supervisor (fecha)", tipo: "date" },
       { k: "VB_JEFE", label: "V°B° jefe de división (fecha)", tipo: "date" },
       { k: "FIRMA_GERENTE", label: "Firma Gerente Comercial (fecha)", tipo: "date" },
+      // — transcripción SIELSE (§5 memoria)
+      { k: "FECHA_FIRMA_GERENTE", label: "Fecha de firma (Gerente Comercial)", tipo: "date", ph: "dd/mm/aaaa" },
     ],
   },
   "Notificación": {
@@ -102,6 +120,9 @@ export const CAMPOS_ETAPA = {
       { k: "MODALIDAD_NOTIF", label: "Modalidad", tipo: "select", opciones: ["Personal", "Bajo puerta", "Notarial"] },
       { k: "NOTIFICADOR", label: "Notificador / notario", tipo: "text" },
       { k: "OBS_NOTIF", label: "Observaciones", tipo: "textarea" },
+      // — transcripción SIELSE (§5 memoria)
+      { k: "FECHA_RECEPCION_CLIENTE", label: "Fecha de recepción por el cliente", tipo: "date", ph: "va en el informe Con Resolución de SIELSE" },
+      { k: "FECHA_NOTIFICACION_NOTARIAL", label: "Fecha de notificación notarial", tipo: "date", ph: "≤5° día desde emisión (penalidad 5.12)" },
     ],
   },
   "Apelación (JARU)": {
@@ -114,6 +135,11 @@ export const CAMPOS_ETAPA = {
       { k: "RECOMENDACION", label: "Recomendación", tipo: "select", opciones: ["Mantener", "Revocar", "Modificar"] },
       { k: "RELACION_DOCUMENTOS", label: "Relación de documentos que se elevan", tipo: "textarea" },
       { k: "N_FOJAS", label: "N° total de fojas", tipo: "num" },
+      // — transcripción SIELSE (§5 memoria)
+      { k: "N_EXPEDIENTE_JARU", label: "N° de Expediente (Apelación)", tipo: "text", ph: "el que registra SIELSE en Atención → Apelación" },
+      { k: "FECHA_ELEVACION", label: "Fecha de elevación a JARU", tipo: "date", ph: "≤5 d háb desde el recurso (penalidad 5.10)" },
+      { k: "N_RESOLUCION_JARU", label: "N° de Resolución JARU", tipo: "text", ph: "cuando OSINERGMIN resuelva" },
+      { k: "TIPO_RESOLUCION_OSINERG", label: "Tipo de Resolución OSINERG", tipo: "text", ph: "el sentido que fija JARU" },
     ],
   },
   "Foliado": {
@@ -122,6 +148,8 @@ export const CAMPOS_ETAPA = {
     campos: [
       { k: "N_FOJAS", label: "N° total de fojas", tipo: "num" },
       { k: "FECHA_FOLIADO", label: "Fecha de foliado", tipo: "date" },
+      // — transcripción SIELSE (§5 memoria)
+      { k: "N_FOLIOS", label: "N° total de folios", tipo: "num", ph: "del expediente único en PDF" },
     ],
   },
   "Cierre": {
@@ -130,6 +158,8 @@ export const CAMPOS_ETAPA = {
     campos: [
       { k: "FECHA_CIERRE", label: "Fecha de cierre en SIELSE", tipo: "date" },
       { k: "MOTIVO_CIERRE", label: "Motivo de cierre", tipo: "text" },
+      // — transcripción SIELSE (§5 memoria) · la fecha de cierre ya existe arriba (FECHA_CIERRE)
+      { k: "TIPO_CIERRE_SIELSE", label: "Vía de cierre en SIELSE", tipo: "select", opciones: ["Acto Firme", "Cumplimiento Resolución JARU", "Trato Directo"] },
     ],
   },
 };

@@ -8,6 +8,7 @@ import FichaSielse from "./FichaSielse.jsx";
 import { INFO_ETAPA, CAMPOS_ETAPA, CAMPOS_POR_FALLO } from "../lib/camposEtapa.js";
 import { resumirIA } from "../lib/api.js";
 import { GuiaSielseBox } from "../lib/guiaSielse.jsx";
+import { fmtCuando, humanizarRegistro } from "./SalaExpediente.jsx";
 
 const humaniza = k => String(k).replace(/_/g, " ").toLowerCase().replace(/^\w/, c => c.toUpperCase());
 // URL de previsualización embebible de un archivo de Drive.
@@ -17,9 +18,31 @@ function previewUrl(url) {
 }
 const esImg = n => /\.(jpg|jpeg|png|gif|webp)$/i.test(String(n || ""));
 
+// Mismo mapa de iconos por etapa que SalaExpediente (copiado como constante local — no se importa
+// porque SalaExpediente no lo exporta, solo exporta fmtCuando/humanizarRegistro).
+const ICONO_ETAPA = { "Recepción": "📥", "Evaluación": "🔍", "Campo": "🚙", "SIELSE": "💻", "Resolución": "⚖️", "Firmas": "✍️", "Notificación": "📨", "Apelación (JARU)": "🏛️", "Foliado": "📚", "Cierre": "✅" };
+
+// fecha ISO ("2026-03-31T05:00:00.000Z") -> "31/03/2026"; el resto se muestra tal cual (mismo
+// patrón fmtValor de FichaSielse.jsx, duplicado aquí porque no se exporta desde allá).
+const ISO_RE = /^\d{4}-\d{2}-\d{2}T/;
+function fmtValor(v) {
+  if (v == null || v === "") return v;
+  const s = String(v);
+  if (ISO_RE.test(s)) {
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) {
+      const dd = String(d.getUTCDate()).padStart(2, "0");
+      const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+      const yy = d.getUTCFullYear();
+      return `${dd}/${mm}/${yy}`;
+    }
+  }
+  return s;
+}
+
 // Workspace del expediente a pantalla completa: timeline arriba · VISOR · datos del formulario · datos del reclamo + etapas.
 // AQUÍ se hace TODO el trabajo de una etapa: subir evidencia + datos, generar documento y marcar la etapa hecha.
-export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, perfil, comentarios = [], onComentar, onClose, onSaveDatos, onSubido, onEstadoTicket, onEditar }) {
+export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, perfil, comentarios = [], registros = [], onComentar, onClose, onSaveDatos, onSubido, onEstadoTicket, onEditar }) {
   const ci = stageIdx(exp.etapa);
   const ii = etapaInicial ? stageIdx(etapaInicial) : -1;
   // EL TICKET ACTIVO ES LA FUENTE DE VERDAD: si no viene una etapa explícita (etapaInicial),
@@ -62,6 +85,13 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
   const camposFaltantes = camposEtapaTodos.filter(c => dat[c.k] == null || dat[c.k] === "").map(c => c.label);
   const faltantes = [...evisFaltantes, ...camposFaltantes];
   const estPlazo = tk && tk.abierto ? (tk.vencido ? { t: "VENCIDO", c: "#7f1d1d" } : (tk.diasRestantes != null && tk.diasRestantes <= 2 ? { t: "POR VENCER", c: "#78350f" } : { t: "VIGENTE", c: "#14532d" })) : null;
+  // Pill de estado de la etapa SELECCIONADA (para la cabecera hero) — según su ticket si existe:
+  // hecha ✓ verde / vencida roja / en curso ámbar. Sin ticket: "sin ticket" gris neutro.
+  const pillEtapaSel = !tk
+    ? { t: "SIN TICKET", bg: "#E9EEF5", c: "var(--mut)" }
+    : tk.hecho ? { t: "HECHA ✓", bg: "#E5F7EC", c: "#15803D" }
+      : tk.abierto && tk.vencido ? { t: "VENCIDA", bg: "#FDE7E7", c: "#DC2626" }
+        : { t: "EN CURSO", bg: "#FEF3DF", c: "#B45309" };
   const selEst = i => { setSel(i); setDocSel(0); setSubir(false); };
   const esMiEtapa = tk && perfil && tk.respId === perfil.resp_id && tk.abierto;
   const puedeAccion = tk && perfil && (esMiEtapa || perfil.rol === "GERENTE" || perfil.rol === "COORDINADOR");
@@ -73,27 +103,39 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
   return (
     <div className="overlay" style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: mobile ? 0 : 16 }} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div style={wrapS}>
-        {/* ===== Header + línea de tiempo (full width) ===== */}
-        <div style={{ padding: "12px 18px", borderBottom: "1px solid var(--bd)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 8 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-              <span className="mono" style={{ fontSize: 16, fontWeight: 700, color: "var(--titulo)" }}>{exp.osinerg || exp.codigo}</span>
-              <span className="muted">{exp.solicitante}</span>
-              <Tag bg={wColor(exp.resp)} color="#fff">👤 {wName(exp.resp)}</Tag>
-              {exp.tipoRes && <Tag bg="#E9EEF5" color="var(--tx)">{exp.tipoRes}</Tag>}
-              {exp.apelacion && <Tag bg="#7c3aed" color="#fff">APELACIÓN JARU</Tag>}
+        {/* ===== Header estilo courier (hero compacto) + línea de tiempo (full width) ===== */}
+        <div style={{ background: "linear-gradient(120deg,#DDF0FA,#EDF7FC)", borderBottom: "1px solid var(--bd)" }}>
+          <div style={{ padding: "12px 18px 6px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <div style={{ width: 40, height: 40, borderRadius: 11, background: "linear-gradient(135deg,#E3001B,#FF5A63)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 19, flexShrink: 0 }}>
+                {ICONO_ETAPA[s.etapa] || "📄"}
+              </div>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  <span className="mono" style={{ fontSize: 16, fontWeight: 700, color: "var(--titulo)" }}>{exp.osinerg || exp.codigo}</span>
+                  <span className="muted">{exp.solicitante}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 999, background: pillEtapaSel.bg, color: pillEtapaSel.c }}>{pillEtapaSel.t}</span>
+                  <Tag bg={wColor(exp.resp)} color="#fff">👤 {wName(exp.resp)}</Tag>
+                  {exp.tipoRes && <Tag bg="#E9EEF5" color="var(--tx)">{exp.tipoRes}</Tag>}
+                  {exp.apelacion && <Tag bg="#7c3aed" color="#fff">APELACIÓN JARU</Tag>}
+                </div>
+              </div>
             </div>
             <button className="btn sec sm" onClick={onClose} title="Cerrar expediente">✕ cerrar</button>
           </div>
-          <div style={{ fontSize: 11, color: "var(--mut)", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 2 }}>Línea de tiempo del expediente</div>
-          <Timeline ticketDe={ticketDe}
-            estadoPos={i => {
-              // Preferir el ticket activo del caso (fuente de verdad); si el caso no tiene
-              // tickets, caer al respaldo viejo (exp.etapa/exp.estado derivados de SIELSE).
-              if (ticketsCaso.length) return i < ai ? "hecho" : i === ai ? "proceso" : "pend";
-              return exp.estado === "Cerrado" ? "hecho" : i < ci ? "hecho" : i === ci ? "proceso" : "pend";
-            }}
-            onSel={selEst} />
+          <div style={{ padding: "10px 18px 14px" }}>
+            <div style={{ fontSize: 11, color: "var(--mut)", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 4 }}>Línea de tiempo del expediente</div>
+            <Timeline ticketDe={ticketDe}
+              estadoPos={i => {
+                // Preferir el ticket activo del caso (fuente de verdad); si el caso no tiene
+                // tickets, caer al respaldo viejo (exp.etapa/exp.estado derivados de SIELSE).
+                if (ticketsCaso.length) return i < ai ? "hecho" : i === ai ? "proceso" : "pend";
+                return exp.estado === "Cerrado" ? "hecho" : i < ci ? "hecho" : i === ci ? "proceso" : "pend";
+              }}
+              onSel={selEst} />
+          </div>
         </div>
 
         {/* ===== 3 columnas (se apilan en móvil) ===== */}
@@ -181,21 +223,25 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
             </div>}
           </div>
 
-          {/* --- Datos del reclamo + navegador de etapas + observaciones --- */}
+          {/* --- Datos del reclamo (editable) + navegador de etapas + observaciones + bitácora --- */}
           <div style={colS}>
             <b style={{ color: "var(--titulo)", fontSize: 13 }}>Datos del reclamo</b>
             <div style={{ margin: "8px 0" }}>
-              {[["Clase", exp.clase], ["Suministro", exp.suministro], ["Dirección", exp.direccion], ["Distrito", `${exp.distrito} · ${exp.provincia}`], ["F. admisión", fmtFecha(exp.fechaAdm)], ["F. límite SIELSE", fmtFecha(exp.fechaLim)], ["Doc. ref.", exp.docRef || "—"]].map(([a, b]) => (
-                <div className="kv" key={a}><b>{a}</b><span>{b}</span></div>
-              ))}
+              <FilaEditable label="Clase" value={exp.raw?.NombreClaseReclamo ?? exp.clase} campo="NombreClaseReclamo" onEditar={onEditar} />
+              <FilaEditable label="Suministro" value={exp.raw?.CodigoSuministro ?? exp.suministro} campo="CodigoSuministro" onEditar={onEditar} />
+              <FilaEditable label="Dirección" value={exp.raw?.DireccionSolicitante ?? exp.direccion} campo="DireccionSolicitante" onEditar={onEditar} />
+              <FilaEditable label="Distrito" value={exp.raw?.NombreDistrito ?? exp.distrito} campo="NombreDistrito" onEditar={onEditar} />
+              <FilaEditable label="F. admisión" value={exp.raw?.FechaAdmisionReclamo ?? exp.fechaAdm} campo="FechaAdmisionReclamo" onEditar={onEditar} formato={fmtValor} title="OJO: mueve el reloj de plazos" />
+              <div className="kv"><b>F. límite SIELSE</b><span>{fmtFecha(exp.fechaLim)}</span></div>
+              <FilaEditable label="Doc. ref." value={exp.raw?.DocumentoReferencia ?? exp.docRef} campo="DocumentoReferencia" onEditar={onEditar} />
+              <FilaEditable label="Descripción" value={exp.raw?.DescripcionReclamo ?? exp.descripcion} campo="DescripcionReclamo" onEditar={onEditar} area />
             </div>
-            {exp.descripcion && <div style={{ fontSize: 12, color: "var(--tx)", background: "var(--card2)", border: "1px solid var(--bd)", borderRadius: 8, padding: 8, marginBottom: 10 }}>{exp.descripcion}</div>}
             <b style={{ color: "var(--titulo)", fontSize: 13 }}>Etapas</b>
             <div style={{ display: "grid", gap: 5, marginTop: 8 }}>
               {FLUJO.map((f, i) => {
                 const t = ticketDe(f.etapa);
                 const est = t ? (t.hecho ? "hecho" : t.estado === "en_proceso" ? "proceso" : "pend") : (exp.estado === "Cerrado" ? "hecho" : i < ci ? "hecho" : i === ci ? "proceso" : "pend");
-                const col2 = est === "hecho" ? "#1E8E5A" : est === "proceso" ? "#2C6FC0" : "var(--mut)";
+                const col2 = est === "hecho" ? "#E3001B" : est === "proceso" ? "#2C6FC0" : "var(--mut)";
                 return (
                   <div key={i} onClick={() => selEst(i)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 9px", borderRadius: 8, cursor: "pointer", background: i === sel ? "var(--selBg)" : "var(--card2)", border: `1px solid ${i === sel ? "#2C6FC0" : "var(--bd)"}` }}>
                     <span style={{ width: 18, height: 18, borderRadius: "50%", background: col2, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800 }}>{est === "hecho" ? "✓" : est === "proceso" ? "◐" : "○"}</span>
@@ -207,6 +253,7 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
               })}
             </div>
             <Observaciones reclamo={exp.codigo} etapa={s.etapa} perfil={perfil} comentarios={comentarios} onComentar={onComentar} />
+            <BitacoraCaso reclamo={exp.codigo} registros={registros} />
           </div>
         </div>
 
@@ -271,6 +318,102 @@ const Sec = ({ t, children }) => (
     {children}
   </div>
 );
+
+// Fila de "Datos del reclamo" editable inline: valor + lapicito ✏️ (visible siempre, chico) que
+// se convierte en input + ✓/✕. Al guardar llama onEditar(campo, valor) con la COLUMNA REAL de
+// SIELSE. `formato` (opcional) formatea el valor mostrado (p.ej. fecha ISO -> dd/mm/aaaa) sin
+// tocar lo que se edita/envía (el input trabaja con el string crudo). `area` usa un <textarea>
+// para textos largos (descripción).
+function FilaEditable({ label, value, campo, onEditar, formato, title, area }) {
+  const [editando, setEditando] = useState(false);
+  const [val, setVal] = useState("");
+  const [guardando, setGuardando] = useState(false);
+  const [valorMostrado, setValorMostrado] = useState(null); // override optimista tras guardar
+
+  const valorActual = valorMostrado != null ? valorMostrado : value;
+  const vacio = valorActual == null || valorActual === "";
+  const mostrar = formato ? formato(valorActual) : valorActual;
+
+  const empezar = () => { setVal(valorActual == null ? "" : String(valorActual)); setEditando(true); };
+  const cancelar = () => setEditando(false);
+  const guardar = async () => {
+    if (!onEditar || !campo) return;
+    setGuardando(true);
+    try {
+      await onEditar(campo, val);
+      setValorMostrado(val);
+      setEditando(false);
+      toast("✓ " + label + " actualizado");
+    } catch (e) {
+      toast("No se pudo guardar " + label);
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  if (editando) {
+    return (
+      <div className="kv" style={{ alignItems: "flex-start" }} title={title}>
+        <b>{label}</b>
+        <div style={{ display: "flex", gap: 6, alignItems: area ? "flex-start" : "center" }}>
+          {area
+            ? <textarea autoFocus value={val} onChange={e => setVal(e.target.value)} rows={3}
+                style={{ flex: 1, fontSize: 12.5, color: "var(--tx)", border: "1px solid var(--acc)", borderRadius: 6, padding: "4px 6px", fontFamily: "inherit", resize: "vertical" }} />
+            : <input autoFocus value={val} onChange={e => setVal(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") guardar(); if (e.key === "Escape") cancelar(); }}
+                style={{ flex: 1, fontSize: 12.5, color: "var(--tx)", border: "1px solid var(--acc)", borderRadius: 6, padding: "2px 6px", fontFamily: "inherit" }} />}
+          <button onClick={guardar} disabled={guardando} title="Guardar" style={{ flexShrink: 0, background: "transparent", border: "1px solid var(--bd)", color: "#15803D", borderRadius: 6, padding: "1px 6px", fontSize: 11, cursor: guardando ? "wait" : "pointer" }}>✓</button>
+          <button onClick={cancelar} disabled={guardando} title="Cancelar" style={{ flexShrink: 0, background: "transparent", border: "1px solid var(--bd)", color: "#DC2626", borderRadius: 6, padding: "1px 6px", fontSize: 11, cursor: "pointer" }}>✕</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="kv fila-editable" style={{ alignItems: "flex-start" }} title={title}>
+      <b>{label}</b>
+      <span style={{ display: "flex", alignItems: "flex-start", gap: 6 }}>
+        <span style={{ flex: 1, color: vacio ? "var(--mut)" : undefined }}>{vacio ? "—" : mostrar}</span>
+        {onEditar && campo && (
+          <button onClick={empezar} title={"Editar " + label} className="lapiz-editable"
+            style={{ flexShrink: 0, background: "transparent", border: "none", color: "var(--mut)", borderRadius: 6, padding: "0 2px", fontSize: 11, cursor: "pointer" }}>✏️</button>
+        )}
+      </span>
+    </div>
+  );
+}
+
+// Bitácora del caso: memoria completa (registros globales) filtrada por expediente, plegada por
+// defecto. Excluye 'comentario' (esos ya se ven en Observaciones, evita duplicar). Más nuevo arriba.
+function BitacoraCaso({ reclamo, registros }) {
+  const [abierta, setAbierta] = useState(false);
+  const propios = (registros || []).filter(r => String(r.reclamo) === String(reclamo) && String(r.tipo) !== "comentario");
+  const ordenados = [...propios].reverse().slice(0, 12);
+  return (
+    <div style={{ marginTop: 14 }}>
+      <button onClick={() => setAbierta(v => !v)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ fontSize: 11, color: "var(--mut)" }}>{abierta ? "▾" : "▸"}</span>
+        <b style={{ color: "var(--titulo)", fontSize: 13 }}>Bitácora del caso ({propios.length})</b>
+      </button>
+      {abierta && (
+        <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
+          {ordenados.map((r, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, background: "var(--card2)", border: "1px solid var(--bd)", borderRadius: 8, padding: "6px 9px" }}>
+              <span style={{ width: 20, height: 20, borderRadius: "50%", background: "#1E5FAF", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9.5, fontWeight: 700, flexShrink: 0 }}>
+                {(r.usuario || "—").split(" ").map(s => s[0]).slice(0, 2).join("").toUpperCase()}
+              </span>
+              <div style={{ flex: 1, fontSize: 12, color: "var(--tx)" }}>
+                <b style={{ color: "var(--titulo)" }}>{r.usuario || "—"}</b> {humanizarRegistro(r)}
+              </div>
+              <span style={{ fontSize: 10.5, color: "var(--mut2)", whiteSpace: "nowrap", flexShrink: 0 }}>{fmtCuando(r.fecha)}</span>
+            </div>
+          ))}
+          {!ordenados.length && <div className="muted" style={{ fontSize: 12 }}>Sin registros de bitácora para este caso todavía.</div>}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const wrap = { width: "96vw", maxWidth: 1500, height: "92vh", background: "#fff", border: "1px solid var(--bd)", borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 20px 60px rgba(22,41,75,.15)" };
 const cols = { flex: 1, display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr", overflow: "hidden" };
