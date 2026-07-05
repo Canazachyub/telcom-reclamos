@@ -16,7 +16,35 @@ function copiar(txt, etiqueta){
   try{ navigator.clipboard.writeText(String(txt)); toast("Copiado: "+etiqueta); }catch(e){ toast("No se pudo copiar"); }
 }
 
-export default function SalaExpediente({ exp, tickets, evidencias, registros, comentarios, perfil, datos, correos, onComentar, onTrabajar, onClose }){
+// fecha ISO/Date -> "05/07 13:52" (hora local, legible)
+function fmtCuando(v){
+  const d = new Date(v);
+  if(isNaN(d)) return String(v||"").slice(0,16);
+  const p = n => ("0"+n).slice(-2);
+  return p(d.getDate())+"/"+p(d.getMonth()+1)+" "+p(d.getHours())+":"+p(d.getMinutes());
+}
+
+// registro crudo de la bitácora -> frase humana (nada de JSON en pantalla)
+function humanizar(r){
+  const raw = typeof r.detalle==="string" ? r.detalle : "";
+  let d={}; try{ const j=JSON.parse(raw); if(j && typeof j==="object") d=j; }catch(e){}
+  const txt = raw && raw.charAt(0)!=="{" ? raw : "";
+  const t = String(r.tipo||"");
+  const limpiaEt = e => String(e||"").replace(/^\d+_/,"");
+  if(t==="datos"){ const ks=Object.keys(d.campos||{}); return "registró datos de "+(d.etapa||"la etapa")+(ks.length?" — "+ks.slice(0,4).join(", ")+(ks.length>4?"…":""):""); }
+  if(t==="evidencia") return "subió "+(d.nombre||"un documento")+(d.etapa?" a "+limpiaEt(d.etapa):"");
+  if(t==="nuevo_caso") return "creó el expediente"+(d.solicitante?" — "+d.solicitante:"");
+  if(t==="delegacion") return "reasignó el caso a "+(d.a||"otro responsable");
+  if(t==="estado") return "cambió el estado a "+(txt||d.estado||"—");
+  if(t==="etapa") return "movió la etapa a "+(txt||"—");
+  if(t==="ticket") return "actualizó la etapa"+(d.estado?" → "+(d.estado==="hecho"?"terminada ✓":String(d.estado).replace("_"," ")):"");
+  if(t==="edicion") return "editó "+(d.campo||"un campo")+(d.valor!=null?" → "+String(d.valor).slice(0,40):"");
+  if(t==="expediente") return "generó el expediente foliado";
+  if(t==="reporte") return "cerró su reporte del día";
+  return (txt||JSON.stringify(d)).slice(0,110);
+}
+
+export default function SalaExpediente({ exp, tickets, evidencias, registros, comentarios, perfil, datos, correos, onComentar, onTrabajar, onClose, onEditar, ladoALado }){
   const [texto, setTexto] = useState("");
   const [verFicha, setVerFicha] = useState(false);
 
@@ -41,14 +69,21 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
         ? { tx:"Vence en "+act.diasRestantes+" d háb. — "+(act.fechaLimite?fmtFecha(act.fechaLimite):""), bg:"#FEF3DF", cl:"#B45309" }
         : { tx: act.diasRestantes!=null ? ("Vence en "+act.diasRestantes+" d háb. — "+(act.fechaLimite?fmtFecha(act.fechaLimite):"")) : "Sin plazo registrado", bg:"#E5F7EC", cl:"#15803D" };
 
-  // actividad: registros del caso + comentarios, lo más nuevo primero (append-only → invertimos)
-  const evRegs = (registros||[]).filter(r=>String(r.reclamo||"")===String(exp.codigo))
-    .map(r=>({ quien:r.usuario||"—", que:(r.tipo?("["+r.tipo+"] "):"")+(r.detalle||""), cuando:r.fecha||"", etapa:r.etapa||"" }));
+  // actividad: registros del caso + comentarios, lo más nuevo primero (append-only → invertimos).
+  // Los registros tipo 'comentario' se excluyen: ya llegan por la prop comentarios (evita duplicados).
+  const evRegs = (registros||[]).filter(r=>String(r.reclamo||"")===String(exp.codigo) && String(r.tipo)!=="comentario")
+    .map(r=>({ quien:r.usuario||"—", que:humanizar(r), cuando:fmtCuando(r.fecha), etapa:r.etapa||"" }));
   const evComs = (comentarios||[]).filter(c=>String(c.reclamo||"")===String(exp.codigo))
-    .map(c=>({ quien:c.nombre||c.usuario||"—", que:"💬 "+(c.texto||""), cuando:c.fecha||"", etapa:c.etapa||"" }));
+    .map(c=>({ quien:c.nombre||c.usuario||"—", que:"💬 "+(c.texto||""), cuando:fmtCuando(c.fecha), etapa:c.etapa||"" }));
   const actividad = [...evRegs.reverse(), ...evComs].slice(0,14);
 
-  const docs = (evidencias||[]).filter(e=>String(e.exp||"")===String(exp.codigo));
+  // documentos del caso SIN repetidos (misma URL, o mismo nombre+etapa, = un solo chip)
+  const docs = [];
+  { const visto = {};
+    (evidencias||[]).filter(e=>String(e.exp||"")===String(exp.codigo)).forEach(dd=>{
+      const k = (dd.url||"") || ((dd.nombre||"")+"|"+(dd.etapa||""));
+      if(visto[k]) return; visto[k]=1; docs.push(dd);
+    }); }
 
   // correos vinculados a este caso — el campo real de vínculo es `reclamo_vinculado` (ver Bandeja.jsx)
   const correosDelCaso = (correos||[]).filter(c=>String(c.reclamo_vinculado||"")===String(exp.codigo));
@@ -60,8 +95,8 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
   }
 
   const S = {
-    overlay:{ position:"fixed", inset:0, background:"rgba(22,41,75,.45)", zIndex:95, display:"flex", justifyContent:"center", alignItems:"flex-start", padding:"3vh 12px", overflowY:"auto" },
-    panel:{ width:"min(1080px,100%)", background:"var(--bg)", border:"1px solid var(--bd)", borderRadius:16, padding:18, maxHeight:"94vh", overflowY:"auto", boxShadow:"0 24px 70px rgba(22,41,75,.28)" },
+    overlay:{ position:"fixed", inset:0, background:"rgba(22,41,75,.45)", zIndex:95, display:"flex", justifyContent: ladoALado ? "flex-start" : "center", alignItems:"flex-start", padding:"3vh 12px", overflowY:"auto" },
+    panel:{ width: ladoALado ? "clamp(380px, calc(100vw - 760px), 640px)" : "min(1080px,100%)", background:"var(--bg)", border:"1px solid var(--bd)", borderRadius:16, padding:18, maxHeight:"94vh", overflowY:"auto", boxShadow:"0 24px 70px rgba(22,41,75,.28)" },
     head:{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:10, marginBottom:12 },
     hero:{ background:"var(--card)", border:"1px solid var(--bd)", borderRadius:16, padding:"18px 20px" },
     icono:{ width:52, height:52, borderRadius:13, background:"linear-gradient(135deg,#E3001B,#FF5A63)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, flexShrink:0 },
@@ -98,7 +133,7 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
   };
 
   return (
-    <div style={S.overlay} onClick={e=>{ if(e.target===e.currentTarget) onClose(); }}>
+    <div style={S.overlay} onClick={e=>{ if(ladoALado) return; if(e.target===e.currentTarget) onClose(); }}>
       <div style={S.panel}>
         <div style={S.head}>
           <div>
@@ -155,7 +190,9 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
             <span>Encargado ahora: <b style={{color:"var(--titulo)"}}>{act?act.responsable:(cerrado?"— (cerrado)":"—")}</b></span>
             {sig && <><span style={{color:"var(--mut2)"}}>→</span>
               <span style={{color:"var(--mut)"}}>Sigue: {sig.etapa} · <b style={{color:"var(--tx)"}}>{sig.responsable||"por asignar"}</b></span></>}
-            <button className="btn" style={{marginLeft:"auto"}} onClick={()=>onTrabajar(exp.id, act?act.etapa:null)}>Trabajar esta etapa</button>
+            {ladoALado
+              ? <span className="muted" style={{marginLeft:"auto",fontSize:12}}>El área de trabajo está abierta a la derecha →</span>
+              : <button className="btn" style={{marginLeft:"auto"}} onClick={()=>onTrabajar(exp.id, act?act.etapa:null)}>Trabajar esta etapa</button>}
           </div>
 
           <div style={{marginTop:12}}><GuiaSielseBox etapa={etapaActual} compacta/></div>
@@ -240,7 +277,7 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
 
       {/* ===== Modal: Ficha SIELSE (registro del caso + trabajado por fase + documentos) ===== */}
       {verFicha && (
-        <FichaSielse exp={exp} datos={datos} evidencias={evidencias} onClose={()=>setVerFicha(false)} />
+        <FichaSielse exp={exp} datos={datos} evidencias={evidencias} onClose={()=>setVerFicha(false)} onEditar={onEditar} />
       )}
     </div>
   );

@@ -19,7 +19,7 @@ const esImg = n => /\.(jpg|jpeg|png|gif|webp)$/i.test(String(n || ""));
 
 // Workspace del expediente a pantalla completa: timeline arriba · VISOR · datos del formulario · datos del reclamo + etapas.
 // AQUÍ se hace TODO el trabajo de una etapa: subir evidencia + datos, generar documento y marcar la etapa hecha.
-export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, perfil, comentarios = [], onComentar, onClose, onSaveDatos, onSubido, onEstadoTicket }) {
+export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, perfil, comentarios = [], onComentar, onClose, onSaveDatos, onSubido, onEstadoTicket, onEditar }) {
   const ci = stageIdx(exp.etapa);
   const ii = etapaInicial ? stageIdx(etapaInicial) : -1;
   // EL TICKET ACTIVO ES LA FUENTE DE VERDAD: si no viene una etapa explícita (etapaInicial),
@@ -228,7 +228,7 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
 
         {/* ===== Modal: Ficha SIELSE (registro del caso + trabajado por fase + documentos) ===== */}
         {fichaSielse && (
-          <FichaSielse exp={exp} datos={datos} evidencias={evidencias} onClose={() => setFichaSielse(false)} />
+          <FichaSielse exp={exp} datos={datos} evidencias={evidencias} onClose={() => setFichaSielse(false)} onEditar={onEditar} />
         )}
       </div>
     </div>

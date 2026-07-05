@@ -18,16 +18,81 @@ const copiar = (label, val) => {
   );
 };
 
+// Formatea cualquier valor para mostrar: si matchea fecha ISO ("2026-03-31T05:00:00.000Z")
+// lo pasa a DD/MM/YYYY; el resto se muestra tal cual (String()).
+const ISO_RE = /^\d{4}-\d{2}-\d{2}T/;
+function fmtValor(v) {
+  if (v == null || v === "") return v;
+  const s = String(v);
+  if (ISO_RE.test(s)) {
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) {
+      const dd = String(d.getUTCDate()).padStart(2, "0");
+      const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+      const yy = d.getUTCFullYear();
+      return `${dd}/${mm}/${yy}`;
+    }
+  }
+  return s;
+}
+
 // Fila label -> valor, con botón copiar. Vacíos en gris "—" (así el digitador ve qué falta).
-function Fila({ label, value }) {
+// Si se pasa `campo` (nombre de columna real SIELSE) y `onEditar`, muestra botón ✏️ que
+// convierte el valor en input inline (✓ guardar / ✕ cancelar). Sin `onEditar` o sin `campo`
+// la fila queda como antes: solo lectura + copiar.
+function Fila({ label, value, campo, onEditar }) {
   const vacio = value == null || value === "";
+  const editable = !!(onEditar && campo);
+  const [editando, setEditando] = useState(false);
+  const [val, setVal] = useState("");
+  const [guardando, setGuardando] = useState(false);
+  const [valorMostrado, setValorMostrado] = useState(null); // override optimista tras guardar
+
+  const valorActual = valorMostrado != null ? valorMostrado : value;
+  const vacioActual = valorActual == null || valorActual === "";
+
+  const empezarEdicion = () => { setVal(valorActual == null ? "" : String(valorActual)); setEditando(true); };
+  const cancelar = () => setEditando(false);
+  const guardar = async () => {
+    setGuardando(true);
+    try {
+      await onEditar(campo, val);
+      setValorMostrado(val);
+      setEditando(false);
+      toast("✓ " + label + " actualizado");
+    } catch (e) {
+      toast("No se pudo guardar " + label);
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  if (editando) {
+    return (
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "5px 0", borderBottom: "1px solid var(--bd)" }}>
+        <div style={{ width: 190, flexShrink: 0, fontSize: 11.5, color: "var(--mut)" }}>{label}</div>
+        <input autoFocus value={val} onChange={e => setVal(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") guardar(); if (e.key === "Escape") cancelar(); }}
+          style={{ flex: 1, fontSize: 12.5, color: "var(--tx)", border: "1px solid var(--acc)", borderRadius: 6, padding: "2px 6px", fontFamily: "inherit" }} />
+        <button onClick={guardar} disabled={guardando} title="Guardar"
+          style={{ flexShrink: 0, background: "transparent", border: "1px solid var(--bd)", color: "#15803D", borderRadius: 6, padding: "1px 6px", fontSize: 11, cursor: guardando ? "wait" : "pointer" }}>✓</button>
+        <button onClick={cancelar} disabled={guardando} title="Cancelar"
+          style={{ flexShrink: 0, background: "transparent", border: "1px solid var(--bd)", color: "#DC2626", borderRadius: 6, padding: "1px 6px", fontSize: 11, cursor: "pointer" }}>✕</button>
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "5px 0", borderBottom: "1px solid var(--bd)" }}>
       <div style={{ width: 190, flexShrink: 0, fontSize: 11.5, color: "var(--mut)" }}>{label}</div>
-      <div style={{ flex: 1, fontSize: 12.5, color: vacio ? "var(--mut)" : "var(--tx)", wordBreak: "break-word" }}>{vacio ? "—" : String(value)}</div>
-      {!vacio && (
-        <button onClick={() => copiar(label, value)} title={"Copiar " + label}
+      <div style={{ flex: 1, fontSize: 12.5, color: vacioActual ? "var(--mut)" : "var(--tx)", wordBreak: "break-word" }}>{vacioActual ? "—" : fmtValor(valorActual)}</div>
+      {!vacioActual && (
+        <button onClick={() => copiar(label, valorActual)} title={"Copiar " + label}
           style={{ flexShrink: 0, background: "transparent", border: "1px solid var(--bd)", color: "var(--linkTx)", borderRadius: 6, padding: "1px 6px", fontSize: 11, cursor: "pointer" }}>📋</button>
+      )}
+      {editable && (
+        <button onClick={empezarEdicion} title={"Editar " + label}
+          style={{ flexShrink: 0, background: "transparent", border: "1px solid var(--bd)", color: "var(--mut)", borderRadius: 6, padding: "1px 6px", fontSize: 11, cursor: "pointer" }}>✏️</button>
       )}
     </div>
   );
@@ -48,47 +113,51 @@ const Grupo = ({ t, children }) => (
 );
 
 // Grupos de REGISTRO DEL CASO — campos de exp.raw (las 45 columnas SIELSE) + algunos ya mapeados en exp.
+// Tercer elemento de cada tupla = nombre de la COLUMNA REAL de la hoja reclamos cuando el campo
+// es editable (se manda tal cual a onEditar). Se omite (undefined) en: la clave (CodigoReclamo),
+// fechas/campos derivados o calculados, y valores que no tienen una columna 1:1 clara en SIELSE
+// (ej. "¿Admitido?"/"¿Apelación?" son booleanos derivados de EsAdmitido/Apelacion con texto Sí/No).
 function gruposRegistro(exp) {
   const r = exp.raw || {};
   return [
     { t: "Identificación", campos: [
       ["Código de reclamo", r.CodigoReclamo ?? exp.codigo],
-      ["N° OSINERGMIN", r.NumeroOsinerg ?? exp.osinerg],
+      ["N° OSINERGMIN", r.NumeroOsinerg ?? exp.osinerg, "NumeroOsinerg"],
       ["Fecha de registro", fmtFecha(r.FechaRegistroReclamo ?? exp.fechaReg)],
       ["Fecha de admisión", fmtFecha(r.FechaAdmisionReclamo ?? exp.fechaAdm)],
       ["Fecha límite de atención", fmtFecha(r.FechaLimiteAtencion ?? exp.fechaLim)],
       ["Fecha estimada de solución", fmtFecha(r.FechaEstimadaSolucion ?? exp.fechaEstimada)],
     ]},
     { t: "Solicitante", campos: [
-      ["Nombre del solicitante", r.NombreSolicitante ?? exp.solicitante],
+      ["Nombre del solicitante", r.NombreSolicitante ?? exp.solicitante, "NombreSolicitante"],
       ["DNI / documento", r.DniSolicitante ?? r.NumeroDocumento ?? r.raw?.DNI],
-      ["Dirección", r.DireccionSolicitante ?? exp.direccion],
+      ["Dirección", r.DireccionSolicitante ?? exp.direccion, "DireccionSolicitante"],
     ]},
     { t: "Ubicación", campos: [
       ["Departamento", r.NombreDepartamento ?? exp.depto],
       ["Provincia", r.NombreProvincia ?? exp.provincia],
-      ["Distrito", r.NombreDistrito ?? exp.distrito],
-      ["Código de suministro", r.CodigoSuministro ?? exp.suministro],
+      ["Distrito", r.NombreDistrito ?? exp.distrito, "NombreDistrito"],
+      ["Código de suministro", r.CodigoSuministro ?? exp.suministro, "CodigoSuministro"],
       ["SET", r.NombreSET],
       ["AMT", r.NombreAMT],
       ["SED", r.NombreSED ?? exp.sed],
       ["Referencia de ubicación", r.ReferenciaUbicacion ?? exp.referencia],
     ]},
     { t: "Clasificación", campos: [
-      ["Clase de reclamo", r.NombreClaseReclamo ?? exp.clase],
+      ["Clase de reclamo", r.NombreClaseReclamo ?? exp.clase, "NombreClaseReclamo"],
       ["Forma de reclamo", r.NombreFormaReclamo ?? exp.forma],
       ["Tipo de resolución", r.NombreTipoResolucionReclamo ?? exp.tipoRes],
       ["Área administrativa", r.NombreAreaAdministrativa ?? exp.area],
       ["Responsable (SIELSE)", r.Responsable ?? exp.respRaw],
       ["¿Admitido?", r.EsAdmitido != null ? (String(r.EsAdmitido) === "1" ? "Sí" : "No") : (exp.admitido ? "Sí" : "No")],
       ["¿Apelación?", r.Apelacion != null ? (String(r.Apelacion) === "1" ? "Sí" : "No") : (exp.apelacion ? "Sí" : "No")],
-      ["Monto en reclamo (S/)", r.monto_reclamo ?? r.MontoReclamo],
+      ["Monto en reclamo (S/)", r.monto_reclamo ?? r.MontoReclamo, "monto_reclamo"],
     ]},
     { t: "Estado / Solución", campos: [
       ["Estado comercial", r.NombreEstadoReclamoComercial ?? exp.estadoCom],
       ["Situación del reclamo", r.NombreSituacionReclamo ?? exp.situacion],
-      ["Descripción del reclamo", r.DescripcionReclamo ?? exp.descripcion],
-      ["Descripción de la solución", r.DescripcionSolucion ?? exp.solucion],
+      ["Descripción del reclamo", r.DescripcionReclamo ?? exp.descripcion, "DescripcionReclamo"],
+      ["Descripción de la solución", r.DescripcionSolucion ?? exp.solucion, "DescripcionSolucion"],
       ["Motivo de cierre", r.NombreMotivoCierreReclamo ?? exp.motivoCierre],
       ["Fecha/hora de solución", r.FechaHoraSolucionReclamo ? fmtFecha(r.FechaHoraSolucionReclamo) : fmtFecha(exp.fechaSol)],
       ["Documento de referencia", r.DocumentoReferencia ?? exp.docRef],
@@ -124,7 +193,7 @@ function armarTextoCompleto(exp, gruposEtapas, docs) {
   return lineas.join("\n");
 }
 
-export default function FichaSielse({ exp, datos, evidencias, onClose }) {
+export default function FichaSielse({ exp, datos, evidencias, onClose, onEditar }) {
   const [w, setW] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
   const mobile = w < 880;
 
@@ -182,13 +251,15 @@ export default function FichaSielse({ exp, datos, evidencias, onClose }) {
             <Bloque t="🗂 Registro del caso (lo que se digita en SIELSE)">
               {gruposRegistro(exp).map(g => (
                 <Grupo key={g.t} t={g.t}>
-                  {g.campos.map(([l, v]) => <Fila key={l} label={l} value={v} />)}
+                  {g.campos.map(([l, v, campo]) => <Fila key={l} label={l} value={v} campo={campo} onEditar={onEditar} />)}
                 </Grupo>
               ))}
             </Bloque>
           </div>
 
           {/* Columna derecha: trabajado en plataforma + documentos */}
+          {/* Nota: estos campos vienen de datos_etapa ("Trabajado en la plataforma"), NO son
+              columnas de la hoja reclamos — nunca se pasa onEditar aquí, quedan solo lectura. */}
           <div>
             <Bloque t="🛠 Trabajado en la plataforma (por fase)">
               {gruposEtapas.length ? gruposEtapas.map(g => (

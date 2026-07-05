@@ -7,10 +7,10 @@ export const USERS = [
   { usuario:"aaraujo",   nombre:"Andre Araujo",     rol:"COORDINADOR",     resp_id:1, pin:"2026" },
   { usuario:"dmarroquin",nombre:"Diego Marroquín",  rol:"ANALISTA_LEGAL",  resp_id:2, pin:"2026" },
   { usuario:"jvargas",   nombre:"Juan Vargas",      rol:"ANALISTA_LEGAL",  resp_id:3, pin:"2026" },
-  { usuario:"dcayllahua",nombre:"Dalia Cayllahua",  rol:"ANALISTA_JUNIOR", resp_id:4, pin:"2026" },
+  { usuario:"amontufar", nombre:"Alvaro Montufar",  rol:"ANALISTA_JUNIOR", resp_id:4, pin:"2026" },
   { usuario:"mleon",     nombre:"Milagros León",    rol:"ASISTENTE",       resp_id:5, pin:"2026" },
-  { usuario:"ajimenez",  nombre:"Abraham Jiménez",  rol:"TRAMITADOR",      resp_id:6, pin:"2026" },
-  { usuario:"mzarate",   nombre:"Mhyalhu Zárate",   rol:"TRAMITADOR",      resp_id:7, pin:"2026" },
+  { usuario:"jcondori",  nombre:"Jocabed Condori",  rol:"TRAMITADOR",      resp_id:6, pin:"2026" },
+  { usuario:"djara",     nombre:"Dante Jara",       rol:"TRAMITADOR",      resp_id:7, pin:"2026" },
   { usuario:"mhurtado",  nombre:"Marilyn Hurtado",  rol:"TRAMITADOR",      resp_id:8, pin:"2026" },
 ];
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { loadReclamos, loadEvidencias, loadDatos, guardarDatos, loadTickets, updTicket, loadComentarios, comentar, loadRegistros, loadCorreos, postAction, USE_MOCK } from "./lib/api.js";
+import { loadReclamos, loadEvidencias, loadDatos, guardarDatos, loadTickets, updTicket, loadComentarios, comentar, loadRegistros, loadCorreos, postAction, editarReclamo, vincularCorreo, USE_MOCK } from "./lib/api.js";
 import { mapTickets, misTickets, activos, abiertos, vencidos, porVencer, exposicionTotal, verMontos, urgColorTicket } from "./lib/tickets.js";
 import { getSesionValida, logout, ROL_LABEL, puedeDelegar, puedeVerTodo, esOperativo, USERS } from "./lib/auth.js";
 import {
@@ -37,7 +37,7 @@ function MiniProgreso({ prog }){
 
 // "Ver como": lista de roles que el Gerente puede simular (uno por perfil operativo/coordinación).
 // Se arma desde USERS (auth.js) para no duplicar nombres/roles a mano.
-const VER_COMO_USUARIOS = ["aaraujo","dmarroquin","dcayllahua","mleon","mhurtado"];
+const VER_COMO_USUARIOS = ["aaraujo","dmarroquin","amontufar","mleon","mhurtado"];
 const VER_COMO_OPCIONES = VER_COMO_USUARIOS.map(u=>USERS.find(x=>x.usuario===u)).filter(Boolean);
 
 export default function App(){
@@ -83,8 +83,18 @@ function Shell({ perfil, onLogout }){
     loadCorreos().then(rows=>{ setCorreos(rows); }).catch(()=>{ setCorreos([]); }).finally(()=>setCorreosCargando(false));
   }
   function convertirCorreoEnCaso(correo){
-    setCorreoOrigen({ DescripcionReclamo: [correo.asunto, correo.resumen].filter(Boolean).join(" — ") });
+    // guardamos el id del correo APARTE del prefill: al crear el caso se vincula solo
+    setCorreoOrigen({ correoId: correo.id, prefill: { DescripcionReclamo: [correo.asunto, correo.resumen].filter(Boolean).join(" — ") } });
     setNuevo(true);
+  }
+  // Ficha SIELSE editable: escribe la columna real en el Sheet y refresca la cartera
+  // para que TODAS las vistas (tablas, Sala, Drawer, Ficha) queden sincronizadas.
+  function onEditarCampo(codigo, campo, valor){
+    return editarReclamo(codigo, campo, valor).then(r=>{
+      if(r && r.ok!==false){ toast("Guardado ✓ — sincronizado en todo el caso"); refrescar(); }
+      else toast("⚠ No se guardó: "+((r&&r.error)||"error"));
+      return r;
+    });
   }
   function onComentar(obj){ setComentarios(cs=>[obj,...cs]); comentar(obj); }
   function refrescar(){ loadReclamos().then(setData).catch(()=>{}); loadTickets().then(rows=>{ if(rows&&rows.length) setTickets(mapTickets(rows)); }).catch(()=>{}); }
@@ -203,10 +213,15 @@ function Shell({ perfil, onLogout }){
 
       {salaExp!=null && data && (()=>{ const sx=data.find(x=>x.id===salaExp); return sx ? (
         <SalaExpediente exp={sx} tickets={tickets} evidencias={evidencias} registros={registros} comentarios={comentarios} datos={datos} correos={correos}
-          perfil={perfilVista} onComentar={onComentar} onTrabajar={trabajarDesdeSala} onClose={()=>setSalaExp(null)}/>
+          perfil={perfilVista} onComentar={onComentar} onTrabajar={trabajarDesdeSala}
+          onEditar={(campo,valor)=>onEditarCampo(sx.codigo,campo,valor)} ladoALado={exp!=null} onClose={()=>setSalaExp(null)}/>
       ) : null; })()}
-      {exp && <Drawer exp={exp} etapaInicial={selEtapa} evidencias={evidencias} datos={datos} tickets={tickets} perfil={perfilVista} comentarios={comentarios} onComentar={onComentar} onEstadoTicket={onEstadoTicket} onClose={()=>{ setSelExpId(null); setSelEtapa(null); }} onSaveDatos={saveDatos} onSubido={obj=>setEvi(ev=>[obj,...ev])}/>}
-      {nuevo && <NuevoCaso perfil={perfilVista} existentes={data||[]} inicial={correoOrigen} onClose={()=>{ setNuevo(false); setCorreoOrigen(null); }} onCreado={()=>{ setNuevo(false); setCorreoOrigen(null); refrescar(); }}/>}
+      {exp && <Drawer exp={exp} etapaInicial={selEtapa} evidencias={evidencias} datos={datos} tickets={tickets} perfil={perfilVista} comentarios={comentarios} onComentar={onComentar} onEstadoTicket={onEstadoTicket} onEditar={(campo,valor)=>onEditarCampo(exp.codigo,campo,valor)} onClose={()=>{ setSelExpId(null); setSelEtapa(null); }} onSaveDatos={saveDatos} onSubido={obj=>setEvi(ev=>[obj,...ev])}/>}
+      {nuevo && <NuevoCaso perfil={perfilVista} existentes={data||[]} inicial={correoOrigen ? correoOrigen.prefill : null} onClose={()=>{ setNuevo(false); setCorreoOrigen(null); }} onCreado={(codigoNuevo)=>{
+        // si el caso nació de un correo de la Bandeja, se vincula solo (adjuntos incluidos)
+        if(correoOrigen && correoOrigen.correoId && codigoNuevo){ vincularCorreo(correoOrigen.correoId, codigoNuevo).then(()=>cargarCorreos()).catch(()=>{}); }
+        setNuevo(false); setCorreoOrigen(null); refrescar();
+      }}/>}
       <PruebaGuiada perfil={perfilVista} sinCasos={!!data && data.length===0}/>
 
       <footer>React + Vite · backend Apps Script · data real SIELSE · TELCOM ENERGY 2026</footer>
@@ -473,7 +488,7 @@ function Norma(){
 }
 
 function Personal({ data }){
-  const cvm={1:"Araujo",2:"Marroquin",3:"Vargas",4:"Cayllahua",5:"Leon",6:"Jimenez",7:"Zarate",8:"Hurtado"};
+  const cvm={1:"Araujo",2:"Marroquin",3:"Vargas",4:"Montufar",5:"Leon",6:"Condori",7:"Jara",8:"Hurtado"};
   return <Card><h3>Personal — carga y CV</h3><div style={{overflowX:"auto"}}><table className="tbl"><thead><tr><th>Nombre</th><th>Rol</th><th>Reclamos</th><th>En atención</th><th>CV</th></tr></thead><tbody>
     {TEAM.map(t=>{const l=data.filter(x=>x.resp===t.id);return <tr key={t.id}><td><span className="dot" style={{background:t.color}}/>{t.nombre}</td><td>{t.rol}</td><td>{l.length}</td><td>{l.filter(x=>x.estadoCom==="EN ATENCION").length}</td><td><a className="link" href={"../../70_Personal/CV-"+cvm[t.id]+".md"} target="_blank" rel="noreferrer">ver CV ↗</a></td></tr>;})}
     <tr><td className="muted">Externos / Call Center</td><td className="muted">No es del equipo</td><td>{data.filter(x=>x.resp===0).length}</td><td>{data.filter(x=>x.resp===0&&x.estadoCom==="EN ATENCION").length}</td><td>—</td></tr>

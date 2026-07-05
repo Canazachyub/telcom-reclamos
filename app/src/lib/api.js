@@ -236,6 +236,12 @@ export async function comentar({ reclamo, etapa, texto, nombre }){
   return postAction("comentar", { reclamo, etapa, texto, nombre });
 }
 
+// Ficha SIELSE editable: escribe la columna real de la hoja reclamos (o datos_etapa si no
+// hay columna) y deja rastro en registros. El caller debe refrescar la cartera al éxito.
+export async function editarReclamo(codigo, campo, valor){
+  return postAction("editar_reclamo", { codigo, campo, valor });
+}
+
 // Catálogos SIELSE (v4): hoja `catalogos` del Sheet (grupo|valor|extra); si aún no existe
 // (falta ejecutarSetupCatalogos o el redeploy), devuelve null y el wizard usa CATALOGOS_LOCAL.
 export async function loadCatalogos(){

@@ -13,10 +13,10 @@ export const TEAM = [
   { id:1, nombre:"Andre Araujo",    corto:"Andre",    rol:"Coordinador General",      color:"#b91c1c", match:"ARAUJO ALVAREZ" },
   { id:2, nombre:"Diego Marroquín", corto:"Diego",    rol:"Analista Legal",           color:"#1d4ed8", match:"MARROQUIN" },
   { id:3, nombre:"Juan Vargas",     corto:"Juan",     rol:"Analista Legal",           color:"#1d4ed8", match:"VARGAS MIRANDA" },
-  { id:4, nombre:"Dalia Cayllahua", corto:"Dalia",    rol:"Analista Junior",          color:"#7c3aed", match:"CAYLLAHUA" },
+  { id:4, nombre:"Alvaro Montufar", corto:"Alvaro",   rol:"Analista Junior",          color:"#7c3aed", match:"MONTUFAR" },
   { id:5, nombre:"Milagros León",   corto:"Milagros", rol:"Asistente Administrativo", color:"#b45309", match:"LEON UMERES" },
-  { id:6, nombre:"Abraham Jiménez", corto:"Abraham",  rol:"Tramitador/Digitador",     color:"#047857", match:"JIMENEZ LATORRE" },
-  { id:7, nombre:"Mhyalhu Zárate",  corto:"Mhyalhu",  rol:"Tramitador/Digitador",     color:"#047857", match:"ZARATE CASTA" },
+  { id:6, nombre:"Jocabed Condori", corto:"Jocabed",  rol:"Tramitador/Digitador",     color:"#047857", match:"CONDORI CACERES" },
+  { id:7, nombre:"Dante Jara",      corto:"Dante",    rol:"Tramitador/Digitador",     color:"#047857", match:"JARA PARI" },
   { id:8, nombre:"Marilyn Hurtado", corto:"Marilyn",  rol:"Tramitador/Digitador",     color:"#047857", match:"HURTADO VEGA" },
 ];
 export const EXTERNO = { id:0, corto:"Externo", nombre:"Externo / Call Center", rol:"No es del equipo", color:"#64748b" };
