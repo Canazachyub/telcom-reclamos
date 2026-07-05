@@ -188,13 +188,28 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
               {estPlazo && <Tag bg={estPlazo.c} color="#fff">{estPlazo.t} · {tk.fechaLimite} ({tk.diasRestantes}d háb.)</Tag>}
               {tk && tk.hecho && <Tag bg="#064e3b" color="#fff">✓ hecho</Tag>}
             </div>
+            {tk?.hecho && faltantes.length > 0 && (
+              <div style={{ background: "#FEF3DF", border: "1px solid #F0C36D", borderRadius: 8, padding: "7px 10px", margin: "0 0 10px", fontSize: 12, color: "#B45309" }}>
+                ⚠ Esta etapa figura <b>HECHA</b> pero le faltan {faltantes.length} ítem(s) de datos/evidencia — inconsistencia que ELSE puede observar. Súbelos ahora con «📎 Evidencia + datos», o Coordinación puede reabrirla desde la Sala (clic en la etapa → ↩ Reabrir).
+              </div>
+            )}
             {puedeAccion && tk.abierto && (
               <div style={{ display: "flex", gap: 8, margin: "4px 0 10px", flexWrap: "wrap" }}>
                 {tk.estado === "pendiente" && <button className="btn sm" onClick={() => { onEstadoTicket?.(tk, "en_proceso"); toast("«" + s.etapa + "» en proceso"); }}>▶ Iniciar etapa</button>}
                 <button className="btn sm" style={{ background: "#1E8E5A", color: "#fff", border: 0 }} onClick={() => {
+                  // Regla de integridad: una etapa NO se marca hecha con datos/evidencia faltantes.
+                  // Operativos: bloqueo real. Coordinación/Gerencia: pueden forzar SOLO con motivo (queda en bitácora).
                   if (faltantes.length) {
-                    const msg = "Faltan " + faltantes.length + " ítem(s) de «" + s.etapa + "»:\n· " + faltantes.slice(0, 10).join("\n· ") + (faltantes.length > 10 ? "\n…" : "") + "\n\nPuede generar penalidad. ¿Marcar la etapa como hecha igual?";
-                    if (!confirm(msg)) return;
+                    const lista = "· " + faltantes.slice(0, 10).join("\n· ") + (faltantes.length > 10 ? "\n…" : "");
+                    const esJefe = ["GERENTE", "COORDINADOR"].includes(perfil?.rol);
+                    if (!esJefe) {
+                      alert("Para terminar «" + s.etapa + "» todavía falta:\n" + lista + "\n\nSúbelo con «📎 Evidencia + datos». Si algo no aplica a este caso, pide a Coordinación que cierre la etapa con motivo.");
+                      return;
+                    }
+                    const motivo = prompt("«" + s.etapa + "» tiene " + faltantes.length + " faltante(s):\n" + lista + "\n\nComo Coordinación/Gerencia puedes cerrarla igual, pero el MOTIVO es obligatorio (queda en la bitácora del caso):");
+                    if (motivo == null) return;
+                    if (!String(motivo).trim()) { toast("⛔ Sin motivo no se cierra una etapa con faltantes"); return; }
+                    onComentar?.({ reclamo: exp.codigo, etapa: s.etapa, texto: "⚠ CIERRE CON FALTANTES (" + faltantes.length + "): " + String(motivo).trim(), nombre: perfil?.nombre });
                   }
                   onEstadoTicket?.(tk, "hecho");
                   const sig = sel < FLUJO.length - 1 ? FLUJO[sel + 1].etapa : null;
