@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { loadReclamos, loadEvidencias, loadDatos, guardarDatos, loadTickets, updTicket, loadComentarios, comentar, loadRegistros, loadCorreos, postAction, editarReclamo, vincularCorreo, USE_MOCK } from "./lib/api.js";
+import { loadReclamos, loadEvidencias, loadDatos, guardarDatos, loadTickets, updTicket, loadComentarios, comentar, loadRegistros, loadCorreos, postAction, editarReclamo, vincularCorreo, loadConfig, USE_MOCK } from "./lib/api.js";
 import { mapTickets, misTickets, activos, abiertos, vencidos, porVencer, exposicionTotal, verMontos, urgColorTicket } from "./lib/tickets.js";
 import { getSesionValida, logout, ROL_LABEL, puedeDelegar, puedeVerTodo, esOperativo, USERS } from "./lib/auth.js";
 import {
-  TEAM, teamById, wName, wColor, ETAPAS, FLUJO, daysLeft, fmtFecha, SHEET_URL, DRIVE_URL, STREAMLIT_URL
+  TEAM, teamById, wName, wColor, ETAPAS, FLUJO, daysLeft, fmtFecha, parseFecha, SHEET_URL, DRIVE_URL, STREAMLIT_URL
 } from "./lib/model.js";
 import { Kpi, Card, Tag, HBars, Donut, estadoColor, urgColor, toast } from "./components/ui.jsx";
 import Drawer from "./components/Drawer.jsx";
@@ -424,13 +424,49 @@ function Expedientes({ data, setSelExp, delegar, updEstado, canDelegate, activoB
   </Card>;
 }
 
+// Definición REAL de cada ACT del contrato (qué cuenta como metrado) — ver 20_Actividades.
+const ACT_DEFINICION = {
+  "ACT-01": "Proyectos de resolución y actas de trato directo elaborados en el mes (incluye resoluciones de reconsideración)",
+  "ACT-02": "Expedientes de apelación elevados a JARU en el mes (Formato 6)",
+  "ACT-03": "Expedientes tramitados en 1ª instancia — deben estar CERRADOS en SIELSE (salvo apelación); incluye expedientes de otras sedes",
+  "ACT-04": "Muestras trimestrales entregadas (metrado 8 en todo el contrato — penalidad S/2,000 por muestra incumplida)",
+  "ACT-05": "Resoluciones notificadas notarialmente (solo ciudad de Cusco)",
+};
+// P.U. placeholder (reemplazar por los de la oferta económica ganadora). La config del backend
+// (hoja `config`: PU_ACT01…PU_ACT05) los sobreescribe si existen y son numéricos.
+const PU_DEFAULT = { ACT01: 45, ACT02: 60, ACT03: 25, ACT04: 0, ACT05: 18 };
+
 function Reportes({ data, setSelExp }){
   const [rtab,setR]=useState("cartera");
+  const [config,setConfig]=useState({});
+  useEffect(()=>{ loadConfig().then(c=>{ if(c) setConfig(c); }).catch(()=>{}); }, []);
+  const puNum = (k, fallback) => { const v = config && config[k]; const n = typeof v==="string" ? parseFloat(v) : v; return (typeof n==="number" && !isNaN(n)) ? n : fallback; };
+  const PU = {
+    ACT01: puNum("PU_ACT01", PU_DEFAULT.ACT01), ACT02: puNum("PU_ACT02", PU_DEFAULT.ACT02),
+    ACT03: puNum("PU_ACT03", PU_DEFAULT.ACT03), ACT04: puNum("PU_ACT04", PU_DEFAULT.ACT04),
+    ACT05: puNum("PU_ACT05", PU_DEFAULT.ACT05),
+  };
+
   const porResp=TEAM.map(t=>({t,list:data.filter(x=>x.resp===t.id)})).filter(o=>o.list.length);
   const clases={}; data.forEach(x=>clases[x.clase]=(clases[x.clase]||0)+1);
   const cerr=data.filter(x=>x.estado==="Cerrado").length, apel=data.filter(x=>x.apelacion).length;
-  const rows=[["ACT-01","Resoluciones / trato directo",cerr,45],["ACT-02","Elevación apelación",apel,60],["ACT-03","Tramitación",data.length,25],["ACT-05","Notif. notarial",cerr,18]];
+
+  // Mes en curso: filtra por la fecha disponible más confiable de cada ACT. Si no hay una
+  // fecha confiable para esa actividad, se deja el total histórico (con nota visible).
+  const HOY=new Date(), mesAct=HOY.getMonth(), anioAct=HOY.getFullYear();
+  const esMesActual = iso => { const d=parseFecha(iso); return d && d.getMonth()===mesAct && d.getFullYear()===anioAct; };
+  const cerrMes = data.filter(x=>x.estado==="Cerrado" && esMesActual(x.fechaSol)).length;
+  const cerrMesHayFecha = data.some(x=>x.estado==="Cerrado" && x.fechaSol);
+
+  const rows=[
+    { act:"ACT-01", nombre:"Resoluciones / trato directo", cant: cerrMesHayFecha?cerrMes:cerr, puK:"ACT01", historico: !cerrMesHayFecha, notaCant:null },
+    { act:"ACT-02", nombre:"Elevación apelación", cant: apel, puK:"ACT02", historico:true, notaCant:null },
+    { act:"ACT-03", nombre:"Tramitación", cant: data.length, puK:"ACT03", historico:true, notaCant:null },
+    { act:"ACT-04", nombre:"Muestra trimestral OSINERGMIN", cant: 0, puK:"ACT04", historico:false, notaCant:"se registra al entregar cada muestra" },
+    { act:"ACT-05", nombre:"Notif. notarial", cant: cerrMesHayFecha?cerrMes:cerr, puK:"ACT05", historico: !cerrMesHayFecha, notaCant:null },
+  ];
   let tot=0;
+
   return <>
     <div className="tabs">{[["cartera","Cartera"],["diario","Diario"],["semanal","Semanal"],["mensual","Valorización"]].map(x=><button key={x[0]} className={rtab===x[0]?"on":""} onClick={()=>setR(x[0])}>{x[1]}</button>)}</div>
     {rtab==="cartera" && <Cartera data={data} setSelExp={setSelExp}/>}
@@ -441,10 +477,35 @@ function Reportes({ data, setSelExp }){
       <div className="kv"><b>Total</b><span>{data.length}</span></div><div className="kv"><b>Cerrados</b><span>{cerr}</span></div>
       <div className="kv"><b>En atención</b><span>{data.filter(x=>x.estadoCom==="EN ATENCION").length}</span></div><div className="kv"><b>Vencidos</b><span>{data.filter(x=>x.vencido).length}</span></div>
       {Object.entries(clases).map(([k,v])=><div className="kv" key={k}><b>{k}</b><span>{v}</span></div>)}</Card>}
-    {rtab==="mensual" && <Card><h3>Valorización mensual estimada (precios unitarios)</h3><div style={{overflowX:"auto"}}><table className="tbl"><thead><tr><th>ACT</th><th>Actividad</th><th>Cantidad</th><th>P.U. (S/)</th><th>Subtotal</th></tr></thead><tbody>
-      {rows.map((r,i)=>{const st=r[2]*r[3];tot+=st;return <tr key={i}><td><b>{r[0]}</b></td><td>{r[1]}</td><td>{r[2]}</td><td>{r[3]}</td><td>S/ {st.toLocaleString()}</td></tr>;})}
-      <tr><td colSpan={4} style={{textAlign:"right"}}><b>Total estimado</b></td><td><b style={{color:"#1E8E5A"}}>S/ {tot.toLocaleString()}</b></td></tr>
-    </tbody></table></div></Card>}
+    {rtab==="mensual" && <>
+      <div className="note" style={{background:"#FEF3DF",border:"1px solid #F0C36D",color:"#B45309",marginBottom:12}}>
+        ⚠ Estimación referencial para seguimiento interno — la valorización oficial exige las 7 relaciones mensuales + acta de capacitación (se genera en la Ola 7).
+      </div>
+      <Card>
+        <h3>Valorización mensual estimada (precios unitarios)</h3>
+        <div className="muted" style={{fontSize:11.5,marginBottom:8}}>P.U. referenciales — reemplazar por los de la oferta económica (hoja config: PU_ACT01…PU_ACT05)</div>
+        <div style={{overflowX:"auto"}}>
+          <table className="tbl"><thead><tr><th>ACT</th><th>Actividad</th><th>¿Qué cuenta?</th><th>Cantidad</th><th>P.U. (S/)</th><th>Subtotal</th></tr></thead><tbody>
+            {rows.map((r,i)=>{
+              const pu=PU[r.puK]; const st=r.cant*pu; tot+=st;
+              return <tr key={i}>
+                <td><b>{r.act}</b></td>
+                <td>{r.nombre}</td>
+                <td style={{fontSize:11.5,color:"var(--mut)",maxWidth:320}}>{ACT_DEFINICION[r.act]}</td>
+                <td>
+                  {r.cant}
+                  {r.notaCant && <div className="muted" style={{fontSize:10}}>({r.notaCant})</div>}
+                  {r.historico && !r.notaCant && <div className="muted" style={{fontSize:10}}>(total histórico)</div>}
+                </td>
+                <td>{pu}</td>
+                <td>S/ {st.toLocaleString()}</td>
+              </tr>;
+            })}
+            <tr><td colSpan={5} style={{textAlign:"right"}}><b>Total estimado</b></td><td><b style={{color:"#1E8E5A"}}>S/ {tot.toLocaleString()}</b></td></tr>
+          </tbody></table>
+        </div>
+      </Card>
+    </>}
   </>;
 }
 

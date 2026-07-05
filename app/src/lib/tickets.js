@@ -112,5 +112,6 @@ export function agrupaPorEtapa(ts) {
 // Exposición total en riesgo (suma de tickets con riesgo). Solo tiene sentido mostrarla a Gerencia.
 export const exposicionTotal = ts => ts.filter(t => t.riesgo).reduce((s, t) => s + (t.exposicion || 0), 0);
 
-// ¿Se le muestran montos S/ a este rol? Solo Gerencia.
-export const verMontos = rol => rol === "GERENTE";
+// ¿Se le muestran montos S/ a este rol? Gerencia y Coordinación (auditoría: el Coordinador
+// gestiona la operación a diario y necesita ver el dinero en riesgo para priorizar).
+export const verMontos = rol => rol === "GERENTE" || rol === "COORDINADOR";

@@ -120,9 +120,17 @@ export default function SubirEvidencia({ reclamo, etapa, etapaNN, perfil, onSave
       )}
 
       <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 10 }}>
-        <button onClick={guardar} disabled={busy} style={{ background: "var(--navy)", color: "#fff", border: 0, borderRadius: 8, padding: "8px 16px", fontSize: 13, cursor: "pointer", fontWeight: 600 }}>
-          {busy ? "Subiendo…" : "Subir evidencia y guardar"}
-        </button>
+        {(() => {
+          const sinNada = !files.length && !Object.keys(datos).length;
+          const disabled = busy || sinNada;
+          return (
+            <button onClick={guardar} disabled={disabled}
+              title={sinNada ? "Adjunta un archivo o completa algún dato para poder guardar" : undefined}
+              style={{ background: "var(--navy)", color: "#fff", border: 0, borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 600, opacity: disabled ? .5 : 1, cursor: disabled ? "default" : "pointer" }}>
+              {busy ? "Subiendo…" : "Subir evidencia y guardar"}
+            </button>
+          );
+        })()}
         {hechos.length > 0 && <span style={{ fontSize: 12, color: "#15803D" }}>✓ {hechos.filter(h => h.ok).length} subido(s)</span>}
       </div>
       {hechos.some(h => h.ok && h.url) && (

@@ -242,6 +242,18 @@ export async function editarReclamo(codigo, campo, valor){
   return postAction("editar_reclamo", { codigo, campo, valor });
 }
 
+// Config general (v4): hoja `config` del Sheet (clave->valor), p.ej. PU_ACT01..PU_ACT05
+// (precios unitarios reales de la oferta económica). Si el backend aún no la implementa,
+// devuelve {} y el caller usa sus valores por defecto (placeholder).
+export async function loadConfig(){
+  try{
+    const r = await fetch(APPS_SCRIPT_URL + "?action=config");
+    const j = await r.json();
+    if(j && typeof j==="object" && !Array.isArray(j)) return j;
+  }catch(e){ /* respaldo: {} */ }
+  return {};
+}
+
 // Catálogos SIELSE (v4): hoja `catalogos` del Sheet (grupo|valor|extra); si aún no existe
 // (falta ejecutarSetupCatalogos o el redeploy), devuelve null y el wizard usa CATALOGOS_LOCAL.
 export async function loadCatalogos(){

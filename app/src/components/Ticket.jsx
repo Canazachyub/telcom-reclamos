@@ -4,6 +4,8 @@ import { INFO_ETAPA } from "../lib/camposEtapa.js";
 import { metaEtapa } from "../lib/model.js";
 
 const ESTADOS = ["pendiente", "en_proceso", "hecho", "observado"];
+// Etiquetas humanas para los values internos (el backend/estado sigue viajando en minúscula/snake_case).
+const ESTADO_TICKET_LABEL = { pendiente: "Pendiente", en_proceso: "En proceso", hecho: "Hecho", observado: "Observado" };
 // "2026-04-10" -> "10/04/2026"
 const fmtDia = iso => { const m = String(iso || "").match(/(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[3]}/${m[2]}/${m[1]}` : (iso || ""); };
 
@@ -40,12 +42,18 @@ export function InfoBoton({ etapa, rol, t }) {
         fontWeight: 700, fontStyle: "italic", fontFamily: "Georgia,serif", cursor: "pointer", lineHeight: 1,
       }}>i</button>
       {open && (
-        <div onMouseLeave={() => setOpen(false)} style={{
+        <div style={{
           position: "absolute", zIndex: 30, top: 26, left: 0, width: 320, background: "#fff",
           border: "1px solid #1F4E8C", borderRadius: 10, padding: 12, boxShadow: "0 10px 30px rgba(22,41,75,.2)",
           color: "var(--tx)", fontSize: 12,
         }}>
-          <div style={{ fontWeight: 700, color: "var(--linkTx)", marginBottom: 6 }}>«{etapa}» — según las bases (269-2014)</div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6, gap: 8 }}>
+            <div style={{ fontWeight: 700, color: "var(--linkTx)" }}>«{etapa}» — según las bases (269-2014)</div>
+            <button onClick={() => setOpen(false)} style={{
+              border: "1px solid var(--bd)", borderRadius: 6, background: "transparent", color: "var(--mut)",
+              cursor: "pointer", fontSize: 11, padding: "2px 7px", flexShrink: 0,
+            }}>✕ cerrar</button>
+          </div>
           <Kv b="Qué es" v={info.que_es} />
           <Kv b="Por qué importa" v={info.importa} />
           <div style={{ display: "flex", gap: 6, margin: "3px 0" }}>
@@ -90,7 +98,7 @@ export function TicketCard({ t, rec, perfil, onEstado, onAbrir }) {
         </div>
         <div style={{ color: "var(--mut)", fontSize: 11.5, marginTop: 2 }}>
           <span style={{ fontFamily: "ui-monospace,monospace" }}>{rec?.osinerg || "…" + t.reclamo.slice(-6)}</span>
-          {rec?.solicitante ? " · " + rec.solicitante.slice(0, 26) : ""}
+          {rec?.solicitante ? <span title={rec.solicitante}> · {rec.solicitante.length > 26 ? rec.solicitante.slice(0, 26) + "…" : rec.solicitante}</span> : ""}
           {verResp && <> · 👤 {t.responsable}</>}
         </div>
         {t.penalidadItem && t.penalidadItem !== "—" && t.penalidadItem !== "mora" && (
@@ -106,9 +114,9 @@ export function TicketCard({ t, rec, perfil, onEstado, onAbrir }) {
           background: "#fff", color: "var(--tx)", border: "1px solid var(--bd)", borderRadius: 8,
           padding: "5px 7px", fontSize: 12,
         }}>
-          {ESTADOS.map(s => <option key={s} value={s}>{s}</option>)}
+          {ESTADOS.map(s => <option key={s} value={s}>{ESTADO_TICKET_LABEL[s] || s}</option>)}
         </select>
-      ) : <span style={{ fontSize: 11, color: "var(--mut)" }}>{t.estado}</span>}
+      ) : <span style={{ fontSize: 11, color: "var(--mut)" }}>{ESTADO_TICKET_LABEL[t.estado] || t.estado}</span>}
     </div>
   );
 }

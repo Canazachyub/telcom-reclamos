@@ -139,8 +139,14 @@ const WEBMAIL_URL = "https://mail.hostinger.com";
 
 // ===== Estilos inline (patrón dominante del proyecto: Drawer.jsx, Ticket.jsx) =====
 const S = {
-  buzonCols: { display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 14 },
-  buzonColHd: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, paddingBottom: 8, marginBottom: 8, borderBottom: "1px solid var(--bd)" },
+  kpiRow: { display: "flex", gap: 10, flexWrap: "wrap", marginTop: 10 },
+  kpiChip: { display: "flex", alignItems: "center", gap: 7, background: "var(--card2)", border: "1px solid var(--bd)", borderRadius: 10, padding: "8px 14px", cursor: "pointer", fontSize: 12.5, color: "var(--tx)", lineHeight: 1.2 },
+  kpiChipActiva: { borderColor: "var(--acc)", boxShadow: "0 0 0 1px var(--acc) inset" },
+  kpiNum: { fontSize: 17, fontWeight: 800, color: "var(--titulo)" },
+  kpiLbl: { fontSize: 11, color: "var(--mut)", whiteSpace: "nowrap" },
+  buzonColsWrap: { overflowX: "auto", paddingBottom: 4 },
+  buzonCols: { display: "grid", gap: 14 },
+  buzonColHd: { position: "sticky", top: 0, zIndex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, paddingBottom: 8, marginBottom: 8, borderBottom: "1px solid var(--bd)", background: "var(--card)" },
   buzonColNombre: { fontSize: 12.5, fontWeight: 700, color: "var(--titulo)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textTransform: "lowercase" },
   buzonColCount: { fontSize: 10.5, color: "var(--mut)", background: "var(--card2)", border: "1px solid var(--bd)", borderRadius: 999, padding: "1px 8px", flexShrink: 0 },
   buzonColBody: { maxHeight: 640, overflowY: "auto", paddingRight: 2 },
@@ -151,15 +157,16 @@ const S = {
   mailDot: { width: 8, height: 8, borderRadius: "50%", flexShrink: 0, marginTop: 6 },
   mailMain: { minWidth: 0, flex: 1 },
   mailLinea1: { display: "flex", alignItems: "baseline", gap: 8, minWidth: 0, flexWrap: "wrap" },
-  mailRemitente: { fontWeight: 600, fontSize: 13, color: "var(--titulo)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "50%" },
+  mailRemitente: { fontWeight: 700, fontSize: 13, color: "var(--titulo)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "50%" },
   mailBuzonChip: { fontSize: 10, color: "var(--mut)", background: "var(--card2)", border: "1px solid var(--bd)", borderRadius: 5, padding: "1px 6px", whiteSpace: "nowrap", flexShrink: 0 },
   mailFecha: { marginLeft: "auto", paddingLeft: 8, fontSize: 11, color: "var(--mut)", whiteSpace: "nowrap", flexShrink: 0, textAlign: "right" },
-  mailAsunto: { fontSize: 12.5, color: "var(--tx2)", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
-  mailResumen: { fontSize: 11.5, color: "var(--mut)", marginTop: 2, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: 1.4 },
-  mailAdjuntos: { display: "flex", gap: 10, flexWrap: "wrap", marginTop: 6 },
+  mailAsunto: { fontSize: 12.5, color: "var(--tx)", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
+  mailResumen: { fontSize: 11.5, color: "var(--mut)", marginTop: 2, display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: 1.4 },
+  mailAdjuntos: { display: "flex", gap: 8, flexWrap: "wrap", marginTop: 6 },
   mailVinc: { display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 8 },
-  mailAcciones: { display: "flex", gap: 4, alignItems: "center", flexShrink: 0 },
-  mailIc: { background: "var(--card2)", border: "1px solid var(--bd)", color: "var(--tx)", borderRadius: 7, width: 26, height: 26, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1, flexShrink: 0 },
+  mailAcciones: { display: "flex", gap: 6, alignItems: "center", flexShrink: 0, flexWrap: "wrap" },
+  mailBtn: { background: "var(--card2)", border: "1px solid var(--bd)", color: "var(--tx)", borderRadius: 7, padding: "5px 9px", fontSize: 11.5, fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4, lineHeight: 1, flexShrink: 0, whiteSpace: "nowrap" },
+  mailBtnAcc: { borderColor: "var(--acc)", color: "var(--acc)" },
 };
 const estBorde = { nuevo: "var(--navy)", vinculado: "#15803D", respondido: "#6D28D9" };
 
@@ -229,6 +236,30 @@ export default function Bandeja({ perfil, correos, cargando, noDisponible, onRec
 
   const hayFiltrosActivos = !!(q.trim() || desde || hasta || estadoFiltro !== "Todos");
 
+  // KPIs de la cabecera: se calculan sobre `porBuzon` (ya filtrado por buzón, pero ANTES del
+  // filtro de estado/texto/fecha) para que los chips reflejen el universo real del buzón elegido
+  // y no colapsen a 0 cuando el usuario ya tiene un filtro de estado activo.
+  // "Sin caso" = mismo criterio de estado "nuevo" que ya usa el badge de cada fila y el <select>
+  // de estado (ni vinculado ni respondido): es el trabajo pendiente real por atender.
+  const kpis = useMemo(() => {
+    const lista = porBuzon || [];
+    let sinCaso = 0, vinculados = 0, respondidos = 0;
+    lista.forEach(c => {
+      const esVinculado = c.estado === "vinculado" || !!c.reclamo_vinculado;
+      const esRespondido = c.estado === "respondido";
+      if (esRespondido) respondidos++;
+      else if (esVinculado) vinculados++;
+      else sinCaso++;
+    });
+    return { total: lista.length, sinCaso, vinculados, respondidos };
+  }, [porBuzon]);
+
+  // Clic en un chip: alterna el filtro de estado existente (mismo <select> de arriba) — clic de
+  // nuevo sobre el chip activo lo desactiva (vuelve a "Todos").
+  function toggleEstado_(valor){
+    setEstadoFiltro(prev => prev === valor ? "Todos" : valor);
+  }
+
   if (noDisponible) {
     return <Card>
       <h3>📧 Bandeja de correos</h3>
@@ -241,7 +272,10 @@ export default function Bandeja({ perfil, correos, cargando, noDisponible, onRec
   return <>
     <Card>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-        <h3 style={{ margin: 0 }}>📧 Bandeja de correos {correosLimpios ? `(${correosLimpios.length})` : ""}</h3>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+          <h3 style={{ margin: 0 }}>📧 Bandeja de correos {correosLimpios ? `(${correosLimpios.length})` : ""}</h3>
+          <span style={{ fontSize: 12, color: "var(--tx)" }}>Mostrando {filtrados.length} de {porBuzon.length}</span>
+        </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           {verTodo && buzones.length > 1 && (
             <select className="flt" value={buzon} onChange={e => setBuzon(e.target.value)}>
@@ -250,6 +284,46 @@ export default function Bandeja({ perfil, correos, cargando, noDisponible, onRec
           )}
           <button className="btn-ghost" onClick={onRecargar} title="Recargar correos">↻ Recargar</button>
         </div>
+      </div>
+
+      <div style={S.kpiRow}>
+        <button
+          style={{ ...S.kpiChip, ...(estadoFiltro === "Todos" ? S.kpiChipActiva : {}), cursor: "default" }}
+          onClick={() => setEstadoFiltro("Todos")}
+          title="Ver todos los correos del buzón seleccionado"
+        >
+          <span style={S.kpiNum}>{kpis.total}</span>
+          <span style={S.kpiLbl}>📥 Total</span>
+        </button>
+        <button
+          style={{
+            ...S.kpiChip,
+            ...(estadoFiltro === "nuevo" ? S.kpiChipActiva : {}),
+            borderColor: estadoFiltro === "nuevo" ? "var(--acc)" : (kpis.sinCaso > 10 ? "var(--acc)" : "#B45309"),
+            background: kpis.sinCaso > 10 ? "rgba(227,0,27,.08)" : "rgba(180,83,9,.08)",
+          }}
+          onClick={() => toggleEstado_("nuevo")}
+          title="Correos sin expediente vinculado y sin responder — trabajo pendiente real"
+        >
+          <span style={{ ...S.kpiNum, color: kpis.sinCaso > 10 ? "var(--acc)" : "#B45309" }}>{kpis.sinCaso}</span>
+          <span style={{ ...S.kpiLbl, color: kpis.sinCaso > 10 ? "var(--acc)" : "#B45309", fontWeight: 700 }}>⚠ Sin caso</span>
+        </button>
+        <button
+          style={{ ...S.kpiChip, ...(estadoFiltro === "vinculado" ? S.kpiChipActiva : {}) }}
+          onClick={() => toggleEstado_("vinculado")}
+          title="Correos ya vinculados a un expediente existente"
+        >
+          <span style={{ ...S.kpiNum, color: "var(--navy)" }}>{kpis.vinculados}</span>
+          <span style={S.kpiLbl}>🔗 Vinculados</span>
+        </button>
+        <button
+          style={{ ...S.kpiChip, ...(estadoFiltro === "respondido" ? S.kpiChipActiva : {}) }}
+          onClick={() => toggleEstado_("respondido")}
+          title="Correos ya respondidos desde el buzón TELCOM"
+        >
+          <span style={{ ...S.kpiNum, color: "#15803D" }}>{kpis.respondidos}</span>
+          <span style={S.kpiLbl}>↩ Respondidos</span>
+        </button>
       </div>
 
       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 10 }}>
@@ -268,28 +342,32 @@ export default function Bandeja({ perfil, correos, cargando, noDisponible, onRec
         )}
       </div>
 
-      <div className="muted" style={{ marginTop: 8, fontSize: 11.5 }}>
-        Mostrando {filtrados.length} de {porBuzon.length}
-      </div>
       {cargando && <div className="muted" style={{ marginTop: 8, fontSize: 12 }}>Cargando correos…</div>}
       {!cargando && !(correosLimpios || []).length && <div className="muted" style={{ marginTop: 8, fontSize: 12 }}>Sin correos por ahora.</div>}
     </Card>
 
     {/* Gerente/Coordinador con "Todos": vista paralela agrupada por buzón */}
     {agrupado
-      ? <div style={{ ...S.buzonCols, gridTemplateColumns: `repeat(${colsBuzon},1fr)`, marginTop: 14 }}>
-          {Object.entries(agrupado).map(([bz, items]) => (
-            <Card key={bz} style={{ padding: 12 }}>
-              <div style={S.buzonColHd}>
-                <span style={S.buzonColNombre} title={bz}>{(bz.split("@")[0] || bz)}</span>
-                <span style={S.buzonColCount}>{items.length}</span>
-              </div>
-              <div style={S.buzonColBody}>
-                <ListaCorreos items={items} existentes={existentes} onConvertir={onConvertir} verExpediente={verExpediente} separadores={false} compacto />
-                {!items.length && <div className="muted" style={{ fontSize: 12 }}>Sin correos.</div>}
-              </div>
-            </Card>
-          ))}
+      ? <div style={{ ...S.buzonColsWrap, marginTop: 14 }}>
+          <div style={{ ...S.buzonCols, gridTemplateColumns: `repeat(${Math.max(colsBuzon, Object.keys(agrupado).length)},minmax(340px,1fr))` }}>
+            {Object.entries(agrupado).map(([bz, items]) => {
+              const sinCasoCol = items.filter(c => !(c.estado === "vinculado" || c.reclamo_vinculado) && c.estado !== "respondido").length;
+              return (
+                <Card key={bz} style={{ padding: 12, minWidth: 340 }}>
+                  <div style={S.buzonColHd}>
+                    <span style={S.buzonColNombre} title={bz}>{(bz.split("@")[0] || bz)}</span>
+                    <span style={{ ...S.buzonColCount, ...(sinCasoCol > 0 ? { color: "#B45309", borderColor: "#B45309", background: "rgba(180,83,9,.08)" } : {}) }} title={sinCasoCol > 0 ? `${sinCasoCol} sin caso` : "Sin pendientes"}>
+                      {items.length}{sinCasoCol > 0 ? ` · ⚠${sinCasoCol}` : ""}
+                    </span>
+                  </div>
+                  <div style={S.buzonColBody}>
+                    <ListaCorreos items={items} existentes={existentes} onConvertir={onConvertir} verExpediente={verExpediente} separadores={false} compacto />
+                    {!items.length && <div className="muted" style={{ fontSize: 12 }}>Sin correos.</div>}
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
         </div>
       : <div style={{ marginTop: 14 }}>
           <Card>
@@ -328,6 +406,7 @@ function CorreoRow({ correo, existentes, onConvertir, verExpediente = () => {}, 
   const [busy, setBusy] = useState(false);
   const [abierto, setAbierto] = useState(false);
   const [respondido, setRespondido] = useState(false);
+  const [hover, setHover] = useState(false);
   const vinculado = correo.estado === "vinculado" || !!correo.reclamo_vinculado;
 
   let adjuntos = [];
@@ -354,7 +433,12 @@ function CorreoRow({ correo, existentes, onConvertir, verExpediente = () => {}, 
 
   return (
     <>
-      <div style={{ ...S.mailRow, padding: compacto ? "8px 9px" : "10px 12px", borderLeft: `3px solid ${estBorde[estado]}` }} onClick={() => setAbierto(true)}>
+      <div
+        style={{ ...S.mailRow, padding: compacto ? "8px 9px" : "10px 12px", borderLeft: `3px solid ${estBorde[estado]}`, background: hover ? "var(--hoverBg)" : "var(--card2)" }}
+        onClick={() => setAbierto(true)}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+      >
         <div style={S.mailTop}>
           <div style={{ ...S.mailDot, background: estadoInfo.color }} title={estadoInfo.txt} />
 
@@ -364,19 +448,19 @@ function CorreoRow({ correo, existentes, onConvertir, verExpediente = () => {}, 
               {correo.buzon && <span style={S.mailBuzonChip} title={correo.buzon}>{correo.buzon.split("@")[0]}</span>}
               <span style={S.mailFecha}>{fechaHumana_(correo.fecha)}</span>
             </div>
-            <div style={S.mailAsunto}>{correo.asunto || "(sin asunto)"}</div>
-            {correo.resumen && <div style={{ ...S.mailResumen, WebkitLineClamp: compacto ? 1 : 2 }}>{correo.resumen}</div>}
+            <div style={S.mailAsunto} title={correo.asunto || "(sin asunto)"}>{correo.asunto || "(sin asunto)"}</div>
+            {correo.resumen && <div style={{ ...S.mailResumen, WebkitLineClamp: 1 }} title={correo.resumen}>{correo.resumen}</div>}
           </div>
 
           <div style={S.mailAcciones} onClick={e => e.stopPropagation()}>
-            <button style={S.mailIc} onClick={() => setAbierto(true)} title="Abrir">👁</button>
+            <button style={S.mailBtn} onClick={() => setAbierto(true)} title="Abrir el correo completo">👁 Abrir</button>
             {!vinculado && (
-              <button style={S.mailIc} onClick={() => setAbrirVinc(v => !v)} title="Vincular a expediente">🔗</button>
+              <button style={S.mailBtn} onClick={() => setAbrirVinc(v => !v)} title="Vincular este correo a un expediente ya existente">🔗 Vincular</button>
             )}
             {vinculado && correo.reclamo_vinculado && (
               <button className="btn-ghost sm" onClick={() => verExpediente(correo.reclamo_vinculado)} title="Abrir la Sala del expediente vinculado">📂 Ver expediente</button>
             )}
-            <button style={S.mailIc} onClick={() => onConvertir?.(correo)} title="Convertir en caso">➕</button>
+            <button style={{ ...S.mailBtn, ...S.mailBtnAcc }} onClick={() => onConvertir?.(correo)} title="Crear un expediente nuevo a partir de este correo">➕ Caso nuevo</button>
           </div>
         </div>
 
@@ -384,7 +468,7 @@ function CorreoRow({ correo, existentes, onConvertir, verExpediente = () => {}, 
           <div style={S.mailAdjuntos} onClick={e => e.stopPropagation()}>
             {adjuntos.map((a, i) => (
               adjuntoNoDescargado_(a)
-                ? <span key={i} style={{ fontSize: 11.5, color: "#B45309" }}>
+                ? <span key={i} style={{ fontSize: 10.5, color: "#B45309" }}>
                     ⚠ {a.nombre || "adjunto"} (no descargado — {" "}
                     <a href={WEBMAIL_URL} target="_blank" rel="noreferrer"
                       title="Abrir webmail de Hostinger (inicia sesión con tu buzón TELCOM)"
@@ -392,7 +476,7 @@ function CorreoRow({ correo, existentes, onConvertir, verExpediente = () => {}, 
                       ábrelo en el webmail
                     </a>)
                   </span>
-                : <a key={i} className="link" href={a.url} target="_blank" rel="noreferrer" style={{ fontSize: 11.5 }}>{iconoAdjunto_(a)} {a.nombre || "adjunto"}</a>
+                : <a key={i} className="link" href={a.url} target="_blank" rel="noreferrer" style={{ fontSize: 10.5 }}>{iconoAdjunto_(a)} {a.nombre || "adjunto"}</a>
             ))}
           </div>
         )}
