@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ETAPAS, FLUJO, fmtFecha, wColor } from "../lib/model.js";
 import { toast } from "./ui.jsx";
+import { GuiaSielseBox } from "../lib/guiaSielse.jsx";
 
 // ===================== Sala del expediente (v4, patrón courier) =====================
 // Vista de SEGUIMIENTO y colaboración de un caso: dónde está, quién lo tiene, cuánto plazo
@@ -144,6 +145,8 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
               <span style={{color:"var(--mut)"}}>Sigue: {sig.etapa} · <b style={{color:"var(--tx)"}}>{sig.responsable||"por asignar"}</b></span></>}
             <button className="btn" style={{marginLeft:"auto"}} onClick={()=>onTrabajar(exp.id, act?act.etapa:null)}>Trabajar esta etapa</button>
           </div>
+
+          <div style={{marginTop:12}}><GuiaSielseBox etapa={etapaActual} compacta/></div>
 
           {/* ===== documentos del caso ===== */}
           <div style={S.descargas}>

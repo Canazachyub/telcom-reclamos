@@ -236,6 +236,17 @@ export async function comentar({ reclamo, etapa, texto, nombre }){
   return postAction("comentar", { reclamo, etapa, texto, nombre });
 }
 
+// Catálogos SIELSE (v4): hoja `catalogos` del Sheet (grupo|valor|extra); si aún no existe
+// (falta ejecutarSetupCatalogos o el redeploy), devuelve null y el wizard usa CATALOGOS_LOCAL.
+export async function loadCatalogos(){
+  try{
+    const res = await fetch(APPS_SCRIPT_URL + "?action=catalogos");
+    const raw = await res.json();
+    if(Array.isArray(raw) && raw.length) return raw;   // [{grupo, valor, extra}]
+  }catch(e){ /* respaldo local */ }
+  return null;
+}
+
 // Escrituras (delegar / estado / evidencia / reporte). Real si hay sesión válida; simula si token mock.
 export async function postAction(action, payload){
   const token = getToken();

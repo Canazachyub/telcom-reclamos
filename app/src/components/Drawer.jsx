@@ -7,6 +7,7 @@ import Formularios from "./Formularios.jsx";
 import FichaSielse from "./FichaSielse.jsx";
 import { INFO_ETAPA, CAMPOS_ETAPA, CAMPOS_POR_FALLO } from "../lib/camposEtapa.js";
 import { resumirIA } from "../lib/api.js";
+import { GuiaSielseBox } from "../lib/guiaSielse.jsx";
 
 const humaniza = k => String(k).replace(/_/g, " ").toLowerCase().replace(/^\w/, c => c.toUpperCase());
 // URL de previsualización embebible de un archivo de Drive.
@@ -160,6 +161,8 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
                 }}>✔ Terminé esta etapa</button>
               </div>
             )}
+
+            <div style={{ marginTop: 10 }}><GuiaSielseBox etapa={s.etapa} compacta /></div>
 
             <Sec t="📝 Lo que registró el trabajador (formulario)">
               {datK.length ? <div style={{ display: "grid", gap: 4 }}>
