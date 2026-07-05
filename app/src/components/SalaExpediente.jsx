@@ -44,9 +44,11 @@ function humanizar(r){
   return (txt||JSON.stringify(d)).slice(0,110);
 }
 
-export default function SalaExpediente({ exp, tickets, evidencias, registros, comentarios, perfil, datos, correos, onComentar, onTrabajar, onClose, onEditar, ladoALado }){
+export default function SalaExpediente({ exp, tickets, evidencias, registros, comentarios, perfil, datos, correos, onComentar, onTrabajar, onClose, onEditar, onEstadoTicket, ladoALado }){
   const [texto, setTexto] = useState("");
   const [verFicha, setVerFicha] = useState(false);
+  const [etapaSel, setEtapaSel] = useState(null);   // etapa clickeada en la línea de tiempo
+  const puedeCorregir = ["GERENTE","COORDINADOR"].includes(perfil?.rol);
 
   // tickets del caso en orden de flujo; el ACTIVO es el primero no-hecho
   const propios = (tickets||[]).filter(t=>String(t.reclamo)===String(exp.codigo))
@@ -165,24 +167,78 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
             </div>
           </div>
 
-          {/* ===== timeline 10 etapas ===== */}
+          {/* ===== línea de tiempo: SIEMPRE las 10 etapas del flujo (espejo de SIELSE) =====
+               Las que aún no tienen ticket se ven "fantasma": Apelación es condicional (solo si
+               el usuario impugna) y Foliado/Cierre nacen al avanzar. Cada hito es CLICKEABLE:
+               abre su detalle abajo, con corrección (reabrir/marcar hecha) para Coord./Gerencia. */}
           {propios.length>0 && (
-            <div style={S.tl}><div style={S.tlInner}>
-              {propios.map((t,i)=>{
-                const estado = t.hecho ? "done" : (i===idxAct ? "actual" : "pend");
-                const cond = t.etapa==="Apelación (JARU)";
+            <div style={S.tl}><div style={{...S.tlInner, minWidth:980}}>
+              {ETAPAS.map((et,i)=>{
+                const t = propios.find(x=>x.etapa===et);
+                const estado = t ? (t.hecho ? "done" : (act && act.etapa===et ? "actual" : "pend")) : "pend";
+                const ghost = !t;
+                const cond = et==="Apelación (JARU)";
+                const sel = etapaSel===et;
                 return (
-                  <div key={t.id||i} style={S.hito}>
-                    <div style={{...S.barra(estado), ...(i===0?{left:"50%"}:{}), ...(i===propios.length-1?{right:"50%"}:{})}}/>
-                    <div style={S.nodo(estado, cond)}>{t.hecho ? "✓" : (cond && estado==="pend" ? "·" : i+1)}</div>
-                    <div style={S.lb(estado)}>{t.etapa==="Apelación (JARU)" ? "Apelación" : t.etapa}{cond && estado==="pend" ? <><br/>(si ocurre)</> : null}</div>
-                    <div style={S.fecha}>{estado==="actual" ? "en curso" : (t.hecho && t.fechaLimite ? fmtFecha(t.fechaLimite) : "")}</div>
+                  <div key={et} style={{...S.hito, cursor:"pointer", opacity: ghost && !cond ? .55 : 1}}
+                       onClick={()=>setEtapaSel(sel?null:et)}
+                       title={ghost ? (cond?"Solo si el reclamante impugna":"Se crea al avanzar el flujo") : "Ver detalle de "+et}>
+                    <div style={{...S.barra(estado), ...(i===0?{left:"50%"}:{}), ...(i===ETAPAS.length-1?{right:"50%"}:{})}}/>
+                    <div style={{...S.nodo(estado, cond||ghost), ...(sel?{boxShadow:"0 0 0 4px rgba(30,58,95,.28)"}:{})}}>
+                      {t && t.hecho ? "✓" : (cond && estado!=="actual" ? "·" : i+1)}
+                    </div>
+                    <div style={{...S.lb(estado), ...(sel?{fontWeight:700, color:"var(--titulo)"}:{})}}>
+                      {et==="Apelación (JARU)" ? "Apelación" : et}{cond && !t ? <><br/>(si ocurre)</> : null}
+                    </div>
+                    <div style={S.fecha}>{estado==="actual" ? "en curso" : (t && t.hecho && t.fechaLimite ? fmtFecha(t.fechaLimite) : "")}</div>
                   </div>
                 );
               })}
             </div></div>
           )}
+          {propios.length>0 && !etapaSel && <div className="muted" style={{fontSize:11,marginTop:2}}>Toca cualquier etapa de la línea para ver su detalle{puedeCorregir?" o corregirla":""}.</div>}
           {!propios.length && <div className="muted" style={{marginTop:14,fontSize:12}}>Este caso aún no tiene flujo de etapas (v1). Ábrelo con "Trabajar esta etapa" para verlo en el detalle clásico.</div>}
+
+          {/* ===== detalle de la etapa seleccionada (navegable + corregible) ===== */}
+          {etapaSel && (()=>{
+            const t = propios.find(x=>x.etapa===etapaSel);
+            const fEt = FLUJO.find(f=>f.etapa===etapaSel);
+            const nn = ("0"+(ETAPAS.indexOf(etapaSel)+1)).slice(-2)+"_";
+            const docsEt = docs.filter(d=>String(d.etapa||"").indexOf(nn)===0 || String(d.etapa||"")===etapaSel);
+            return (
+              <div style={{marginTop:12, background:"var(--card2)", border:"1px solid var(--bd)", borderRadius:12, padding:"12px 14px"}}>
+                <div style={{display:"flex",flexWrap:"wrap",alignItems:"center",gap:10}}>
+                  <span style={{fontSize:16}}>{ICONO_ETAPA[etapaSel]||"📄"}</span>
+                  <b style={{color:"var(--titulo)",fontSize:13.5}}>{etapaSel}</b>
+                  {t ? (
+                    <span style={{fontSize:11,fontWeight:700,padding:"2px 9px",borderRadius:999,
+                      background: t.hecho?"#E5F7EC":(t.vencido?"#FDE7E7":"#FEF3DF"),
+                      color: t.hecho?"#15803D":(t.vencido?"#DC2626":"#B45309")}}>
+                      {t.hecho?"hecha ✓":(t.vencido?"vencida":"en curso/pendiente")}
+                    </span>
+                  ) : <span className="muted" style={{fontSize:11.5}}>{etapaSel==="Apelación (JARU)"?"condicional — solo si el reclamante impugna":"aún sin ticket — nace al avanzar el flujo"}</span>}
+                  {t && <span style={{fontSize:12,color:"var(--mut)"}}>Responsable: <b style={{color:"var(--tx)"}}>{t.responsable||"—"}</b>{t.fechaLimite?" · límite "+fmtFecha(t.fechaLimite):""}</span>}
+                  {fEt && <span style={{fontSize:11.5,color:"var(--mut2)"}}>({fEt.rol}{fEt.plazo?" · "+fEt.plazo:""})</span>}
+                  <button className="btn-ghost" style={{marginLeft:"auto",fontSize:11.5,padding:"4px 9px"}} onClick={()=>setEtapaSel(null)}>✕</button>
+                </div>
+                {docsEt.length>0 && (
+                  <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:9}}>
+                    {docsEt.slice(0,5).map((d,i)=><a key={i} style={{...S.doc,fontSize:11.5,padding:"3px 10px"}} href={d.url||"#"} target="_blank" rel="noreferrer">⬇ {d.nombre}</a>)}
+                  </div>
+                )}
+                <div style={{marginTop:9}}><GuiaSielseBox etapa={etapaSel} compacta/></div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:10}}>
+                  <button className="btn sm" onClick={()=>onTrabajar(exp.id, etapaSel)}>Abrir esta etapa en el trabajo</button>
+                  {t && puedeCorregir && onEstadoTicket && (t.hecho
+                    ? <button className="btn-ghost" style={{fontSize:12}} title="Corrige un cierre por error: la etapa vuelve a pendiente y queda registrado en la bitácora"
+                        onClick={()=>{ if(confirm("¿Reabrir la etapa "+etapaSel+"? Volverá a pendiente (queda en bitácora).")){ onEstadoTicket(t,"pendiente"); toast("Etapa reabierta — corrige y vuelve a terminarla"); } }}>↩ Reabrir (corregir)</button>
+                    : <button className="btn-ghost" style={{fontSize:12,color:"#15803D",borderColor:"#A7D9B9"}} title="Marca la etapa como terminada (queda en bitácora)"
+                        onClick={()=>{ if(confirm("¿Marcar "+etapaSel+" como hecha?")){ onEstadoTicket(t,"hecho"); toast("Etapa marcada como hecha ✓"); } }}>✓ Marcar hecha</button>)}
+                  {t && !puedeCorregir && <span className="muted" style={{fontSize:11,alignSelf:"center"}}>Corregir etapas: solo Coordinación/Gerencia</span>}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* ===== responsable actual y siguiente ===== */}
           <div style={S.resp}>
