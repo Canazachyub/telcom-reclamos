@@ -7,7 +7,7 @@ import Formularios from "./Formularios.jsx";
 import FichaSielse from "./FichaSielse.jsx";
 import { INFO_ETAPA, CAMPOS_ETAPA, CAMPOS_POR_FALLO } from "../lib/camposEtapa.js";
 import { resumirIA } from "../lib/api.js";
-import { GuiaSielseBox } from "../lib/guiaSielse.jsx";
+import { GuiaSielseBox, GUIA_SIELSE } from "../lib/guiaSielse.jsx";
 import { fmtCuando, humanizarRegistro } from "./SalaExpediente.jsx";
 
 const humaniza = k => String(k).replace(/_/g, " ").toLowerCase().replace(/^\w/, c => c.toUpperCase());
@@ -59,6 +59,8 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
   const [subir, setSubir] = useState(false);
   const [docGen, setDocGen] = useState(false);
   const [fichaSielse, setFichaSielse] = useState(false);
+  // Plan de trabajo sugerido al iniciar una etapa: descartable por sesión, por etapa (no persiste).
+  const [planDescartado, setPlanDescartado] = useState({});
   const [w, setW] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
   useEffect(() => { const f = () => setW(window.innerWidth); window.addEventListener("resize", f); return () => window.removeEventListener("resize", f); }, []);
   const mobile = w < 880;
@@ -134,7 +136,7 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
                 if (ticketsCaso.length) return i < ai ? "hecho" : i === ai ? "proceso" : "pend";
                 return exp.estado === "Cerrado" ? "hecho" : i < ci ? "hecho" : i === ci ? "proceso" : "pend";
               }}
-              onSel={selEst} />
+              onSel={selEst} seleccionado={sel} />
           </div>
         </div>
 
@@ -195,7 +197,7 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
             )}
             {puedeAccion && tk.abierto && (
               <div style={{ display: "flex", gap: 8, margin: "4px 0 10px", flexWrap: "wrap" }}>
-                {tk.estado === "pendiente" && <button className="btn sm" onClick={() => { onEstadoTicket?.(tk, "en_proceso"); toast("«" + s.etapa + "» en proceso"); }}>▶ Iniciar etapa</button>}
+                {tk.estado === "pendiente" && <button className="btn sm" onClick={() => { onEstadoTicket?.(tk, "en_proceso"); toast("«" + s.etapa + "» en proceso"); setPlanDescartado(p => ({ ...p, [s.etapa]: false })); }}>▶ Iniciar etapa</button>}
                 <button className="btn sm" style={{ background: "#1E8E5A", color: "#fff", border: 0 }} onClick={() => {
                   // Regla de integridad: una etapa NO se marca hecha con datos/evidencia faltantes.
                   // Operativos: bloqueo real. Coordinación/Gerencia: pueden forzar SOLO con motivo (queda en bitácora).
@@ -217,6 +219,17 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
                   if (sig) { setSel(sel + 1); setDocSel(0); setSubir(false); }
                 }}>✔ Terminé esta etapa</button>
               </div>
+            )}
+
+            {tk && tk.estado === "en_proceso" && datK.length === 0 && !planDescartado[s.etapa] && (
+              <PlanEtapa
+                etapa={s.etapa}
+                campos={camposEtapaTodos}
+                evidencias={s.evi}
+                guia={GUIA_SIELSE[s.etapa]}
+                onAbrirEvidencia={() => setSubir(true)}
+                onCerrar={() => setPlanDescartado(p => ({ ...p, [s.etapa]: true }))}
+              />
             )}
 
             <div style={{ marginTop: 10 }}><GuiaSielseBox etapa={s.etapa} compacta /></div>
@@ -323,6 +336,36 @@ function Observaciones({ reclamo, etapa, perfil, comentarios, onComentar }) {
         ))}
         {!mis.length && <div className="muted" style={{ fontSize: 12 }}>Sin observaciones aún.</div>}
       </div>
+    </div>
+  );
+}
+
+// Plan de trabajo sugerido al iniciar una etapa (aparece cuando el ticket está EN PROCESO y
+// todavía no hay ningún dato registrado): 4 pasos generados de datos REALES ya disponibles en
+// el Drawer (campos de la etapa, evidencia requerida, guía SIELSE) — nada inventado ni nuevo
+// estado global, solo reutiliza lo que el Drawer ya calcula. Descartable (✕) para esa sesión.
+function PlanEtapa({ etapa, campos, evidencias, guia, onAbrirEvidencia, onCerrar }) {
+  const nCampos = campos.length;
+  const primerosLabels = campos.slice(0, 3).map(c => c.label).join(", ");
+  return (
+    <div style={{ border: "2px solid var(--navy)", background: "#EAF1F9", borderRadius: 12, padding: "10px 12px", margin: "10px 0" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+        <b style={{ fontSize: 13.5, fontWeight: 700, color: "var(--navy)" }}>🎯 Plan de trabajo — {etapa}</b>
+        <button onClick={onCerrar} title="No volver a mostrar este plan en esta sesión"
+          style={{ background: "transparent", border: "none", color: "var(--mut)", fontSize: 12, cursor: "pointer", flexShrink: 0, padding: "0 2px" }}>✕</button>
+      </div>
+      <ol style={{ margin: "8px 0 0", paddingLeft: 18, fontSize: 12.5, color: "var(--tx)", display: "grid", gap: 7 }}>
+        {nCampos > 0 && (
+          <li>
+            Llena los datos de la fase ({nCampos} campos): {primerosLabels}{nCampos > 3 ? "…" : ""}
+            {" "}
+            <button className="btn sm" style={{ padding: "2px 8px", fontSize: 11 }} onClick={onAbrirEvidencia}>📎 Abrir Evidencia + datos</button>
+          </li>
+        )}
+        {evidencias.length > 0 && <li>Sube la evidencia requerida: {evidencias.join(", ")}</li>}
+        {guia && <li>Transcribe en SIELSE: {guia.resumen} <span style={{ color: "var(--mut2)" }}>(la guía completa está abajo)</span></li>}
+        <li>Cuando todo esté ✓, pulsa «✔ Terminé esta etapa».</li>
+      </ol>
     </div>
   );
 }
