@@ -46,6 +46,18 @@ export const CATALOGOS_LOCAL = {
   MEDIO_COMUNICACION: [
     { valor: "CELULAR" }, { valor: "TELEFONO" }, { valor: "E-MAIL" },
   ],
+  // Tipo Reclamo SIELSE: depende de la Clase Reclamo elegida (extra = clase padre).
+  // Solo el par confirmado en captura real; el resto lo completa el equipo en la hoja
+  // `catalogos` copiando el desplegable del SIELSE vivo para cada clase (§6 memoria).
+  TIPO_RECLAMO: [
+    { valor: "EXCESIVO CONSUMO FACTURADO", extra: "EXCESIVO CONSUMO" },
+  ],
+  // Sector Típico SIELSE: define si aplica NTCSE (urbano) o NTCSER (rural). Confirmado
+  // en captura: "Rural de Media Densidad"; los otros son los sectores típicos usuales
+  // — el equipo confirma el listado completo contra el SIELSE vivo.
+  SECTOR_TIPICO: [
+    { valor: "Urbano" }, { valor: "Rural de Media Densidad" }, { valor: "Rural de Baja Densidad" },
+  ],
 };
 
 // filas de la hoja catalogos [{grupo,valor,extra}] -> { GRUPO: [{valor, extra}] }

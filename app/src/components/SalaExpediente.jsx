@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ETAPAS, FLUJO, fmtFecha, wColor } from "../lib/model.js";
 import { toast } from "./ui.jsx";
 import { GuiaSielseBox } from "../lib/guiaSielse.jsx";
+import FichaSielse from "./FichaSielse.jsx";
 
 // ===================== Sala del expediente (v4, patrón courier) =====================
 // Vista de SEGUIMIENTO y colaboración de un caso: dónde está, quién lo tiene, cuánto plazo
@@ -15,8 +16,9 @@ function copiar(txt, etiqueta){
   try{ navigator.clipboard.writeText(String(txt)); toast("Copiado: "+etiqueta); }catch(e){ toast("No se pudo copiar"); }
 }
 
-export default function SalaExpediente({ exp, tickets, evidencias, registros, comentarios, perfil, onComentar, onTrabajar, onClose }){
+export default function SalaExpediente({ exp, tickets, evidencias, registros, comentarios, perfil, datos, correos, onComentar, onTrabajar, onClose }){
   const [texto, setTexto] = useState("");
+  const [verFicha, setVerFicha] = useState(false);
 
   // tickets del caso en orden de flujo; el ACTIVO es el primero no-hecho
   const propios = (tickets||[]).filter(t=>String(t.reclamo)===String(exp.codigo))
@@ -47,6 +49,9 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
   const actividad = [...evRegs.reverse(), ...evComs].slice(0,14);
 
   const docs = (evidencias||[]).filter(e=>String(e.exp||"")===String(exp.codigo));
+
+  // correos vinculados a este caso — el campo real de vínculo es `reclamo_vinculado` (ver Bandeja.jsx)
+  const correosDelCaso = (correos||[]).filter(c=>String(c.reclamo_vinculado||"")===String(exp.codigo));
 
   function enviarComentario(){
     const t = texto.trim(); if(!t) return;
@@ -86,6 +91,10 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
     copy:{ float:"right", background:"transparent", border:"1px solid var(--bd)", color:"var(--mut)", borderRadius:7, fontSize:10.5, padding:"2px 8px", cursor:"pointer", fontFamily:"inherit" },
     feed:{ background:"var(--card)", border:"1px solid var(--bd)", borderRadius:16, padding:15, marginTop:13 },
     evento:{ display:"flex", gap:11, padding:"9px 2px", borderBottom:"1px solid #EDF1F6", fontSize:12.5 },
+    correos:{ background:"var(--card)", border:"1px solid var(--bd)", borderRadius:16, padding:15, marginTop:13 },
+    correoFila:{ display:"flex", alignItems:"flex-start", gap:9, padding:"8px 2px", borderBottom:"1px solid #EDF1F6" },
+    correoAsunto:{ fontSize:12.5, fontWeight:700, color:"var(--titulo)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" },
+    correoMeta:{ fontSize:11, color:"var(--mut)", marginTop:2 },
   };
 
   return (
@@ -96,7 +105,10 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
             <h2 style={{margin:0,fontSize:17,color:"var(--titulo)"}}>Sala del expediente</h2>
             <div className="muted" style={{fontSize:11.5}}>seguimiento y colaboración — para trabajar la etapa usa el botón rojo</div>
           </div>
-          <button className="btn-ghost" onClick={onClose}>✕ Cerrar</button>
+          <div style={{display:"flex",gap:8}}>
+            <button className="btn-ghost" onClick={()=>setVerFicha(true)} title="Ver el registro SIELSE completo del caso, lo trabajado por fase y sus documentos">📋 Ficha SIELSE</button>
+            <button className="btn-ghost" onClick={onClose}>✕ Cerrar</button>
+          </div>
         </div>
 
         {/* ===== hero de estado ===== */}
@@ -188,6 +200,21 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
           </div>
         </div>
 
+        {/* ===== correos del caso ===== */}
+        <div style={S.correos}>
+          <div style={{fontSize:13.5,fontWeight:700,color:"var(--titulo)",marginBottom:4}}>Correos del caso</div>
+          {correosDelCaso.slice(0,5).map((c,i)=>(
+            <div key={c.id||i} style={{...S.correoFila, ...(i===Math.min(correosDelCaso.length,5)-1?{borderBottom:0}:{})}} title="ábrelo desde la pestaña Bandeja">
+              <span style={{fontSize:15}}>📧</span>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={S.correoAsunto}>{c.asunto||"(sin asunto)"}</div>
+                <div style={S.correoMeta}>{c.de||"—"} · {c.fecha||""}</div>
+              </div>
+            </div>
+          ))}
+          {!correosDelCaso.length && <div className="muted" style={{fontSize:12}}>Sin correos vinculados — vincúlalos desde la Bandeja.</div>}
+        </div>
+
         {/* ===== actividad del equipo ===== */}
         <div style={S.feed}>
           <div style={{fontSize:13.5,fontWeight:700,color:"var(--titulo)",marginBottom:4}}>Actividad del equipo</div>
@@ -210,6 +237,11 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
           </div>
         </div>
       </div>
+
+      {/* ===== Modal: Ficha SIELSE (registro del caso + trabajado por fase + documentos) ===== */}
+      {verFicha && (
+        <FichaSielse exp={exp} datos={datos} evidencias={evidencias} onClose={()=>setVerFicha(false)} />
+      )}
     </div>
   );
 }

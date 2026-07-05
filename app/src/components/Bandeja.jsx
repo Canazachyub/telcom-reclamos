@@ -167,7 +167,7 @@ const estBorde = { nuevo: "var(--navy)", vinculado: "#15803D", respondido: "#6D2
 // ve todos los buzones (con selector); el resto ve lo que el backend ya le filtró.
 // Barra de filtros (client-side, sobre la lista ya cargada): texto libre, rango de fechas y estado.
 // Acciones por correo: vincular a un expediente existente o convertir en caso nuevo (abre NuevoCaso).
-export default function Bandeja({ perfil, correos, cargando, noDisponible, onRecargar, existentes = [], onConvertir }){
+export default function Bandeja({ perfil, correos, cargando, noDisponible, onRecargar, existentes = [], onConvertir, verExpediente = () => {} }){
   const [buzon, setBuzon] = useState("Todos");
   const [q, setQ] = useState("");
   const [desde, setDesde] = useState("");
@@ -285,7 +285,7 @@ export default function Bandeja({ perfil, correos, cargando, noDisponible, onRec
                 <span style={S.buzonColCount}>{items.length}</span>
               </div>
               <div style={S.buzonColBody}>
-                <ListaCorreos items={items} existentes={existentes} onConvertir={onConvertir} separadores={false} compacto />
+                <ListaCorreos items={items} existentes={existentes} onConvertir={onConvertir} verExpediente={verExpediente} separadores={false} compacto />
                 {!items.length && <div className="muted" style={{ fontSize: 12 }}>Sin correos.</div>}
               </div>
             </Card>
@@ -293,7 +293,7 @@ export default function Bandeja({ perfil, correos, cargando, noDisponible, onRec
         </div>
       : <div style={{ marginTop: 14 }}>
           <Card>
-            <ListaCorreos items={filtrados} existentes={existentes} onConvertir={onConvertir} separadores={true} />
+            <ListaCorreos items={filtrados} existentes={existentes} onConvertir={onConvertir} verExpediente={verExpediente} separadores={true} />
             {!filtrados.length && !cargando && <div className="muted" style={{ fontSize: 12 }}>Sin correos que coincidan con los filtros.</div>}
           </Card>
         </div>}
@@ -301,7 +301,7 @@ export default function Bandeja({ perfil, correos, cargando, noDisponible, onRec
 }
 
 // Lista de correos ya ordenada desc. Opcionalmente inserta separadores de día ("— Hoy —", "— Ayer —").
-function ListaCorreos({ items, existentes, onConvertir, separadores, compacto }){
+function ListaCorreos({ items, existentes, onConvertir, verExpediente, separadores, compacto }){
   let diaAnterior = null;
   return items.map(c => {
     const dia = separadores ? claveDia_(c.fecha) : null;
@@ -309,7 +309,7 @@ function ListaCorreos({ items, existentes, onConvertir, separadores, compacto })
     if (separadores) diaAnterior = dia;
     return (
       <FragmentoConSeparador key={c.id} mostrarSeparador={mostrarSeparador} dia={dia}>
-        <CorreoRow correo={c} existentes={existentes} onConvertir={onConvertir} compacto={compacto} />
+        <CorreoRow correo={c} existentes={existentes} onConvertir={onConvertir} verExpediente={verExpediente} compacto={compacto} />
       </FragmentoConSeparador>
     );
   });
@@ -322,7 +322,7 @@ function FragmentoConSeparador({ mostrarSeparador, dia, children }){
   </>;
 }
 
-function CorreoRow({ correo, existentes, onConvertir, compacto }){
+function CorreoRow({ correo, existentes, onConvertir, verExpediente = () => {}, compacto }){
   const [abrirVinc, setAbrirVinc] = useState(false);
   const [codigo, setCodigo] = useState("");
   const [busy, setBusy] = useState(false);
@@ -373,6 +373,9 @@ function CorreoRow({ correo, existentes, onConvertir, compacto }){
             {!vinculado && (
               <button style={S.mailIc} onClick={() => setAbrirVinc(v => !v)} title="Vincular a expediente">🔗</button>
             )}
+            {vinculado && correo.reclamo_vinculado && (
+              <button className="btn-ghost sm" onClick={() => verExpediente(correo.reclamo_vinculado)} title="Abrir la Sala del expediente vinculado">📂 Ver expediente</button>
+            )}
             <button style={S.mailIc} onClick={() => onConvertir?.(correo)} title="Convertir en caso">➕</button>
           </div>
         </div>
@@ -406,7 +409,7 @@ function CorreoRow({ correo, existentes, onConvertir, compacto }){
         )}
       </div>
 
-      {abierto && <CorreoModal correo={correo} onClose={() => setAbierto(false)} onRespondido={() => setRespondido(true)} />}
+      {abierto && <CorreoModal correo={correo} verExpediente={verExpediente} onClose={() => setAbierto(false)} onRespondido={() => setRespondido(true)} />}
     </>
   );
 }
@@ -470,7 +473,7 @@ function VistaCorreoEml({ idCorreo, nombre, url, alto }){
 // Modal de lectura completa del correo: carga el cuerpo (html/text) vía correo_completo y permite
 // responder desde el buzón TELCOM. Si el backend aún no implementa el endpoint, avisa sin romper.
 // Incluye panel lateral de previsualización de adjuntos (2 columnas en desktop, apilado en móvil).
-function CorreoModal({ correo, onClose, onRespondido }){
+function CorreoModal({ correo, verExpediente = () => {}, onClose, onRespondido }){
   const [cargando, setCargando] = useState(true);
   const [detalle, setDetalle] = useState(null);
   const [noDisponible, setNoDisponible] = useState(false);
@@ -555,7 +558,12 @@ function CorreoModal({ correo, onClose, onRespondido }){
             <b style={{ color: "var(--titulo)", fontSize: 14 }}>{detalle?.asunto || correo.asunto || "(sin asunto)"}</b>
             <div className="muted" style={{ fontSize: 11.5, marginTop: 3 }}>De: {detalle?.de || correo.de || "—"} · {fechaHumana_(detalle?.fecha || correo.fecha)}</div>
           </div>
-          <button className="btn sec sm" onClick={onClose}>✕ cerrar</button>
+          <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+            {correo.reclamo_vinculado && (
+              <button className="btn-ghost sm" onClick={() => { verExpediente(correo.reclamo_vinculado); onClose(); }} title="Abrir la Sala del expediente vinculado">📂 Ver expediente</button>
+            )}
+            <button className="btn sec sm" onClick={onClose}>✕ cerrar</button>
+          </div>
         </div>
 
         <div style={{ flex: 1, minHeight: 0, overflowY: "auto", display: "flex", flexDirection: "column" }}>

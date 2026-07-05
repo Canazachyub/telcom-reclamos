@@ -34,7 +34,7 @@ const PASOS = [
 // duplicados, IA, archivo) es exactamente la misma que antes; solo cambió la presentación.
 export default function NuevoCaso({ perfil, onCreado, onClose, existentes = [], inicial = null }) {
   // si el caso viene de la Bandeja (correo), preseleccionamos forma de presentación
-  const [f, setF] = useState({ NombreClaseReclamo: "RECLAMOS POR EXCESIVA FACTURACION", ...(inicial ? { FORMA_PRESENTACION: "CORREO ELECTRONICO" } : {}), ...(inicial || {}) });
+  const [f, setF] = useState({ NombreClaseReclamo: "RECLAMOS POR EXCESIVA FACTURACION", RECLAMO_OSINERG: true, ...(inicial ? { FORMA_PRESENTACION: "CORREO ELECTRONICO" } : {}), ...(inicial || {}) });
   const [file, setFile] = useState(null);
   const [pdfUrl, setPdfUrl] = useState("");
   const [iaBusy, setIaBusy] = useState(false);
@@ -119,14 +119,20 @@ export default function NuevoCaso({ perfil, onCreado, onClose, existentes = [], 
 
   return (
     <div className="overlay" style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{ width: "min(1180px,97vw)", maxHeight: "94vh", display: "flex", flexDirection: "column", background: "var(--card)", border: "1px solid var(--bd)", borderRadius: 14, boxShadow: "0 20px 60px rgba(22,41,75,.15)" }}>
-        {/* header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px", borderBottom: "1px solid var(--bd)" }}>
-          <div>
-            <h3 style={{ margin: 0, color: "var(--titulo)" }}>➕ Registrar reclamo — mesa de partes TELCOM</h3>
-            <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>Paso {paso} de 5 — {PASOS[paso - 1].titulo}. El detalle queda listo para <b>transcribirlo a SIELSE</b> en su etapa (≤2 días háb.).</div>
+      <div style={{ width: "min(1180px,97vw)", maxHeight: "94vh", display: "flex", flexDirection: "column", background: "var(--card)", border: "1px solid var(--bd)", borderRadius: 14, boxShadow: "0 20px 60px rgba(22,41,75,.15)", overflow: "hidden" }}>
+        {/* header — franja hero */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14, padding: "16px 20px", background: "linear-gradient(120deg,#DDF0FA,#EDF7FC)", borderBottom: "1px solid var(--bd)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: 12, flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center",
+              background: "linear-gradient(135deg,#E3001B,#FF5A63)", fontSize: 20, boxShadow: "0 4px 12px rgba(227,0,27,.28)",
+            }}>📥</div>
+            <div>
+              <h3 style={{ margin: 0, color: "var(--titulo)", fontSize: 17, fontWeight: 700 }}>Registrar reclamo — mesa de partes TELCOM</h3>
+              <div style={{ fontSize: 12, marginTop: 2, color: "var(--mut)" }}>Paso {paso} de 5 — {PASOS[paso - 1].titulo}. El detalle queda listo para <b>transcribirlo a SIELSE</b> en su etapa (≤2 días háb.).</div>
+            </div>
           </div>
-          <button className="btn sec sm" onClick={onClose}>✕ cerrar</button>
+          <button className="btn sec sm" onClick={onClose} style={{ flex: "0 0 auto" }}>✕ cerrar</button>
         </div>
 
         {/* stepper de pills */}
@@ -137,9 +143,10 @@ export default function NuevoCaso({ perfil, onCreado, onClose, existentes = [], 
                 onClick={() => irA(p.n)}
                 title={p.titulo}
                 style={{
-                  display: "flex", alignItems: "center", gap: 6, border: "1px solid " + (paso === p.n ? "var(--acc)" : "var(--bd)"),
+                  display: "flex", alignItems: "center", gap: 6, border: "1px solid " + (paso === p.n ? "var(--acc)" : (completo[p.n] ? "var(--selBg)" : "var(--bd)")),
                   background: paso === p.n ? "var(--acc)" : (completo[p.n] ? "var(--selBg)" : "var(--card2)"),
                   color: paso === p.n ? "#fff" : "var(--tx)", borderRadius: 999, padding: "5px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                  boxShadow: paso === p.n ? "0 2px 8px rgba(227,0,27,.3)" : "none", transition: "all .12s",
                 }}>
                 <span style={{
                   width: 18, height: 18, borderRadius: "50%", display: "inline-flex", alignItems: "center", justifyContent: "center",
@@ -165,7 +172,7 @@ export default function NuevoCaso({ perfil, onCreado, onClose, existentes = [], 
             <Paso3 f={f} set={set} sug={sug} cats={cats} />
           )}
           {paso === 4 && (
-            <Paso4 f={f} set={set} sug={sug} />
+            <Paso4 f={f} set={set} sug={sug} cats={cats} />
           )}
           {paso === 5 && (
             <Paso5 f={f} file={file} />
@@ -173,21 +180,45 @@ export default function NuevoCaso({ perfil, onCreado, onClose, existentes = [], 
         </div>
 
         {/* navegación */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px", borderTop: "1px solid var(--bd)" }}>
-          <button className="btn sec sm" onClick={anterior} disabled={paso === 1} style={{ opacity: paso === 1 ? .45 : 1, cursor: paso === 1 ? "not-allowed" : "pointer" }}>← Volver</button>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px", borderTop: "1px solid var(--bd)", background: "var(--card2)" }}>
+          <button
+            onClick={anterior} disabled={paso === 1}
+            style={{
+              background: "transparent", color: "var(--mut)", border: "1px solid var(--bd)", borderRadius: 8, padding: "9px 18px", fontSize: 13.5, fontWeight: 600,
+              opacity: paso === 1 ? .45 : 1, cursor: paso === 1 ? "not-allowed" : "pointer",
+            }}>← Volver</button>
           {paso < 5
-            ? <button onClick={siguiente} style={{ background: "var(--acc)", color: "#fff", border: 0, borderRadius: 8, padding: "9px 20px", fontSize: 14, cursor: "pointer", fontWeight: 600 }}>Continuar →</button>
-            : <button onClick={crear} disabled={busy} style={{ background: "#15803D", color: "#fff", border: 0, borderRadius: 8, padding: "9px 20px", fontSize: 14, cursor: "pointer", fontWeight: 600 }}>{busy ? "Creando…" : "Crear expediente ✓"}</button>}
+            ? <button onClick={siguiente} style={{ background: "var(--acc)", color: "#fff", border: 0, borderRadius: 8, padding: "9px 22px", fontSize: 14, cursor: "pointer", fontWeight: 700, boxShadow: "0 2px 8px rgba(227,0,27,.3)" }}>Continuar →</button>
+            : <button onClick={crear} disabled={busy} style={{ background: "#15803D", color: "#fff", border: 0, borderRadius: 8, padding: "9px 22px", fontSize: 14, cursor: "pointer", fontWeight: 700, boxShadow: "0 2px 8px rgba(21,128,61,.3)" }}>{busy ? "Creando…" : "Crear expediente ✓"}</button>}
         </div>
       </div>
     </div>
   );
 }
 
+// Clases del art. 13 de la Directiva 269-2014-OS/CD: en SIELSE, al Admitir estas
+// materias se genera el correlativo OSINERG. Marcamos el checkbox en true por defecto
+// para estas; el resto queda en false (el usuario confirma según el caso).
+const CLASES_ART13 = new Set([
+  "RECLAMOS POR EXCESIVA FACTURACION", "EXCESIVO CONSUMO", "RECUPERO DE ENERGIA", "COBRO INDEBIDO",
+  "CORTE DEL SERVICIO", "NEGATIVA A LA INSTALACION DEL SUMINISTRO", "NEGATIVA AL INCREMENTO DE POTENCIA",
+  "NEGATIVA AL CAMBIO DE OPCION TARIFARIA", "REEMBOLSO DE APORTES O CONTRIBUCIONES",
+  "REUBICACION DE INSTALACIONES", "MALA CALIDAD (TENSION / INTERRUPCIONES)", "DEUDAS DE TERCEROS",
+  "RECLAMOS VARIOS",
+]);
+
 /* ===================== PASO 1 — ¿Qué reclama el usuario? ===================== */
 function Paso1({ f, set, cats }) {
   const clases = cats.CLASE_RECLAMO || [];
   const formas = cats.FORMA_RECLAMO || [];
+  const tiposReclamo = (cats.TIPO_RECLAMO || []).filter(t => t.extra === f.NombreClaseReclamo);
+
+  function elegirClase(valor) {
+    set("NombreClaseReclamo", valor);
+    // valor por defecto del checkbox OSINERG según la clase (el usuario puede corregirlo)
+    set("RECLAMO_OSINERG", CLASES_ART13.has(valor));
+  }
+
   return (
     <div>
       <h4 style={{ margin: "0 0 4px", color: "var(--navy)" }}>¿Qué reclama el usuario?</h4>
@@ -196,25 +227,63 @@ function Paso1({ f, set, cats }) {
         {clases.map(c => {
           const activo = f.NombreClaseReclamo === c.valor;
           return (
-            <div key={c.valor} onClick={() => set("NombreClaseReclamo", c.valor)}
+            <div key={c.valor} onClick={() => elegirClase(c.valor)}
+              onMouseEnter={e => { if (!activo) e.currentTarget.style.borderColor = "#F3B4B4"; }}
+              onMouseLeave={e => { if (!activo) e.currentTarget.style.borderColor = "var(--bd)"; }}
               style={{
-                cursor: "pointer", borderRadius: 10, padding: "14px 12px", border: "2px solid " + (activo ? "var(--acc)" : "var(--bd)"),
-                background: activo ? "var(--selBg)" : "var(--card2)", transition: "border .15s",
+                position: "relative", cursor: "pointer", borderRadius: 10, padding: "14px 12px",
+                border: "2px solid " + (activo ? "var(--acc)" : "var(--bd)"),
+                background: activo ? "var(--selBg)" : "var(--card2)",
+                transition: "border-color .12s, transform .12s", transform: activo ? "none" : undefined,
               }}>
-              <div style={{ fontSize: 22, marginBottom: 6 }}>{c.icono || "📄"}</div>
-              <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--tx)" }}>{c.valor}</div>
-              {c.ayuda && <div className="muted" style={{ fontSize: 11.5, marginTop: 3 }}>{c.ayuda}</div>}
+              {activo && (
+                <span style={{
+                  position: "absolute", top: 8, right: 8, width: 18, height: 18, borderRadius: "50%",
+                  background: "var(--acc)", color: "#fff", fontSize: 11, fontWeight: 700,
+                  display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1,
+                }}>✓</span>
+              )}
+              <div style={{ fontSize: 26, marginBottom: 6 }}>{c.icono || "📄"}</div>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--titulo)" }}>{c.valor}</div>
+              {c.ayuda && <div style={{ fontSize: 10.5, marginTop: 3, color: "var(--mut)" }}>{c.ayuda}</div>}
             </div>
           );
         })}
       </div>
-      <label style={{ fontSize: 12, display: "block", maxWidth: 340 }}>
-        <span style={{ color: "var(--mut)" }}>¿Cómo llegó el reclamo?</span>
-        <select value={f.FORMA_PRESENTACION || ""} onChange={e => set("FORMA_PRESENTACION", e.target.value)} style={inp(false)}>
-          <option value="">—</option>
-          {formas.map(x => <option key={x.valor} value={x.valor}>{x.valor}</option>)}
-        </select>
-      </label>
+
+      <div style={{ display: "flex", gap: 22, flexWrap: "wrap", alignItems: "flex-start" }}>
+        <label style={lbl(340)}>
+          <span style={lblSpan}>¿Cómo llegó el reclamo?</span>
+          <select value={f.FORMA_PRESENTACION || ""} onChange={e => set("FORMA_PRESENTACION", e.target.value)} style={inp(false)}>
+            <option value="">—</option>
+            {formas.map(x => <option key={x.valor} value={x.valor}>{x.valor}</option>)}
+          </select>
+        </label>
+
+        <label style={lbl(340)}>
+          <span style={lblSpan}>Tipo de reclamo (SIELSE)</span>
+          {tiposReclamo.length
+            ? (
+              <select value={f.NombreTipoReclamo || ""} onChange={e => set("NombreTipoReclamo", e.target.value)} style={inp(false)}>
+                <option value="">—</option>
+                {tiposReclamo.map(t => <option key={t.valor} value={t.valor}>{t.valor}</option>)}
+              </select>
+            )
+            : (
+              <input type="text" value={f.NombreTipoReclamo || ""} onChange={e => set("NombreTipoReclamo", e.target.value)}
+                placeholder="como aparece en el desplegable de SIELSE" style={inp(false)} />
+            )}
+          {!f.NombreClaseReclamo && <div style={{ fontSize: 10.5, marginTop: 3, color: "var(--mut)" }}>Elige antes la clase de reclamo.</div>}
+        </label>
+
+        <label style={{ ...lbl(280), display: "flex", alignItems: "flex-start", gap: 8, cursor: "pointer" }}>
+          <input type="checkbox" checked={!!f.RECLAMO_OSINERG} onChange={e => set("RECLAMO_OSINERG", e.target.checked)} style={{ marginTop: 3 }} />
+          <span>
+            <span style={{ ...lblSpan, display: "block" }}>Reclamo OSINERG</span>
+            <span style={{ fontSize: 11, color: "var(--mut)" }}>en SIELSE genera correlativo OSINERG al admitir</span>
+          </span>
+        </label>
+      </div>
     </div>
   );
 }
@@ -263,12 +332,12 @@ function Paso2({ file, setFile, inputRef, pdfUrl, iaBusy, extraer, f, set, sug }
               ["PERIODO_RECLAMADO", "Período reclamado", "text"], ["monto_reclamo", "Monto en reclamo (S/)", "num"],
             ].map(([k, lab, tipo]) => (
               <label key={k} style={{ fontSize: 12 }}>
-                <span style={{ color: "var(--mut)" }}>{lab}{sug.has(k) && <span style={badgeDudoso}>revisar</span>}</span>
+                <span style={lblSpan}>{lab}{sug.has(k) && <span style={badgeDudoso}>revisar</span>}</span>
                 <input type={tipo === "num" ? "number" : "text"} value={f[k] || ""} onChange={e => set(k, e.target.value)} style={inp(sug.has(k))} />
               </label>
             ))}
             <label style={{ fontSize: 12, gridColumn: "1 / -1" }}>
-              <span style={{ color: "var(--mut)" }}>Descripción{sug.has("DescripcionReclamo") && <span style={badgeDudoso}>revisar</span>}</span>
+              <span style={lblSpan}>Descripción{sug.has("DescripcionReclamo") && <span style={badgeDudoso}>revisar</span>}</span>
               <textarea rows={3} value={f.DescripcionReclamo || ""} onChange={e => set("DescripcionReclamo", e.target.value)} style={inp(sug.has("DescripcionReclamo"))} />
             </label>
           </div>
@@ -304,23 +373,23 @@ function Paso3({ f, set, sug, cats }) {
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, maxWidth: 640 }}>
         <label style={{ fontSize: 12 }}>
-          <span style={{ color: "var(--mut)" }}>N° de documento{sug.has("DNI") && <span style={badgeDudoso}>revisar</span>}</span>
+          <span style={lblSpan}>N° de documento{sug.has("DNI") && <span style={badgeDudoso}>revisar</span>}</span>
           <input type="text" value={f.DNI || ""} onChange={e => set("DNI", e.target.value)} style={inp(sug.has("DNI"))} />
         </label>
         <label style={{ fontSize: 12 }}>
-          <span style={{ color: "var(--mut)" }}>Solicitante / reclamante *{sug.has("NombreSolicitante") && <span style={badgeDudoso}>revisar</span>}</span>
+          <span style={lblSpan}>Solicitante / reclamante *{sug.has("NombreSolicitante") && <span style={badgeDudoso}>revisar</span>}</span>
           <input type="text" value={f.NombreSolicitante || ""} onChange={e => set("NombreSolicitante", e.target.value)} style={inp(sug.has("NombreSolicitante"))} />
         </label>
         <label style={{ fontSize: 12 }}>
-          <span style={{ color: "var(--mut)" }}>Celular / teléfono{sug.has("TELEFONO") && <span style={badgeDudoso}>revisar</span>}</span>
+          <span style={lblSpan}>Celular / teléfono{sug.has("TELEFONO") && <span style={badgeDudoso}>revisar</span>}</span>
           <input type="text" value={f.TELEFONO || ""} onChange={e => set("TELEFONO", e.target.value)} style={inp(sug.has("TELEFONO"))} />
         </label>
         <label style={{ fontSize: 12 }}>
-          <span style={{ color: "var(--mut)" }}>Correo electrónico</span>
+          <span style={lblSpan}>Correo electrónico</span>
           <input type="text" value={f.CORREO || ""} onChange={e => set("CORREO", e.target.value)} style={inp(false)} />
         </label>
         <label style={{ fontSize: 12 }}>
-          <span style={{ color: "var(--mut)" }}>Grado de parentesco</span>
+          <span style={lblSpan}>Grado de parentesco</span>
           <select value={f.GRADO_PARENTESCO || "Propietario"} onChange={e => set("GRADO_PARENTESCO", e.target.value)} style={inp(false)}>
             {grados.map(g => <option key={g.valor} value={g.valor}>{g.valor}</option>)}
           </select>
@@ -331,36 +400,61 @@ function Paso3({ f, set, sug, cats }) {
 }
 
 /* ===================== PASO 4 — ¿Sobre qué suministro y qué pide? ===================== */
-function Paso4({ f, set, sug }) {
+function Paso4({ f, set, sug, cats }) {
+  const sectores = cats?.SECTOR_TIPICO || [];
   return (
     <div>
       <h4 style={{ margin: "0 0 4px", color: "var(--navy)" }}>¿Sobre qué suministro y qué pide?</h4>
       <div className="muted" style={{ fontSize: 12, marginBottom: 14 }}>Confirma el suministro y el detalle del reclamo.</div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, maxWidth: 640 }}>
         <label style={{ fontSize: 12 }}>
-          <span style={{ color: "var(--mut)" }}>Suministro *{sug.has("CodigoSuministro") && <span style={badgeDudoso}>revisar</span>}</span>
+          <span style={lblSpan}>Suministro *{sug.has("CodigoSuministro") && <span style={badgeDudoso}>revisar</span>}</span>
           <input type="text" value={f.CodigoSuministro || ""} onChange={e => set("CodigoSuministro", e.target.value)} style={inp(sug.has("CodigoSuministro"))} />
         </label>
         <label style={{ fontSize: 12 }}>
-          <span style={{ color: "var(--mut)" }}>N° OSINERG{sug.has("NumeroOsinerg") && <span style={badgeDudoso}>revisar</span>}</span>
+          <span style={lblSpan}>N° OSINERG{sug.has("NumeroOsinerg") && <span style={badgeDudoso}>revisar</span>}</span>
           <input type="text" value={f.NumeroOsinerg || ""} onChange={e => set("NumeroOsinerg", e.target.value)} style={inp(sug.has("NumeroOsinerg"))} />
         </label>
         <label style={{ fontSize: 12, gridColumn: "1 / -1" }}>
-          <span style={{ color: "var(--mut)" }}>Dirección{sug.has("DireccionSolicitante") && <span style={badgeDudoso}>revisar</span>}</span>
+          <span style={lblSpan}>Dirección{sug.has("DireccionSolicitante") && <span style={badgeDudoso}>revisar</span>}</span>
           <input type="text" value={f.DireccionSolicitante || ""} onChange={e => set("DireccionSolicitante", e.target.value)} style={inp(sug.has("DireccionSolicitante"))} />
         </label>
         <label style={{ fontSize: 12 }}>
-          <span style={{ color: "var(--mut)" }}>Distrito{sug.has("NombreDistrito") && <span style={badgeDudoso}>revisar</span>}</span>
+          <span style={lblSpan}>Distrito{sug.has("NombreDistrito") && <span style={badgeDudoso}>revisar</span>}</span>
           <input type="text" value={f.NombreDistrito || ""} onChange={e => set("NombreDistrito", e.target.value)} style={inp(sug.has("NombreDistrito"))} />
         </label>
         <label style={{ fontSize: 12 }}>
-          <span style={{ color: "var(--mut)" }}>Monto en reclamo (S/){sug.has("monto_reclamo") && <span style={badgeDudoso}>revisar</span>}</span>
+          <span style={lblSpan}>Monto en reclamo (S/){sug.has("monto_reclamo") && <span style={badgeDudoso}>revisar</span>}</span>
           <input type="number" value={f.monto_reclamo || ""} onChange={e => set("monto_reclamo", e.target.value)} style={inp(sug.has("monto_reclamo"))} />
         </label>
         <label style={{ fontSize: 12, gridColumn: "1 / -1" }}>
-          <span style={{ color: "var(--mut)" }}>Pedido / descripción del reclamo *{sug.has("DescripcionReclamo") && <span style={badgeDudoso}>revisar</span>}</span>
+          <span style={lblSpan}>Pedido / descripción del reclamo *{sug.has("DescripcionReclamo") && <span style={badgeDudoso}>revisar</span>}</span>
           <textarea rows={3} value={f.DescripcionReclamo || ""} onChange={e => set("DescripcionReclamo", e.target.value)} style={inp(sug.has("DescripcionReclamo"))} />
         </label>
+      </div>
+
+      {/* Ubicación (lo pide SIELSE): campos propios de la pantalla Solicitud, ajenos al Formato 1 */}
+      <div style={{ marginTop: 22, maxWidth: 640 }}>
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--titulo)", marginBottom: 2 }}>Ubicación (lo pide SIELSE)</div>
+        <div style={{ fontSize: 11, color: "var(--mut)", marginBottom: 10 }}>Campos propios de la pantalla Solicitud — no vienen del Formato 1.</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <label style={{ fontSize: 12, gridColumn: "1 / -1" }}>
+            <span style={lblSpan}>Dirección frontis</span>
+            <input type="text" value={f.DIRECCION_FRONTIS || ""} onChange={e => set("DIRECCION_FRONTIS", e.target.value)} style={inp(false)} />
+          </label>
+          <label style={{ fontSize: 12, gridColumn: "1 / -1" }}>
+            <span style={lblSpan}>Referencia de ubicación de falla</span>
+            <input type="text" value={f.REFERENCIA_FALLA || ""} onChange={e => set("REFERENCIA_FALLA", e.target.value)} style={inp(false)} />
+          </label>
+          <label style={{ fontSize: 12 }}>
+            <span style={lblSpan}>Sector típico</span>
+            <select value={f.SECTOR_TIPICO || ""} onChange={e => set("SECTOR_TIPICO", e.target.value)} style={inp(false)}>
+              <option value="">—</option>
+              {sectores.map(s => <option key={s.valor} value={s.valor}>{s.valor}</option>)}
+            </select>
+            <div style={{ fontSize: 10.5, marginTop: 3, color: "var(--mut)" }}>define si aplica NTCSE urbano o rural</div>
+          </label>
+        </div>
       </div>
     </div>
   );
@@ -370,9 +464,12 @@ function Paso4({ f, set, sug }) {
 function Paso5({ f, file }) {
   const filas = [
     ["Tipo", f.NombreClaseReclamo || "—"],
+    ["Tipo SIELSE", f.NombreTipoReclamo || "—"],
+    ["OSINERG", f.RECLAMO_OSINERG ? "Sí" : "No"],
     ["Forma", f.FORMA_PRESENTACION || "—"],
     ["Reclamante", [f.NombreSolicitante, f.DNI].filter(Boolean).join(" · ") || "—"],
     ["Suministro", [f.CodigoSuministro, f.DireccionSolicitante].filter(Boolean).join(" · ") || "—"],
+    ["Sector típico", f.SECTOR_TIPICO || "—"],
     ["Documentos adjuntos", file ? `📄 ${file.name}` : "Ninguno"],
   ];
   return (
@@ -388,9 +485,32 @@ function Paso5({ f, file }) {
         ))}
         <div style={{ padding: "9px 12px", fontSize: 12, color: "var(--mut)" }}>Se asignará automáticamente al responsable de Recepción.</div>
       </div>
+      <div style={{
+        marginTop: 12, maxWidth: 640, display: "flex", gap: 8, alignItems: "flex-start",
+        background: "var(--selBg)", border: "1px solid var(--acc)", borderRadius: 10, padding: "10px 12px",
+      }}>
+        <span style={{ fontSize: 14 }}>⚠️</span>
+        <span style={{ fontSize: 12, color: "var(--tx)" }}>
+          Al crear: transcribe la Solicitud en SIELSE el mismo día (botón <b>Nuevo → Guardar</b>) y anota aquí el <b>Nº de Solicitud</b>.
+        </span>
+      </div>
     </div>
   );
 }
 
 const badgeDudoso = { marginLeft: 5, fontSize: 9, background: "#B45309", color: "#fff", borderRadius: 4, padding: "1px 4px" };
-const inp = sug => ({ width: "100%", marginTop: 3, padding: "7px 9px", borderRadius: 8, fontSize: 13, fontFamily: "inherit", background: "#fff", color: "var(--tx)", border: `1px solid ${sug ? "#B45309" : "var(--bd)"}`, boxSizing: "border-box" });
+const inp = sug => ({
+  width: "100%", marginTop: 3, padding: "7px 9px", borderRadius: 8, fontSize: 13, fontFamily: "inherit",
+  background: "#fff", color: "var(--tx)", border: `1px solid ${sug ? "#B45309" : "var(--bd)"}`, boxSizing: "border-box",
+  outline: "none", transition: "outline-color .1s",
+});
+// label uniforme: texto 10.5px mayúsculas espaciadas (patrón SIELSE de campo obligatorio)
+const lbl = (maxWidth) => ({ fontSize: 12, display: "block", ...(maxWidth ? { maxWidth, flex: "1 1 " + maxWidth + "px" } : {}) });
+const lblSpan = { color: "var(--mut)", fontSize: 10.5, textTransform: "uppercase", letterSpacing: ".05em", fontWeight: 600 };
+// aplica el foco navy 2px a todos los inputs/selects/textareas del wizard sin tocar la lógica
+if (typeof document !== "undefined" && !document.getElementById("nuevocaso-focus-style")) {
+  const st = document.createElement("style");
+  st.id = "nuevocaso-focus-style";
+  st.textContent = ".overlay input:focus, .overlay select:focus, .overlay textarea:focus { outline: 2px solid var(--navy); outline-offset: 1px; }";
+  document.head.appendChild(st);
+}

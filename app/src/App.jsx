@@ -198,11 +198,11 @@ function Shell({ perfil, onLogout }){
           El Drawer recibe todos (muestra el historial completo de etapas del expediente). */}
       {!data ? <div className="card">Cargando reclamos…</div>
         : esOperativo(perfilVista.rol)
-          ? <Operativo key={"op-"+perfilVista.resp_id} perfil={perfilVista} data={data} setSelExp={abrirExp} tickets={activos(tickets)} activoByCode={activoByCode} progresoDe={progresoDe} recByCode={recByCode} onEstadoTicket={onEstadoTicket} correos={correos} correosCargando={correosCargando} onRecargarCorreos={cargarCorreos} onConvertirCorreo={convertirCorreoEnCaso}/>
-          : <Admin key={"ad-"+perfilVista.resp_id} perfil={perfilVista} data={data} evidencias={evidencias} setSelExp={abrirExp} delegar={delegar} updEstado={updEstado} tickets={activos(tickets)} activoByCode={activoByCode} progresoDe={progresoDe} recByCode={recByCode} onEstadoTicket={onEstadoTicket} onReasignarTicket={onReasignarTicket} registros={registros} comentarios={comentarios} correos={correos} correosCargando={correosCargando} onRecargarCorreos={cargarCorreos} onConvertirCorreo={convertirCorreoEnCaso}/>}
+          ? <Operativo key={"op-"+perfilVista.resp_id} perfil={perfilVista} data={data} setSelExp={abrirExp} tickets={activos(tickets)} activoByCode={activoByCode} progresoDe={progresoDe} recByCode={recByCode} onEstadoTicket={onEstadoTicket} correos={correos} correosCargando={correosCargando} onRecargarCorreos={cargarCorreos} onConvertirCorreo={convertirCorreoEnCaso} verExpediente={(codigo)=>{ const r=(data||[]).find(x=>String(x.codigo)===String(codigo)); if(r) abrirExp(r.id); }}/>
+          : <Admin key={"ad-"+perfilVista.resp_id} perfil={perfilVista} data={data} evidencias={evidencias} setSelExp={abrirExp} delegar={delegar} updEstado={updEstado} tickets={activos(tickets)} activoByCode={activoByCode} progresoDe={progresoDe} recByCode={recByCode} onEstadoTicket={onEstadoTicket} onReasignarTicket={onReasignarTicket} registros={registros} comentarios={comentarios} correos={correos} correosCargando={correosCargando} onRecargarCorreos={cargarCorreos} onConvertirCorreo={convertirCorreoEnCaso} verExpediente={(codigo)=>{ const r=(data||[]).find(x=>String(x.codigo)===String(codigo)); if(r) abrirExp(r.id); }}/>}
 
       {salaExp!=null && data && (()=>{ const sx=data.find(x=>x.id===salaExp); return sx ? (
-        <SalaExpediente exp={sx} tickets={tickets} evidencias={evidencias} registros={registros} comentarios={comentarios}
+        <SalaExpediente exp={sx} tickets={tickets} evidencias={evidencias} registros={registros} comentarios={comentarios} datos={datos} correos={correos}
           perfil={perfilVista} onComentar={onComentar} onTrabajar={trabajarDesdeSala} onClose={()=>setSalaExp(null)}/>
       ) : null; })()}
       {exp && <Drawer exp={exp} etapaInicial={selEtapa} evidencias={evidencias} datos={datos} tickets={tickets} perfil={perfilVista} comentarios={comentarios} onComentar={onComentar} onEstadoTicket={onEstadoTicket} onClose={()=>{ setSelExpId(null); setSelEtapa(null); }} onSaveDatos={saveDatos} onSubido={obj=>setEvi(ev=>[obj,...ev])}/>}
@@ -217,7 +217,7 @@ function Shell({ perfil, onLogout }){
 /* ===================== GERENTE / COORDINADOR ===================== */
 // 6 pestañas (7 el Gerente). Todo lo operativo de un expediente se hace DENTRO del
 // expediente (Drawer): evidencia, datos de etapa, generar documento, marcar hecho.
-function Admin({ perfil, data, evidencias, setSelExp, delegar, updEstado, tickets, activoByCode, progresoDe, recByCode, onEstadoTicket, onReasignarTicket, registros, comentarios, correos, correosCargando, onRecargarCorreos, onConvertirCorreo }){
+function Admin({ perfil, data, evidencias, setSelExp, delegar, updEstado, tickets, activoByCode, progresoDe, recByCode, onEstadoTicket, onReasignarTicket, registros, comentarios, correos, correosCargando, onRecargarCorreos, onConvertirCorreo, verExpediente }){
   const [tab, setTab] = useState("hoy");
   const canDelegate = puedeDelegar(perfil.rol);
   const esGer = perfil.rol==="GERENTE";
@@ -229,7 +229,7 @@ function Admin({ perfil, data, evidencias, setSelExp, delegar, updEstado, ticket
     {tab==="hoy"         && <Hoy perfil={perfil} tickets={tickets} recByCode={recByCode} onEstadoTicket={onEstadoTicket} onReasignarTicket={onReasignarTicket} setSelExp={setSelExp} sinCasos={data.length===0} setTab={setTab}/>}
     {tab==="equipo"      && <><ResumenEquipo tickets={tickets} perfil={perfil}/><div style={{marginTop:14}}><ResumenDiario registros={registros} tickets={tickets}/></div><MejorasSugeridas comentarios={comentarios}/></>}
     {tab==="expedientes" && <ExpedientesTab data={data} setSelExp={setSelExp} delegar={delegar} updEstado={updEstado} canDelegate={canDelegate} evidencias={evidencias} activoByCode={activoByCode} progresoDe={progresoDe}/>}
-    {tab==="bandeja"     && <Bandeja perfil={perfil} correos={correos} cargando={correosCargando} noDisponible={correos===null && !correosCargando} onRecargar={onRecargarCorreos} existentes={data} onConvertir={onConvertirCorreo}/>}
+    {tab==="bandeja"     && <Bandeja perfil={perfil} correos={correos} cargando={correosCargando} noDisponible={correos===null && !correosCargando} onRecargar={onRecargarCorreos} existentes={data} onConvertir={onConvertirCorreo} verExpediente={verExpediente}/>}
     {tab==="calendario"  && <Calendario tickets={tickets} recByCode={recByCode} perfil={perfil} setSelExp={setSelExp} equipo/>}
     {tab==="reportes"    && <Reportes data={data} setSelExp={setSelExp}/>}
     {tab==="guia"        && <Guia/>}
@@ -494,7 +494,7 @@ function Conexion(){
 /* ===================== OPERATIVO ===================== */
 // 4 pestañas. El trabajo real (evidencia + datos + documento + marcar hecho) se hace
 // dentro del expediente: Mi día → "Abrir y trabajar" → Drawer en la etapa del ticket.
-function Operativo({ perfil, data, setSelExp, tickets, activoByCode={}, progresoDe, recByCode, onEstadoTicket, correos, correosCargando, onRecargarCorreos, onConvertirCorreo }){
+function Operativo({ perfil, data, setSelExp, tickets, activoByCode={}, progresoDe, recByCode, onEstadoTicket, correos, correosCargando, onRecargarCorreos, onConvertirCorreo, verExpediente }){
   const [tab,setTab]=useState("midia");
   const mine=data.filter(x=>x.resp===perfil.resp_id);
   const misTk=misTickets(tickets||[], perfil);
@@ -504,7 +504,7 @@ function Operativo({ perfil, data, setSelExp, tickets, activoByCode={}, progreso
     {tab==="midia" && data.length===0 && <BienvenidaSinCasos onIrBandeja={()=>setTab("bandeja")}/>}
     {tab==="midia" && <MiDia perfil={perfil} misReclamos={mine} tickets={misTk} recByCode={recByCode} onEstadoTicket={onEstadoTicket} setSelExp={setSelExp}
       onCerrarDia={()=>postAction("reporte",{rol:perfil.rol, asignados:mine.length, en_atencion:abiertos(misTk).length, cerrados:misTk.filter(t=>t.hecho).length, vencidos:vencidos(misTk).length})}/>}
-    {tab==="bandeja" && <Bandeja perfil={perfil} correos={correos} cargando={correosCargando} noDisponible={correos===null && !correosCargando} onRecargar={onRecargarCorreos} existentes={data} onConvertir={onConvertirCorreo}/>}
+    {tab==="bandeja" && <Bandeja perfil={perfil} correos={correos} cargando={correosCargando} noDisponible={correos===null && !correosCargando} onRecargar={onRecargarCorreos} existentes={data} onConvertir={onConvertirCorreo} verExpediente={verExpediente}/>}
     {tab==="calendario" && <Calendario tickets={misTk} recByCode={recByCode} perfil={perfil} setSelExp={setSelExp}/>}
     {tab==="expedientes" && <Card><h3>Mis expedientes ({mine.length}) — clic para ver su seguimiento</h3><div style={{overflowX:"auto"}}><table className="tbl"><thead><tr><th>Nº OSINERG</th><th>Solicitante</th><th>Suministro</th><th>Clase</th><th>Progreso</th><th>Etapa</th><th>Límite</th><th>Restan</th><th>Estado</th></tr></thead><tbody>
       {mine.slice(0,200).map(x=>{
