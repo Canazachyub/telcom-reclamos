@@ -49,6 +49,7 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
   const [texto, setTexto] = useState("");
   const [verFicha, setVerFicha] = useState(false);
   const [etapaSel, setEtapaSel] = useState(null);   // etapa clickeada en la línea de tiempo
+  const [verTodaAct, setVerTodaAct] = useState(false); // feed comprimido (5) vs completo
   const puedeCorregir = ["GERENTE","COORDINADOR"].includes(perfil?.rol);
 
   // tickets del caso en orden de flujo; el ACTIVO es el primero no-hecho
@@ -78,7 +79,8 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
     .map(r=>({ quien:r.usuario||"—", que:humanizar(r), cuando:fmtCuando(r.fecha), etapa:r.etapa||"" }));
   const evComs = (comentarios||[]).filter(c=>String(c.reclamo||"")===String(exp.codigo))
     .map(c=>({ quien:c.nombre||c.usuario||"—", que:"💬 "+(c.texto||""), cuando:fmtCuando(c.fecha), etapa:c.etapa||"" }));
-  const actividad = [...evRegs.reverse(), ...evComs].slice(0,14);
+  const actividadTodo = [...evRegs.reverse(), ...evComs];
+  const actividad = verTodaAct ? actividadTodo.slice(0,40) : actividadTodo.slice(0,5);
 
   // documentos del caso SIN repetidos (misma URL, o mismo nombre+etapa, = un solo chip)
   const docs = [];
@@ -324,6 +326,11 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
             </div>
           ))}
           {!actividad.length && <div className="muted" style={{fontSize:12}}>Sin actividad registrada todavía.</div>}
+          {actividadTodo.length > 5 && (
+            <button className="btn-ghost" style={{marginTop:8,fontSize:12,width:"100%"}} onClick={()=>setVerTodaAct(v=>!v)}>
+              {verTodaAct ? "▴ Comprimir actividad" : "▾ Ver toda la actividad ("+actividadTodo.length+")"}
+            </button>
+          )}
           <div style={{display:"flex",gap:8,marginTop:11}}>
             <input className="flt" style={{flex:1}} placeholder="Comentar en este expediente… (todo el equipo del caso lo ve)"
               value={texto} onChange={e=>setTexto(e.target.value)} onKeyDown={e=>{ if(e.key==="Enter") enviarComentario(); }}/>

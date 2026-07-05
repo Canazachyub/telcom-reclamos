@@ -11,12 +11,15 @@ import Login from "./components/Login.jsx";
 import MiDia from "./components/MiDia.jsx";
 import FlujoCards from "./components/FlujoCards.jsx";
 import Notificaciones from "./components/Notificaciones.jsx";
-import { AtenderPrimero, ResumenEquipo, DineroRiesgo, ResumenDiario } from "./components/Equipo.jsx";
+import { AtenderPrimero, ResumenEquipo, DineroRiesgo, ResumenDiario, VerificacionDiaria } from "./components/Equipo.jsx";
 import Calendario from "./components/Calendario.jsx";
 import NuevoCaso from "./components/NuevoCaso.jsx";
 import Bandeja from "./components/Bandeja.jsx";
 import PruebaGuiada from "./components/PruebaGuiada.jsx";
 import SalaExpediente from "./components/SalaExpediente.jsx";
+import ValorizacionMensual from "./components/ValorizacionMensual.jsx";
+import MuestraTrimestral from "./components/MuestraTrimestral.jsx";
+import MejorasTR from "./components/MejorasTR.jsx";
 
 const ESTADOS_APP = ["Pendiente","En proceso","Observado","Notificado","Cerrado"];
 const iniciales = n => (n||"").split(" ").map(s=>s[0]).slice(0,2).join("").toUpperCase();
@@ -209,7 +212,7 @@ function Shell({ perfil, onLogout }){
       {!data ? <div className="card">Cargando reclamos…</div>
         : esOperativo(perfilVista.rol)
           ? <Operativo key={"op-"+perfilVista.resp_id} perfil={perfilVista} data={data} setSelExp={abrirExp} tickets={activos(tickets)} activoByCode={activoByCode} progresoDe={progresoDe} recByCode={recByCode} onEstadoTicket={onEstadoTicket} correos={correos} correosCargando={correosCargando} onRecargarCorreos={cargarCorreos} onConvertirCorreo={convertirCorreoEnCaso} verExpediente={(codigo)=>{ const r=(data||[]).find(x=>String(x.codigo)===String(codigo)); if(r) abrirExp(r.id); }}/>
-          : <Admin key={"ad-"+perfilVista.resp_id} perfil={perfilVista} data={data} evidencias={evidencias} setSelExp={abrirExp} delegar={delegar} updEstado={updEstado} tickets={activos(tickets)} activoByCode={activoByCode} progresoDe={progresoDe} recByCode={recByCode} onEstadoTicket={onEstadoTicket} onReasignarTicket={onReasignarTicket} registros={registros} comentarios={comentarios} correos={correos} correosCargando={correosCargando} onRecargarCorreos={cargarCorreos} onConvertirCorreo={convertirCorreoEnCaso} verExpediente={(codigo)=>{ const r=(data||[]).find(x=>String(x.codigo)===String(codigo)); if(r) abrirExp(r.id); }}/>}
+          : <Admin key={"ad-"+perfilVista.resp_id} perfil={perfilVista} data={data} evidencias={evidencias} setSelExp={abrirExp} delegar={delegar} updEstado={updEstado} tickets={activos(tickets)} todosTickets={tickets} datos={datos} activoByCode={activoByCode} progresoDe={progresoDe} recByCode={recByCode} onEstadoTicket={onEstadoTicket} onReasignarTicket={onReasignarTicket} registros={registros} comentarios={comentarios} correos={correos} correosCargando={correosCargando} onRecargarCorreos={cargarCorreos} onConvertirCorreo={convertirCorreoEnCaso} verExpediente={(codigo)=>{ const r=(data||[]).find(x=>String(x.codigo)===String(codigo)); if(r) abrirExp(r.id); }}/>}
 
       {salaExp!=null && data && (()=>{ const sx=data.find(x=>x.id===salaExp); return sx ? (
         <SalaExpediente exp={sx} tickets={tickets} evidencias={evidencias} registros={registros} comentarios={comentarios} datos={datos} correos={correos}
@@ -232,7 +235,7 @@ function Shell({ perfil, onLogout }){
 /* ===================== GERENTE / COORDINADOR ===================== */
 // 6 pestañas (7 el Gerente). Todo lo operativo de un expediente se hace DENTRO del
 // expediente (Drawer): evidencia, datos de etapa, generar documento, marcar hecho.
-function Admin({ perfil, data, evidencias, setSelExp, delegar, updEstado, tickets, activoByCode, progresoDe, recByCode, onEstadoTicket, onReasignarTicket, registros, comentarios, correos, correosCargando, onRecargarCorreos, onConvertirCorreo, verExpediente }){
+function Admin({ perfil, data, evidencias, setSelExp, delegar, updEstado, tickets, todosTickets, datos, activoByCode, progresoDe, recByCode, onEstadoTicket, onReasignarTicket, registros, comentarios, correos, correosCargando, onRecargarCorreos, onConvertirCorreo, verExpediente }){
   const [tab, setTab] = useState("hoy");
   const canDelegate = puedeDelegar(perfil.rol);
   const esGer = perfil.rol==="GERENTE";
@@ -242,11 +245,11 @@ function Admin({ perfil, data, evidencias, setSelExp, delegar, updEstado, ticket
   return <>
     <div className="tabs">{tabs.map(t=><button key={t[0]} className={tab===t[0]?"on":""} onClick={()=>setTab(t[0])}>{t[1]}</button>)}</div>
     {tab==="hoy"         && <Hoy perfil={perfil} tickets={tickets} recByCode={recByCode} onEstadoTicket={onEstadoTicket} onReasignarTicket={onReasignarTicket} setSelExp={setSelExp} sinCasos={data.length===0} setTab={setTab}/>}
-    {tab==="equipo"      && <><ResumenEquipo tickets={tickets} perfil={perfil}/><div style={{marginTop:14}}><ResumenDiario registros={registros} tickets={tickets}/></div><MejorasSugeridas comentarios={comentarios}/></>}
+    {tab==="equipo"      && <><ResumenEquipo tickets={tickets} perfil={perfil}/><div style={{marginTop:14}}><ResumenDiario registros={registros} tickets={tickets}/></div><div style={{marginTop:14}}><VerificacionDiaria tickets={tickets} registros={registros} perfil={perfil}/></div><MejorasSugeridas comentarios={comentarios}/></>}
     {tab==="expedientes" && <ExpedientesTab data={data} setSelExp={setSelExp} delegar={delegar} updEstado={updEstado} canDelegate={canDelegate} evidencias={evidencias} activoByCode={activoByCode} progresoDe={progresoDe}/>}
     {tab==="bandeja"     && <Bandeja perfil={perfil} correos={correos} cargando={correosCargando} noDisponible={correos===null && !correosCargando} onRecargar={onRecargarCorreos} existentes={data} onConvertir={onConvertirCorreo} verExpediente={verExpediente}/>}
     {tab==="calendario"  && <Calendario tickets={tickets} recByCode={recByCode} perfil={perfil} setSelExp={setSelExp} equipo/>}
-    {tab==="reportes"    && <Reportes data={data} setSelExp={setSelExp}/>}
+    {tab==="reportes"    && <Reportes data={data} setSelExp={setSelExp} tickets={todosTickets} registros={registros} datos={datos} evidencias={evidencias} perfil={perfil}/>}
     {tab==="guia"        && <Guia/>}
     {tab==="admin"       && <><Personal data={data}/><div style={{marginTop:14}}><Conexion/></div></>}
   </>;
@@ -436,7 +439,7 @@ const ACT_DEFINICION = {
 // (hoja `config`: PU_ACT01…PU_ACT05) los sobreescribe si existen y son numéricos.
 const PU_DEFAULT = { ACT01: 45, ACT02: 60, ACT03: 25, ACT04: 0, ACT05: 18 };
 
-function Reportes({ data, setSelExp }){
+function Reportes({ data, setSelExp, tickets, registros, datos, evidencias, perfil }){
   const [rtab,setR]=useState("cartera");
   const [config,setConfig]=useState({});
   useEffect(()=>{ loadConfig().then(c=>{ if(c) setConfig(c); }).catch(()=>{}); }, []);
@@ -468,7 +471,7 @@ function Reportes({ data, setSelExp }){
   let tot=0;
 
   return <>
-    <div className="tabs">{[["cartera","Cartera"],["diario","Diario"],["semanal","Semanal"],["mensual","Valorización"]].map(x=><button key={x[0]} className={rtab===x[0]?"on":""} onClick={()=>setR(x[0])}>{x[1]}</button>)}</div>
+    <div className="tabs">{[["cartera","Cartera"],["diario","Diario"],["semanal","Semanal"],["mensual","Valorización (estimada)"],["mensualoficial","Valorización oficial"],["muestra","Muestra ACT-04"],["mejoras","Mejoras TR"]].map(x=><button key={x[0]} className={rtab===x[0]?"on":""} onClick={()=>setR(x[0])}>{x[1]}</button>)}</div>
     {rtab==="cartera" && <Cartera data={data} setSelExp={setSelExp}/>}
     {rtab==="diario" && <Card><h3>Reporte diario por trabajador</h3><div style={{overflowX:"auto"}}><table className="tbl"><thead><tr><th>Trabajador</th><th>Asignados</th><th>En atención</th><th>Cerrados</th><th>Vencidos</th></tr></thead><tbody>
       {porResp.map(o=><tr key={o.t.id}><td><span className="dot" style={{background:o.t.color}}/>{o.t.nombre}</td><td>{o.list.length}</td><td>{o.list.filter(x=>x.estadoCom==="EN ATENCION").length}</td><td>{o.list.filter(x=>x.estado==="Cerrado").length}</td><td style={{color:"#C9821B"}}>{o.list.filter(x=>x.vencido).length||0}</td></tr>)}
@@ -506,6 +509,9 @@ function Reportes({ data, setSelExp }){
         </div>
       </Card>
     </>}
+    {rtab==="mensualoficial" && <ValorizacionMensual data={data} tickets={tickets} evidencias={evidencias} registros={registros} datos={datos} config={config} perfil={perfil}/>}
+    {rtab==="muestra" && <MuestraTrimestral data={data} tickets={tickets} evidencias={evidencias} registros={registros} perfil={perfil} setSelExp={setSelExp}/>}
+    {rtab==="mejoras" && <MejorasTR data={data} tickets={tickets} datos={datos} registros={registros} perfil={perfil}/>}
   </>;
 }
 

@@ -66,6 +66,8 @@ export const CAMPOS_ETAPA = {
       // — transcripción SIELSE (§5 memoria)
       { k: "N_OT_SIELSE", label: "N° de Orden de Trabajo", tipo: "text", ph: "OT generada en SIELSE para la inspección" },
       { k: "FECHA_INFORME_OT", label: "Fecha en que se informó el resultado en SIELSE", tipo: "date", ph: "dd/mm/aaaa — plazo ≤2 d háb (penalidad 5.1)" },
+      // — Mejoras a los TR (informe mensual/semestral de incumplimientos de contratistas de campo)
+      { k: "CAUSA_INCUMPLIMIENTO_OT", label: "Si la OT llegó tarde: causa", tipo: "select", opciones: ["", "Contratista de campo demoró", "Acceso/ubicación del predio", "Clima", "Reprogramación de ELSE", "Datos errados del suministro", "Otro"] },
     ],
   },
   "SIELSE": {
