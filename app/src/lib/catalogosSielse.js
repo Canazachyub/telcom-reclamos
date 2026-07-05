@@ -6,9 +6,27 @@
 // El equipo amplía la hoja copiando de los desplegables del SIELSE vivo — sin tocar código.
 
 export const CATALOGOS_LOCAL = {
+  // Universo COMPLETO: art. 13 de la Directiva 269-2014-OS/CD (13 materias reclamables)
+  // + clases operativas vistas en SIELSE/manuales. El equipo poda/renombra en la hoja
+  // `catalogos` contra el desplegable real de SIELSE — aquí no se limita nada.
   CLASE_RECLAMO: [
-    { valor: "RECLAMOS POR EXCESIVA FACTURACION", icono: "🧾", ayuda: "consumo, recálculos, recibos" },
-    { valor: "RECLAMOS VARIOS", icono: "📄", ayuda: "otras materias del procedimiento" },
+    { valor: "RECLAMOS POR EXCESIVA FACTURACION", icono: "🧾", ayuda: "importe facturado mayor al debido (art. 13.c)" },
+    { valor: "EXCESIVO CONSUMO", icono: "📈", ayuda: "consumo registrado mayor al real (art. 13.b)" },
+    { valor: "RECUPERO DE ENERGIA", icono: "♻️", ayuda: "cobro por consumos no registrados (art. 13.d)" },
+    { valor: "COBRO INDEBIDO", icono: "💰", ayuda: "conceptos ajenos al servicio (art. 13.e)" },
+    { valor: "CORTE DEL SERVICIO", icono: "🔌", ayuda: "corte indebido o sin aviso (art. 13.f)" },
+    { valor: "NEGATIVA A LA INSTALACION DEL SUMINISTRO", icono: "🚫", ayuda: "no atienden el nuevo suministro (art. 13.a)" },
+    { valor: "NEGATIVA AL INCREMENTO DE POTENCIA", icono: "⚡", ayuda: "art. 13.g" },
+    { valor: "NEGATIVA AL CAMBIO DE OPCION TARIFARIA", icono: "🔁", ayuda: "art. 13.h" },
+    { valor: "REEMBOLSO DE APORTES O CONTRIBUCIONES", icono: "💵", ayuda: "devolución de aportes (art. 13.i)" },
+    { valor: "REUBICACION DE INSTALACIONES", icono: "🏗️", ayuda: "instalaciones a cargo de la concesionaria (art. 13.j)" },
+    { valor: "MALA CALIDAD (TENSION / INTERRUPCIONES)", icono: "💡", ayuda: "calidad de producto/servicio (art. 13.k)" },
+    { valor: "DEUDAS DE TERCEROS", icono: "👥", ayuda: "cobran deuda de otro titular (art. 13.l)" },
+    { valor: "FALTA DE SERVICIO EN EL PREDIO", icono: "🕯️", ayuda: "sin energía en el predio (SIELSE/denuncia)" },
+    { valor: "ALUMBRADO PUBLICO", icono: "🛣️", ayuda: "deficiencias de AP — Proc. 094-2017" },
+    { valor: "DAÑOS Y PERJUICIOS", icono: "🔥", ayuda: "artefactos dañados por sobretensión" },
+    { valor: "EMERGENCIAS", icono: "🚨", ayuda: "riesgo eléctrico grave / atención inmediata" },
+    { valor: "RECLAMOS VARIOS", icono: "📄", ayuda: "otras cuestiones del servicio (art. 13.m)" },
   ],
   FORMA_RECLAMO: [
     { valor: "PRESENCIAL" }, { valor: "TELEFONO" }, { valor: "PORTAL WEB" },
@@ -43,9 +61,18 @@ export function agruparCatalogos(rows) {
 }
 
 // mezcla: lo que exista en el Sheet REEMPLAZA a ese grupo local (el Sheet manda);
-// grupos que el Sheet no tenga se completan con el respaldo local.
+// grupos que el Sheet no tenga se completan con el respaldo local. Al reemplazar,
+// se conservan icono/ayuda del respaldo local cuando el valor coincide (el Sheet
+// solo trae grupo|valor|extra).
 export function mezclarCatalogos(deSheet) {
   const out = { ...CATALOGOS_LOCAL };
-  Object.keys(deSheet || {}).forEach(g => { if (deSheet[g] && deSheet[g].length) out[g] = deSheet[g]; });
+  Object.keys(deSheet || {}).forEach(g => {
+    if (!deSheet[g] || !deSheet[g].length) return;
+    const locales = CATALOGOS_LOCAL[g] || [];
+    out[g] = deSheet[g].map(e => {
+      const loc = locales.find(l => l.valor.toUpperCase() === e.valor.toUpperCase());
+      return loc ? { ...loc, ...e, ayuda: e.extra || loc.ayuda } : { ...e, ayuda: e.extra || "" };
+    });
+  });
   return out;
 }
