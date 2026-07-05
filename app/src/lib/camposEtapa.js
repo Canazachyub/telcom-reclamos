@@ -162,7 +162,7 @@ export const CAMPOS_ETAPA = {
     nota: "Cierre del reclamo en SIELSE (≤16 días desde la notificación).",
     campos: [
       { k: "FECHA_CIERRE", label: "Fecha de cierre en SIELSE", tipo: "date" },
-      { k: "MOTIVO_CIERRE", label: "Motivo de cierre", tipo: "text" },
+      { k: "MOTIVO_CIERRE", label: "Motivo de cierre", tipo: "select", opciones: ["", "ACTA DE REUNION DE TRATO DIRECTO", "CONFORMIDAD DEL CLIENTE", "FALTA DE APELACION", "POR RESOLUCION DE OSINERG", "TRABAJO REALIZADO", "FALTA DE PRESENTACION DE DOCUMENTOS", "Otro"] },
       // — transcripción SIELSE (§5 memoria) · la fecha de cierre ya existe arriba (FECHA_CIERRE)
       { k: "TIPO_CIERRE_SIELSE", label: "Vía de cierre en SIELSE", tipo: "select", opciones: ["Acto Firme", "Cumplimiento Resolución JARU", "Trato Directo", "Desistimiento del cliente"] },
       { k: "N_ACTA_TD", label: "N° de Acta de Trato Directo", tipo: "text", ph: "ej. ATD-103-2026 — solo si la vía es Trato Directo" },

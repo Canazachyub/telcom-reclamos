@@ -26,6 +26,7 @@ export const GUIA_SIELSE = {
     pasos: [
       "Botón Admisión → Admitir (indica la fecha)",
       "Se genera el correlativo OSINERG — anótalo en la plataforma",
+      "⚠ OJO: SIELSE advierte que tras Admitir algunos datos YA NO se podrán modificar — verifica la solicitud ANTES de admitir",
       "Pestaña Reclamo: dirección de notificación, representante (si aplica) y documentación sustentatoria",
     ],
     plazo: "",
