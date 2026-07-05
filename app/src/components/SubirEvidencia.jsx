@@ -62,9 +62,9 @@ export default function SubirEvidencia({ reclamo, etapa, etapaNN, perfil, onSave
   }
 
   return (
-    <div style={{ background: "rgba(31,78,140,.12)", border: "1px solid #1e3a5f", borderRadius: 10, padding: 12, marginTop: 8 }}>
+    <div style={{ background: "rgba(30,58,95,.06)", border: "1px solid var(--navy)", borderRadius: 10, padding: 12, marginTop: 8 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <b style={{ fontSize: 12.5, color: "#cbd5e1" }}>Subir evidencia de «{etapa}»</b>
+        <b style={{ fontSize: 12.5, color: "var(--tx)" }}>Subir evidencia de «{etapa}»</b>
         <button onClick={onClose} style={xbtn}>✕</button>
       </div>
 
@@ -72,15 +72,15 @@ export default function SubirEvidencia({ reclamo, etapa, etapaNN, perfil, onSave
       <div onClick={() => inputRef.current?.click()}
         onDragOver={e => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)}
         onDrop={e => { e.preventDefault(); setOver(false); addFiles(e.dataTransfer.files); }}
-        style={{ border: `1px dashed ${over ? "#60a5fa" : "#334155"}`, borderRadius: 8, padding: "14px 10px", textAlign: "center", cursor: "pointer", background: over ? "rgba(96,165,250,.08)" : "transparent" }}>
-        <div style={{ fontSize: 12.5, color: "#cbd5e1" }}>Arrastra el PDF (o imágenes) aquí, o haz clic</div>
-        <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>Ej.: un solo PDF con las firmas / el cargo / las fotos de la etapa</div>
+        style={{ border: `1px dashed ${over ? "var(--linkTx)" : "var(--bd)"}`, borderRadius: 8, padding: "14px 10px", textAlign: "center", cursor: "pointer", background: over ? "var(--hoverBg)" : "transparent" }}>
+        <div style={{ fontSize: 12.5, color: "var(--tx)" }}>Arrastra el PDF (o imágenes) aquí, o haz clic</div>
+        <div style={{ fontSize: 11, color: "var(--mut)", marginTop: 2 }}>Ej.: un solo PDF con las firmas / el cargo / las fotos de la etapa</div>
         <input ref={inputRef} type="file" multiple hidden onChange={e => addFiles(e.target.files)} />
       </div>
       {files.length > 0 && (
         <div style={{ marginTop: 8, display: "grid", gap: 4 }}>
           {files.map((f, i) => (
-            <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#e2e8f0", background: "#0f1828", border: "1px solid #1e2a3e", borderRadius: 6, padding: "5px 9px" }}>
+            <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--tx)", background: "var(--card2)", border: "1px solid var(--bd)", borderRadius: 6, padding: "5px 9px" }}>
               <span>📄 {f.name} <span className="muted" style={{ fontSize: 10 }}>{Math.round(f.size / 1024)} KB</span></span>
               <button onClick={() => setFiles(fs => fs.filter((_, k) => k !== i))} style={xbtn}>quitar</button>
             </div>
@@ -92,21 +92,21 @@ export default function SubirEvidencia({ reclamo, etapa, etapaNN, perfil, onSave
       {spec && (
         <div style={{ marginTop: 10 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6, gap: 8, flexWrap: "wrap" }}>
-            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".05em", color: "#5b6b80", fontWeight: 700 }}>Datos de la fase</div>
+            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".05em", color: "var(--mut)", fontWeight: 700 }}>Datos de la fase</div>
             <button onClick={extraer} disabled={iaBusy || !files.length} title={files.length ? "La IA lee el documento y sugiere los datos" : "Adjunta primero el documento"}
-              style={{ background: "rgba(124,58,237,.18)", color: "#c4b5fd", border: "1px solid #6d28d9", borderRadius: 8, padding: "5px 10px", fontSize: 11.5, cursor: files.length ? "pointer" : "not-allowed", fontWeight: 600 }}>
+              style={{ background: "rgba(109,40,217,.10)", color: "#6D28D9", border: "1px solid #6d28d9", borderRadius: 8, padding: "5px 10px", fontSize: 11.5, cursor: files.length ? "pointer" : "not-allowed", fontWeight: 600 }}>
               {iaBusy ? "Leyendo documento…" : "🤖 Extraer del documento (sugerencia)"}
             </button>
           </div>
-          {sugeridos.size > 0 && <div style={{ fontSize: 11, color: "#c4b5fd", marginBottom: 6 }}>✨ La IA sugirió {sugeridos.size} dato(s) — <b>revísalos y corrige</b> antes de guardar.</div>}
+          {sugeridos.size > 0 && <div style={{ fontSize: 11, color: "#6D28D9", marginBottom: 6 }}>✨ La IA sugirió {sugeridos.size} dato(s) — <b>revísalos y corrige</b> antes de guardar.</div>}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             {spec.campos.map(c => {
               const sg = sugeridos.has(c.k);
-              const st = sg ? { ...inp, borderColor: "#7c3aed", background: "rgba(124,58,237,.08)" } : inp;
+              const st = sg ? { ...inp, borderColor: "#7c3aed", background: "rgba(109,40,217,.06)" } : inp;
               const set = v => { setDatos(d => ({ ...d, [c.k]: v })); if (sg) setSugeridos(s => { const n = new Set(s); n.delete(c.k); return n; }); };
               return (
                 <label key={c.k} title={AYUDA_CAMPO[c.k] || ""} style={{ fontSize: 12, gridColumn: c.tipo === "textarea" ? "1 / -1" : undefined }}>
-                  <span style={{ color: "#94a3b8" }}>{c.label}{AYUDA_CAMPO[c.k] && <span style={{ color: "#60a5fa" }}> ⓘ</span>}{sg && <span style={{ marginLeft: 5, fontSize: 9, background: "#6d28d9", color: "#fff", borderRadius: 4, padding: "1px 4px" }}>IA</span>}</span>
+                  <span style={{ color: "var(--mut)" }}>{c.label}{AYUDA_CAMPO[c.k] && <span style={{ color: "var(--linkTx)" }}> ⓘ</span>}{sg && <span style={{ marginLeft: 5, fontSize: 9, background: "#6d28d9", color: "#fff", borderRadius: 4, padding: "1px 4px" }}>IA</span>}</span>
                   {c.tipo === "select"
                     ? <select value={datos[c.k] || ""} onChange={e => set(e.target.value)} style={st}><option value="">—</option>{c.opciones.map(o => <option key={o} value={o}>{o}</option>)}</select>
                     : c.tipo === "textarea"
@@ -120,19 +120,19 @@ export default function SubirEvidencia({ reclamo, etapa, etapaNN, perfil, onSave
       )}
 
       <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 10 }}>
-        <button onClick={guardar} disabled={busy} style={{ background: "#1F4E8C", color: "#fff", border: 0, borderRadius: 8, padding: "8px 16px", fontSize: 13, cursor: "pointer", fontWeight: 600 }}>
+        <button onClick={guardar} disabled={busy} style={{ background: "var(--navy)", color: "#fff", border: 0, borderRadius: 8, padding: "8px 16px", fontSize: 13, cursor: "pointer", fontWeight: 600 }}>
           {busy ? "Subiendo…" : "Subir evidencia y guardar"}
         </button>
-        {hechos.length > 0 && <span style={{ fontSize: 12, color: "#22c55e" }}>✓ {hechos.filter(h => h.ok).length} subido(s)</span>}
+        {hechos.length > 0 && <span style={{ fontSize: 12, color: "#15803D" }}>✓ {hechos.filter(h => h.ok).length} subido(s)</span>}
       </div>
       {hechos.some(h => h.ok && h.url) && (
         <div style={{ marginTop: 8, display: "grid", gap: 3 }}>
-          {hechos.filter(h => h.url).map((h, i) => <a key={i} href={h.url} target="_blank" rel="noreferrer" style={{ color: "#60a5fa", fontSize: 12 }}>🔗 {h.nombre}</a>)}
+          {hechos.filter(h => h.url).map((h, i) => <a key={i} href={h.url} target="_blank" rel="noreferrer" style={{ color: "var(--linkTx)", fontSize: 12 }}>🔗 {h.nombre}</a>)}
         </div>
       )}
     </div>
   );
 }
 
-const inp = { width: "100%", marginTop: 3, padding: "6px 8px", borderRadius: 7, fontSize: 12.5, fontFamily: "inherit", background: "#0e1726", color: "#e2e8f0", border: "1px solid #334155" };
-const xbtn = { border: "1px solid #334155", borderRadius: 6, background: "transparent", color: "#94a3b8", cursor: "pointer", fontSize: 11, padding: "2px 7px" };
+const inp = { width: "100%", marginTop: 3, padding: "6px 8px", borderRadius: 7, fontSize: 12.5, fontFamily: "inherit", background: "#fff", color: "var(--tx)", border: "1px solid var(--bd)" };
+const xbtn = { border: "1px solid var(--bd)", borderRadius: 6, background: "transparent", color: "var(--mut)", cursor: "pointer", fontSize: 11, padding: "2px 7px" };

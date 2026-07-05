@@ -140,28 +140,28 @@ const WEBMAIL_URL = "https://mail.hostinger.com";
 // ===== Estilos inline (patrón dominante del proyecto: Drawer.jsx, Ticket.jsx) =====
 const S = {
   buzonCols: { display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 14 },
-  buzonColHd: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, paddingBottom: 8, marginBottom: 8, borderBottom: "1px solid #27324a" },
-  buzonColNombre: { fontSize: 12.5, fontWeight: 700, color: "#cbd5e1", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textTransform: "lowercase" },
-  buzonColCount: { fontSize: 10.5, color: "#7d8ba3", background: "#0b1120", border: "1px solid #27324a", borderRadius: 999, padding: "1px 8px", flexShrink: 0 },
+  buzonColHd: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, paddingBottom: 8, marginBottom: 8, borderBottom: "1px solid var(--bd)" },
+  buzonColNombre: { fontSize: 12.5, fontWeight: 700, color: "var(--titulo)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textTransform: "lowercase" },
+  buzonColCount: { fontSize: 10.5, color: "var(--mut)", background: "var(--card2)", border: "1px solid var(--bd)", borderRadius: 999, padding: "1px 8px", flexShrink: 0 },
   buzonColBody: { maxHeight: 640, overflowY: "auto", paddingRight: 2 },
-  diaSep: { display: "flex", alignItems: "center", gap: 10, margin: "14px 0 8px", color: "#7d8ba3", fontSize: 11, textTransform: "uppercase", letterSpacing: ".06em" },
-  diaSepLine: { flex: 1, height: 1, background: "#27324a" },
-  mailRow: { position: "relative", display: "flex", flexDirection: "column", gap: 6, background: "#0f172a", border: "1px solid #27324a", borderRadius: 10, padding: "10px 12px", marginBottom: 6, cursor: "pointer" },
+  diaSep: { display: "flex", alignItems: "center", gap: 10, margin: "14px 0 8px", color: "var(--mut)", fontSize: 11, textTransform: "uppercase", letterSpacing: ".06em" },
+  diaSepLine: { flex: 1, height: 1, background: "var(--bd)" },
+  mailRow: { position: "relative", display: "flex", flexDirection: "column", gap: 6, background: "var(--card2)", border: "1px solid var(--bd)", borderRadius: 10, padding: "10px 12px", marginBottom: 6, cursor: "pointer" },
   mailTop: { display: "flex", gap: 10, alignItems: "flex-start" },
   mailDot: { width: 8, height: 8, borderRadius: "50%", flexShrink: 0, marginTop: 6 },
   mailMain: { minWidth: 0, flex: 1 },
   mailLinea1: { display: "flex", alignItems: "baseline", gap: 8, minWidth: 0, flexWrap: "wrap" },
-  mailRemitente: { fontWeight: 600, fontSize: 13, color: "#f1f5f9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "50%" },
-  mailBuzonChip: { fontSize: 10, color: "#7d8ba3", background: "#0b1120", border: "1px solid #27324a", borderRadius: 5, padding: "1px 6px", whiteSpace: "nowrap", flexShrink: 0 },
-  mailFecha: { marginLeft: "auto", paddingLeft: 8, fontSize: 11, color: "#7d8ba3", whiteSpace: "nowrap", flexShrink: 0, textAlign: "right" },
-  mailAsunto: { fontSize: 12.5, color: "#dbe4f3", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
-  mailResumen: { fontSize: 11.5, color: "#94a3b8", marginTop: 2, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: 1.4 },
+  mailRemitente: { fontWeight: 600, fontSize: 13, color: "var(--titulo)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "50%" },
+  mailBuzonChip: { fontSize: 10, color: "var(--mut)", background: "var(--card2)", border: "1px solid var(--bd)", borderRadius: 5, padding: "1px 6px", whiteSpace: "nowrap", flexShrink: 0 },
+  mailFecha: { marginLeft: "auto", paddingLeft: 8, fontSize: 11, color: "var(--mut)", whiteSpace: "nowrap", flexShrink: 0, textAlign: "right" },
+  mailAsunto: { fontSize: 12.5, color: "var(--tx2)", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
+  mailResumen: { fontSize: 11.5, color: "var(--mut)", marginTop: 2, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: 1.4 },
   mailAdjuntos: { display: "flex", gap: 10, flexWrap: "wrap", marginTop: 6 },
   mailVinc: { display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 8 },
   mailAcciones: { display: "flex", gap: 4, alignItems: "center", flexShrink: 0 },
-  mailIc: { background: "#0b1120", border: "1px solid #27324a", color: "#cbd5e1", borderRadius: 7, width: 26, height: 26, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1, flexShrink: 0 },
+  mailIc: { background: "var(--card2)", border: "1px solid var(--bd)", color: "var(--tx)", borderRadius: 7, width: 26, height: 26, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1, flexShrink: 0 },
 };
-const estBorde = { nuevo: "#1F4E8C", vinculado: "#22c55e", respondido: "#7c3aed" };
+const estBorde = { nuevo: "var(--navy)", vinculado: "#15803D", respondido: "#6D28D9" };
 
 // "📧 Bandeja": correos sincronizados de los buzones (ELSE/OSINERGMIN). El Gerente/Coordinador
 // ve todos los buzones (con selector); el resto ve lo que el backend ya le filtró.
@@ -232,7 +232,7 @@ export default function Bandeja({ perfil, correos, cargando, noDisponible, onRec
   if (noDisponible) {
     return <Card>
       <h3>📧 Bandeja de correos</h3>
-      <div className="note" style={{ background: "rgba(31,78,140,.18)", border: "1px solid #1F4E8C", color: "#cbd5e1" }}>
+      <div className="note" style={{ background: "rgba(30,58,95,.08)", border: "1px solid var(--navy)", color: "var(--tx)" }}>
         La sincronización de correos se activa tras el próximo redeploy. Esta pestaña quedará lista automáticamente en cuanto el backend responda <code>action=correos</code>.
       </div>
     </Card>;
@@ -345,9 +345,9 @@ function CorreoRow({ correo, existentes, onConvertir, compacto }){
 
   const estado = respondido ? "respondido" : vinculado ? "vinculado" : "nuevo";
   const estadoInfo = {
-    respondido: { color: "#a78bfa", txt: "Respondido" },
-    vinculado: { color: "#4ade80", txt: "Vinculado" + (correo.reclamo_vinculado ? ` · exp. ${correo.reclamo_vinculado}` : "") },
-    nuevo: { color: "#60a5fa", txt: "Nuevo" },
+    respondido: { color: "#6D28D9", txt: "Respondido" },
+    vinculado: { color: "#15803D", txt: "Vinculado" + (correo.reclamo_vinculado ? ` · exp. ${correo.reclamo_vinculado}` : "") },
+    nuevo: { color: "var(--navy)", txt: "Nuevo" },
   }[estado];
 
   const remitente = nombreRemitente_(correo.de);
@@ -381,11 +381,11 @@ function CorreoRow({ correo, existentes, onConvertir, compacto }){
           <div style={S.mailAdjuntos} onClick={e => e.stopPropagation()}>
             {adjuntos.map((a, i) => (
               adjuntoNoDescargado_(a)
-                ? <span key={i} style={{ fontSize: 11.5, color: "#f59e0b" }}>
+                ? <span key={i} style={{ fontSize: 11.5, color: "#B45309" }}>
                     ⚠ {a.nombre || "adjunto"} (no descargado — {" "}
                     <a href={WEBMAIL_URL} target="_blank" rel="noreferrer"
                       title="Abrir webmail de Hostinger (inicia sesión con tu buzón TELCOM)"
-                      style={{ color: "#f59e0b", textDecoration: "underline" }}>
+                      style={{ color: "#B45309", textDecoration: "underline" }}>
                       ábrelo en el webmail
                     </a>)
                   </span>
@@ -436,14 +436,14 @@ function VistaCorreoEml({ idCorreo, nombre, url, alto }){
   }, [clave, idCorreo, nombre]);
 
   if (estado === "cargando") {
-    return <div style={{ textAlign: "center", color: "#cbd5e1", padding: 20, fontSize: 12.5 }}>
-      <span style={{ display: "inline-block", width: 16, height: 16, border: "2px solid #334155", borderTopColor: "#60a5fa", borderRadius: "50%", animation: "girar .8s linear infinite", verticalAlign: "middle" }}/>
+    return <div style={{ textAlign: "center", color: "var(--tx)", padding: 20, fontSize: 12.5 }}>
+      <span style={{ display: "inline-block", width: 16, height: 16, border: "2px solid var(--bd)", borderTopColor: "var(--navy)", borderRadius: "50%", animation: "girar .8s linear infinite", verticalAlign: "middle" }}/>
       <div style={{ marginTop: 8 }}>Traduciendo correo adjunto…</div>
     </div>;
   }
 
   if (estado === "error") {
-    return <div style={{ textAlign: "center", color: "#cbd5e1", padding: 20, fontSize: 12 }}>
+    return <div style={{ textAlign: "center", color: "var(--tx)", padding: 20, fontSize: 12 }}>
       <div style={{ fontSize: 32 }}>📧</div>
       <div style={{ marginTop: 8, lineHeight: 1.5 }}>No se pudo traducir este correo adjunto. Ábrelo en Drive para verlo completo.</div>
       {url && <a className="link" style={{ fontSize: 11.5, marginTop: 6, display: "inline-block" }} href={url} target="_blank" rel="noreferrer">🔗 abrir en Drive ↗</a>}
@@ -547,12 +547,12 @@ function CorreoModal({ correo, onClose, onRespondido }){
     <div className="overlay" style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: mobile ? 0 : 16, zIndex: 80 }} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div style={{
         width: mobile ? "100vw" : "min(1500px,97vw)", height: mobile ? "100vh" : "94vh", maxHeight: mobile ? "100vh" : "94vh",
-        background: "#0c1322", border: mobile ? "none" : "1px solid #1e2a3e", borderRadius: mobile ? 0 : 14,
+        background: "var(--card)", border: mobile ? "none" : "1px solid var(--bd)", borderRadius: mobile ? 0 : 14,
         padding: 16, boxSizing: "border-box", display: "flex", flexDirection: "column", overflow: "hidden",
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 10, gap: 8, flexShrink: 0 }}>
           <div style={{ minWidth: 0 }}>
-            <b style={{ color: "#e2e8f0", fontSize: 14 }}>{detalle?.asunto || correo.asunto || "(sin asunto)"}</b>
+            <b style={{ color: "var(--titulo)", fontSize: 14 }}>{detalle?.asunto || correo.asunto || "(sin asunto)"}</b>
             <div className="muted" style={{ fontSize: 11.5, marginTop: 3 }}>De: {detalle?.de || correo.de || "—"} · {fechaHumana_(detalle?.fecha || correo.fecha)}</div>
           </div>
           <button className="btn sec sm" onClick={onClose}>✕ cerrar</button>
@@ -561,12 +561,12 @@ function CorreoModal({ correo, onClose, onRespondido }){
         <div style={{ flex: 1, minHeight: 0, overflowY: "auto", display: "flex", flexDirection: "column" }}>
 
         {cargando && <div className="muted" style={{ fontSize: 12.5, padding: "20px 0", textAlign: "center" }}>
-          <span style={{ display: "inline-block", width: 14, height: 14, border: "2px solid #334155", borderTopColor: "#60a5fa", borderRadius: "50%", animation: "girar .8s linear infinite", marginRight: 8, verticalAlign: "middle" }}/>
+          <span style={{ display: "inline-block", width: 14, height: 14, border: "2px solid var(--bd)", borderTopColor: "var(--navy)", borderRadius: "50%", animation: "girar .8s linear infinite", marginRight: 8, verticalAlign: "middle" }}/>
           Cargando correo…
         </div>}
 
         {!cargando && noDisponible && (
-          <div className="note" style={{ background: "rgba(31,78,140,.18)", border: "1px solid #1F4E8C", color: "#cbd5e1" }}>
+          <div className="note" style={{ background: "rgba(30,58,95,.08)", border: "1px solid var(--navy)", color: "var(--tx)" }}>
             La lectura del cuerpo completo se activa tras el próximo redeploy. Esta ventana quedará lista automáticamente en cuanto el backend responda <code>action=correo_completo</code>.
           </div>
         )}
@@ -574,7 +574,7 @@ function CorreoModal({ correo, onClose, onRespondido }){
         {!cargando && !noDisponible && detalle && (
           <div style={{ flex: 1, minHeight: mobile ? "auto" : "55vh", display: "flex", flexDirection: mobile ? "column" : "row", gap: 12 }}>
             {/* Columna izquierda: cuerpo del correo */}
-            <div style={{ flex: mobile ? "1 1 auto" : "1 1 60%", minWidth: 0, border: "1px solid #1e2a3e", borderRadius: 10, overflow: "hidden", minHeight: mobile ? 280 : "55vh", background: "#fff", display: "flex" }}>
+            <div style={{ flex: mobile ? "1 1 auto" : "1 1 60%", minWidth: 0, border: "1px solid var(--bd)", borderRadius: 10, overflow: "hidden", minHeight: mobile ? 280 : "55vh", background: "#fff", display: "flex" }}>
               {detalle.html
                 ? <iframe title="cuerpo-correo" srcDoc={detalle.html} sandbox="" style={{ flex: 1, width: "100%", height: "100%", minHeight: mobile ? 280 : "55vh", border: 0, background: "#fff" }} />
                 : <pre style={{ flex: 1, whiteSpace: "pre-wrap", wordBreak: "break-word", margin: 0, padding: 14, fontFamily: "inherit", fontSize: 13.5, color: "#111827", overflowY: "auto" }}>{detalle.text || "(sin contenido)"}</pre>}
@@ -583,12 +583,12 @@ function CorreoModal({ correo, onClose, onRespondido }){
             {/* Columna derecha: panel de adjuntos + previsualización */}
             {!!adjuntos.length && (
               <div style={{ flex: mobile ? "1 1 auto" : "1 1 40%", minWidth: 0, display: "flex", flexDirection: "column", gap: 8 }}>
-                <b style={{ color: "#e2e8f0", fontSize: 12.5 }}>📎 Adjuntos ({adjuntos.length})</b>
+                <b style={{ color: "var(--titulo)", fontSize: 12.5 }}>📎 Adjuntos ({adjuntos.length})</b>
                 <div style={{ display: "flex", flexDirection: mobile ? "row" : "column", gap: 6, flexWrap: "wrap", maxHeight: mobile ? "none" : 140, overflowY: mobile ? "visible" : "auto", flexShrink: 0 }}>
                   {adjuntos.map((a, i) => (
                     <button key={i} onClick={() => setAdjSel(i)} title={adjuntoNoDescargado_(a) ? `No descargado (${motivoAdjuntoNoDescargado_(a)})` : (a.nombre || "adjunto")} style={{
-                      textAlign: "left", display: "flex", alignItems: "center", gap: 6, background: i === adjSel ? "#1F4E8C" : "#0f1828",
-                      color: i === adjSel ? "#fff" : (adjuntoNoDescargado_(a) ? "#f59e0b" : "#cbd5e1"), border: `1px solid ${i === adjSel ? "#2C6FC0" : "#334155"}`,
+                      textAlign: "left", display: "flex", alignItems: "center", gap: 6, background: i === adjSel ? "var(--navy)" : "var(--card2)",
+                      color: i === adjSel ? "#fff" : (adjuntoNoDescargado_(a) ? "#B45309" : "var(--tx)"), border: `1px solid ${i === adjSel ? "var(--navy)" : "var(--bd)"}`,
                       borderRadius: 8, padding: "6px 9px", fontSize: 11.5, cursor: "pointer", maxWidth: "100%",
                     }}>
                       <span style={{ flexShrink: 0 }}>{adjuntoNoDescargado_(a) ? "⚠" : iconoAdjunto_(a)}</span>
@@ -596,19 +596,19 @@ function CorreoModal({ correo, onClose, onRespondido }){
                     </button>
                   ))}
                 </div>
-                <div style={{ flex: 1, minHeight: mobile ? 280 : "55vh", border: "1px solid #1e2a3e", borderRadius: 10, overflow: "hidden", background: "#0b1220", display: "flex", flexDirection: "column" }}>
+                <div style={{ flex: 1, minHeight: mobile ? 280 : "55vh", border: "1px solid var(--bd)", borderRadius: 10, overflow: "hidden", background: "var(--card2)", display: "flex", flexDirection: "column" }}>
                   {adjActivo && adjActivo.url && (
                     <div style={{
                       display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
-                      padding: "6px 8px", borderBottom: "1px solid #1e2a3e", background: "#0b1120", flexShrink: 0,
+                      padding: "6px 8px", borderBottom: "1px solid var(--bd)", background: "var(--card2)", flexShrink: 0,
                     }}>
-                      <span style={{ minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: 11.5, color: "#cbd5e1" }}>
+                      <span style={{ minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: 11.5, color: "var(--tx)" }}>
                         {iconoAdjunto_(adjActivo)} {adjActivo.nombre || "adjunto"}
                       </span>
                       <span style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                         <a className="link" style={{ fontSize: 11 }} href={adjActivo.url} target="_blank" rel="noreferrer">🔗 abrir en Drive ↗</a>
                         <button className="btn-ghost sm" onClick={() => setAmpliado(true)} title="Ampliar adjunto"
-                          style={{ background: "#0b1120", border: "1px solid #334155" }}>
+                          style={{ background: "var(--card2)", border: "1px solid var(--bd)" }}>
                           ⛶ Ampliar
                         </button>
                       </span>
@@ -616,14 +616,14 @@ function CorreoModal({ correo, onClose, onRespondido }){
                   )}
                   <div style={{ flex: 1, minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
                     {adjActivo && adjuntoNoDescargado_(adjActivo)
-                      ? <div style={{ textAlign: "center", color: "#f59e0b", padding: 20 }}>
+                      ? <div style={{ textAlign: "center", color: "#B45309", padding: 20 }}>
                         <div style={{ fontSize: 32 }}>⚠</div>
                         <div style={{ fontSize: 12.5, marginTop: 6, fontWeight: 600 }}>{adjActivo.nombre || "adjunto"}</div>
-                        <div style={{ fontSize: 11.5, marginTop: 4, color: "#cbd5e1" }}>
+                        <div style={{ fontSize: 11.5, marginTop: 4, color: "var(--tx)" }}>
                           No se pudo descargar automáticamente ({motivoAdjuntoNoDescargado_(adjActivo)}). Sin vista previa — {" "}
                           <a href={WEBMAIL_URL} target="_blank" rel="noreferrer"
                             title="Abrir webmail de Hostinger (inicia sesión con tu buzón TELCOM)"
-                            style={{ color: "#f59e0b", textDecoration: "underline" }}>
+                            style={{ color: "#B45309", textDecoration: "underline" }}>
                             ábrelo en el webmail
                           </a>.
                         </div>
@@ -641,7 +641,7 @@ function CorreoModal({ correo, onClose, onRespondido }){
                         : esImg_(adjActivo.nombre)
                           ? <img src={adjActivo.url} alt={adjActivo.nombre} style={{ maxWidth: "100%", maxHeight: "100%" }} />
                           : <iframe title="preview-adjunto" src={previewUrl_(adjActivo.url)} style={{ width: "100%", height: "100%", border: 0 }} />)
-                      : <div style={{ textAlign: "center", color: "#5b6b80", padding: 20 }}>
+                      : <div style={{ textAlign: "center", color: "var(--mut)", padding: 20 }}>
                         <div style={{ fontSize: 32 }}>📎</div>
                         <div style={{ fontSize: 12, marginTop: 6 }}>Selecciona un adjunto para previsualizarlo</div>
                       </div>}
@@ -658,13 +658,13 @@ function CorreoModal({ correo, onClose, onRespondido }){
             <button className="btn sm" disabled={sugBusy} onClick={sugerirRespuesta}>{sugBusy ? "Redactando…" : "✨ Sugerir respuesta"}</button>
           </div>
         )}
-        {iaAnalisis && <div style={{ marginTop: 8, background: "rgba(124,58,237,.12)", border: "1px solid #6d28d9", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "#e2e8f0", whiteSpace: "pre-wrap", lineHeight: 1.5, flexShrink: 0 }}>
-          <b style={{ color: "#c4b5fd" }}>🤖 Análisis IA del correo:</b><br />{iaAnalisis}</div>}
+        {iaAnalisis && <div style={{ marginTop: 8, background: "rgba(109,40,217,.08)", border: "1px solid #6D28D9", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "var(--tx)", whiteSpace: "pre-wrap", lineHeight: 1.5, flexShrink: 0 }}>
+          <b style={{ color: "#6D28D9" }}>🤖 Análisis IA del correo:</b><br />{iaAnalisis}</div>}
 
-        <div style={{ marginTop: 14, borderTop: "1px solid #1e2a3e", paddingTop: 12, flexShrink: 0 }}>
-          <b style={{ color: "#e2e8f0", fontSize: 13 }}>✍️ Responder</b>
+        <div style={{ marginTop: 14, borderTop: "1px solid var(--bd)", paddingTop: 12, flexShrink: 0 }}>
+          <b style={{ color: "var(--titulo)", fontSize: 13 }}>✍️ Responder</b>
           <textarea value={texto} onChange={e => setTexto(e.target.value)} rows={3} placeholder="Escribe tu respuesta…"
-            style={{ width: "100%", marginTop: 8, background: "#0e1726", color: "#e2e8f0", border: "1px solid #334155", borderRadius: 8, padding: "8px 10px", fontSize: 12.5, resize: "vertical", boxSizing: "border-box" }} />
+            style={{ width: "100%", marginTop: 8, background: "var(--card2)", color: "var(--tx)", border: "1px solid var(--bd)", borderRadius: 8, padding: "8px 10px", fontSize: 12.5, resize: "vertical", boxSizing: "border-box" }} />
           <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>Se enviará desde tu buzón TELCOM · para archivos pesados comparte links de Drive, no adjuntos.</div>
           <div style={{ marginTop: 8, display: "flex", justifyContent: "flex-end" }}>
             <button className="btn sm" onClick={enviar} disabled={enviando}>{enviando ? "Enviando…" : "Enviar"}</button>
@@ -675,12 +675,12 @@ function CorreoModal({ correo, onClose, onRespondido }){
 
       {ampliado && adjActivo && adjActivo.url && (
         <div className="overlay" style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 0, zIndex: 90 }} onClick={e => { if (e.target === e.currentTarget) setAmpliado(false); }}>
-          <div style={{ width: "95vw", height: "95vh", background: "#0c1322", border: "1px solid #1e2a3e", borderRadius: 10, display: "flex", flexDirection: "column", overflow: "hidden" }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", borderBottom: "1px solid #1e2a3e", flexShrink: 0 }}>
-              <b style={{ color: "#e2e8f0", fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{iconoAdjunto_(adjActivo)} {adjActivo.nombre || "adjunto"}</b>
+          <div style={{ width: "95vw", height: "95vh", background: "var(--card)", border: "1px solid var(--bd)", borderRadius: 10, display: "flex", flexDirection: "column", overflow: "hidden" }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", borderBottom: "1px solid var(--bd)", flexShrink: 0 }}>
+              <b style={{ color: "var(--titulo)", fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{iconoAdjunto_(adjActivo)} {adjActivo.nombre || "adjunto"}</b>
               <button className="btn sec sm" onClick={() => setAmpliado(false)}>✕ cerrar</button>
             </div>
-            <div style={{ flex: 1, minHeight: 0, background: esImg_(adjActivo.nombre) ? "#0b1220" : "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ flex: 1, minHeight: 0, background: esImg_(adjActivo.nombre) ? "var(--card2)" : "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
               {esEml_(adjActivo.nombre, adjActivo)
                 ? <VistaCorreoEml idCorreo={correo.id} nombre={adjActivo.nombre} url={adjActivo.url} alto="100%" />
                 : esImg_(adjActivo.nombre)

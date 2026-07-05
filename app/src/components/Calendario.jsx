@@ -49,25 +49,25 @@ export default function Calendario({ tickets = [], recByCode = {}, perfil, setSe
         <h3 style={{ margin: 0 }}>Calendario de plazos {equipo ? "— equipo" : "— mis vencimientos"}</h3>
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
           <button className="btn sm" onClick={() => setMes(new Date(y, m - 1, 1))}>‹</button>
-          <b style={{ minWidth: 130, textAlign: "center", color: "#e2e8f0", textTransform: "capitalize" }}>{MESES[m]} {y}</b>
+          <b style={{ minWidth: 130, textAlign: "center", color: "var(--titulo)", textTransform: "capitalize" }}>{MESES[m]} {y}</b>
           <button className="btn sm" onClick={() => setMes(new Date(y, m + 1, 1))}>›</button>
         </div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4 }}>
-        {DOW.map(d => <div key={d} style={{ textAlign: "center", fontSize: 11, color: "#5b6b80", fontWeight: 700, padding: "2px 0" }}>{d}</div>)}
+        {DOW.map(d => <div key={d} style={{ textAlign: "center", fontSize: 11, color: "var(--mut)", fontWeight: 700, padding: "2px 0" }}>{d}</div>)}
         {celdas.map((d, i) => {
           if (!d) return <div key={i} />;
           const k = iso(d), list = ev[k], es_hoy = k === hoyISO, sel = k === selDia;
           return (
             <div key={i} onClick={() => list && setSelDia(sel ? null : k)} style={{
               minHeight: 58, borderRadius: 8, padding: 5, cursor: list ? "pointer" : "default",
-              background: sel ? "#16233a" : "#0f1828", border: `1px solid ${sel ? "#2C6FC0" : es_hoy ? "#3b5680" : "#1a2436"}`,
+              background: sel ? "var(--selBg)" : "var(--card2)", border: `1px solid ${sel ? "var(--navy)" : es_hoy ? "var(--linkTx)" : "var(--bd)"}`,
             }}>
-              <div style={{ fontSize: 11, color: es_hoy ? "#93c5fd" : "#8a97a8", fontWeight: es_hoy ? 700 : 400 }}>{d.getDate()}</div>
+              <div style={{ fontSize: 11, color: es_hoy ? "var(--linkTx)" : "var(--mut)", fontWeight: es_hoy ? 700 : 400 }}>{d.getDate()}</div>
               {list && <div style={{ marginTop: 3, display: "flex", alignItems: "center", gap: 4 }}>
                 <span style={{ width: 8, height: 8, borderRadius: "50%", background: colorDia(list) }} />
-                <span style={{ fontSize: 10.5, color: "#cbd5e1" }}>{list.length}</span>
+                <span style={{ fontSize: 10.5, color: "var(--tx)" }}>{list.length}</span>
               </div>}
             </div>
           );
@@ -76,17 +76,17 @@ export default function Calendario({ tickets = [], recByCode = {}, perfil, setSe
 
       {detalle && (
         <div style={{ marginTop: 14 }}>
-          <div style={{ fontWeight: 700, color: "#e2e8f0", marginBottom: 8 }}>Vence el {selDia} ({detalle.length})</div>
+          <div style={{ fontWeight: 700, color: "var(--titulo)", marginBottom: 8 }}>Vence el {selDia} ({detalle.length})</div>
           <div style={{ display: "grid", gap: 6 }}>
             {detalle.map((e, i) => (
               <div key={i} onClick={() => { const r = recByCode[e.reclamo]; if (r) setSelExp?.(r.id, e.etapa); }} style={{
                 display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 8,
-                background: "#0f1828", border: "1px solid #1e2a3e", borderLeft: `4px solid ${e.vencido ? "#C0392B" : e.hito ? "#C9821B" : "#1E8E5A"}`,
+                background: "var(--card2)", border: "1px solid var(--bd)", borderLeft: `4px solid ${e.vencido ? "#C0392B" : e.hito ? "#C9821B" : "#1E8E5A"}`,
                 cursor: e.reclamo ? "pointer" : "default",
               }}>
-                <span style={{ fontSize: 12.5, color: "#e2e8f0", fontWeight: 600 }}>{e.hito ? "📌 " : ""}{e.titulo}</span>
+                <span style={{ fontSize: 12.5, color: "var(--titulo)", fontWeight: 600 }}>{e.hito ? "📌 " : ""}{e.titulo}</span>
                 <span className="muted" style={{ fontSize: 11.5 }}>{e.sub}</span>
-                {e.vencido && <span style={{ marginLeft: "auto", fontSize: 11, color: "#fca5a5" }}>vencido</span>}
+                {e.vencido && <span style={{ marginLeft: "auto", fontSize: 11, color: "#DC2626" }}>vencido</span>}
               </div>
             ))}
           </div>

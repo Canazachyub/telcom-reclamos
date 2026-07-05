@@ -70,15 +70,15 @@ export default function Evidencias({ misReclamos, evidencias, onAdd, respId, per
         <h3 style={{margin:0}}>Subir evidencia del día · {etapa}</h3>
         <button onClick={()=>setVerInfo(v=>!v)} title="¿Qué es esta etapa según las bases?"
           style={{width:24,height:24,borderRadius:"50%",border:"1px solid #1F4E8C",background:verInfo?"#1F4E8C":"transparent",
-                  color:verInfo?"#fff":"#60a5fa",fontWeight:700,fontStyle:"italic",cursor:"pointer",lineHeight:1,fontFamily:"Georgia,serif"}}>i</button>
+                  color:verInfo?"#fff":"var(--linkTx)",fontWeight:700,fontStyle:"italic",cursor:"pointer",lineHeight:1,fontFamily:"Georgia,serif"}}>i</button>
       </div>
       {verInfo && infoEtapa && (
-        <div className="note" style={{background:"rgba(31,78,140,.15)",border:"1px solid #1F4E8C",color:"#cbd5e1",margin:"10px 0"}}>
-          <div style={{fontWeight:700,marginBottom:6,color:"#93c5fd"}}>«{etapa}» — según las bases (Directiva OSINERGMIN 269-2014)</div>
+        <div className="note" style={{background:"var(--hoverBg)",border:"1px solid #1F4E8C",color:"var(--tx)",margin:"10px 0"}}>
+          <div style={{fontWeight:700,marginBottom:6,color:"var(--linkTx)"}}>«{etapa}» — según las bases (Directiva OSINERGMIN 269-2014)</div>
           <div className="kv"><b>Qué es</b><span>{infoEtapa.que_es}</span></div>
           <div className="kv"><b>Por qué importa</b><span>{infoEtapa.importa}</span></div>
           <div className="kv"><b>Plazo</b><span>{infoEtapa.plazo}</span></div>
-          <div className="kv"><b>Penalidad en juego</b><span style={{color:infoEtapa.pen==="—"?"#94a3b8":"#fca5a5"}}>
+          <div className="kv"><b>Penalidad en juego</b><span style={{color:infoEtapa.pen==="—"?"var(--mut)":"#DC2626"}}>
             {infoEtapa.pen}{esGerente && infoEtapa.penMonto ? "  ·  "+infoEtapa.penMonto : ""}
           </span></div>
           {!esGerente && infoEtapa.pen!=="—" && <div className="muted" style={{fontSize:11,marginTop:4}}>El importe en S/ lo gestiona Gerencia.</div>}
@@ -96,12 +96,12 @@ export default function Evidencias({ misReclamos, evidencias, onAdd, respId, per
         onDragOver={e=>{e.preventDefault();setOver(true);}}
         onDragLeave={()=>setOver(false)}
         onDrop={e=>{e.preventDefault();setOver(false);handleFiles(e.dataTransfer.files);}}>
-        <div style={{fontSize:14,color:"#cbd5e1"}}>Arrastra aquí los PDF / imágenes del trabajo</div>
+        <div style={{fontSize:14,color:"var(--tx)"}}>Arrastra aquí los PDF / imágenes del trabajo</div>
         <div style={{fontSize:12,marginTop:4}}>o haz clic para seleccionar · se archivan en <span className="mono">/{reclamo||"{reclamo}"}/{etapa}</span></div>
         <input ref={inputRef} type="file" multiple hidden onChange={e=>handleFiles(e.target.files)}/>
       </div>
 
-      {meta?.guia && <div className="note" style={{background:"rgba(31,78,140,.15)",border:"1px solid #1F4E8C",color:"#cbd5e1",marginTop:14}}>
+      {meta?.guia && <div className="note" style={{background:"var(--hoverBg)",border:"1px solid #1F4E8C",color:"var(--tx)",marginTop:14}}>
         <div style={{fontWeight:600,marginBottom:8}}>Qué subir en «{etapa}» — guía según las bases</div>
         <div className="kv"><b>Documentos</b><span>{meta.evi.join(" · ")}</span></div>
         <div className="kv"><b>Formato admitido</b><span>{meta.guia.formatos}</span></div>
@@ -110,9 +110,9 @@ export default function Evidencias({ misReclamos, evidencias, onAdd, respId, per
       </div>}
 
       <div style={{marginTop:14}}>
-        <div style={{fontWeight:600,fontSize:12,color:"#cbd5e1",marginBottom:6}}>Estado de la evidencia en «{etapa}»</div>
+        <div style={{fontWeight:600,fontSize:12,color:"var(--tx)",marginBottom:6}}>Estado de la evidencia en «{etapa}»</div>
         {checklist.length? checklist.map((c,i)=>(
-          <div key={i} className="chk"><span style={{color:c.ok?"#22c55e":"#ef4444"}}>{c.ok?"✓":"pendiente"}</span> {c.ev}</div>
+          <div key={i} className="chk"><span style={{color:c.ok?"#15803D":"#DC2626"}}>{c.ok?"✓":"pendiente"}</span> {c.ev}</div>
         )) : <div className="muted" style={{fontSize:12}}>Etapa sin evidencia obligatoria.</div>}
         <a className="link" style={{fontSize:12}} href={DRIVE_URL} target="_blank" rel="noreferrer">Abrir carpeta en Drive ↗</a>
       </div>
@@ -127,7 +127,7 @@ export default function Evidencias({ misReclamos, evidencias, onAdd, respId, per
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
           {especEtapa.campos.map(c => (
             <label key={c.k} title={AYUDA_CAMPO[c.k]||""} style={{fontSize:12.5,gridColumn:c.tipo==="textarea"?"1 / -1":undefined}}>
-              <span style={{color:"#94a3b8"}}>{c.label}{AYUDA_CAMPO[c.k] && <span style={{color:"#60a5fa",cursor:"help"}} title={AYUDA_CAMPO[c.k]}> ⓘ</span>}</span>
+              <span style={{color:"var(--mut)"}}>{c.label}{AYUDA_CAMPO[c.k] && <span style={{color:"var(--linkTx)",cursor:"help"}} title={AYUDA_CAMPO[c.k]}> ⓘ</span>}</span>
               {c.tipo==="select" ? (
                 <select disabled={!puedeDatos} value={datos[c.k]||""} onChange={e=>setDatos(d=>({...d,[c.k]:e.target.value}))} style={inDato}>
                   <option value="">—</option>{c.opciones.map(o=><option key={o} value={o}>{o}</option>)}
@@ -157,7 +157,7 @@ export default function Evidencias({ misReclamos, evidencias, onAdd, respId, per
       <h3>Subidas de hoy ({subidasHoy.length})</h3>
       {Object.keys(porReclamo).length? Object.entries(porReclamo).map(([cod,list])=>(
         <div key={cod} style={{marginBottom:12}}>
-          <div className="mono" style={{fontSize:12,color:"#93c5fd",marginBottom:6}}>{cod}</div>
+          <div className="mono" style={{fontSize:12,color:"var(--linkTx)",marginBottom:6}}>{cod}</div>
           {list.map((e,i)=>(
             <div className="evic" key={i}>
               <div className="th">{icoTipo(e.tipo)}</div>
@@ -172,4 +172,4 @@ export default function Evidencias({ misReclamos, evidencias, onAdd, respId, per
 }
 
 const inDato = { width:"100%", marginTop:3, padding:"7px 9px", borderRadius:8, fontSize:13,
-  fontFamily:"inherit", background:"#0e1726", color:"#e2e8f0", border:"1px solid #334155" };
+  fontFamily:"inherit", background:"var(--card2)", color:"var(--tx)", border:"1px solid var(--bd)" };

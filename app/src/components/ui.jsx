@@ -11,7 +11,7 @@ export function Kpi({label, value, sub, s}){
     <div className="val" style={{color:sem(s)}}>{value}</div><div className="sub">{sub}</div></div>;
 }
 export function Pill({children, bg, color="#fff"}){ return <span className="pill" style={{background:bg,color}}>{children}</span>; }
-export function Tag({children, bg="#1e293b", color="#cbd5e1"}){ return <span className="tag" style={{background:bg,color}}>{children}</span>; }
+export function Tag({children, bg="#E9EEF5", color="var(--tx)"}){ return <span className="tag" style={{background:bg,color}}>{children}</span>; }
 
 export function HBars({items}){
   const max = Math.max(1, ...items.map(i=>i.val));

@@ -66,25 +66,25 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
   const puedeAccion = tk && perfil && (esMiEtapa || perfil.rol === "GERENTE" || perfil.rol === "COORDINADOR");
   const wrapS = { ...wrap, ...(mobile ? { width: "100vw", height: "100vh", maxWidth: "none", borderRadius: 0 } : {}) };
   const colsS = mobile ? { flex: 1, display: "flex", flexDirection: "column", overflowY: "auto" } : cols;
-  const colS = mobile ? { padding: 14, borderBottom: "1px solid #1e2a3e" } : col;
-  const bordR = mobile ? {} : { borderRight: "1px solid #1e2a3e" };
+  const colS = mobile ? { padding: 14, borderBottom: "1px solid var(--bd)" } : col;
+  const bordR = mobile ? {} : { borderRight: "1px solid var(--bd)" };
 
   return (
     <div className="overlay" style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: mobile ? 0 : 16 }} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div style={wrapS}>
         {/* ===== Header + línea de tiempo (full width) ===== */}
-        <div style={{ padding: "12px 18px", borderBottom: "1px solid #1e2a3e" }}>
+        <div style={{ padding: "12px 18px", borderBottom: "1px solid var(--bd)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 8 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-              <span className="mono" style={{ fontSize: 16, fontWeight: 700, color: "#e6eaf0" }}>{exp.osinerg || exp.codigo}</span>
+              <span className="mono" style={{ fontSize: 16, fontWeight: 700, color: "var(--titulo)" }}>{exp.osinerg || exp.codigo}</span>
               <span className="muted">{exp.solicitante}</span>
               <Tag bg={wColor(exp.resp)} color="#fff">👤 {wName(exp.resp)}</Tag>
-              {exp.tipoRes && <Tag bg="#1e293b">{exp.tipoRes}</Tag>}
+              {exp.tipoRes && <Tag bg="#E9EEF5" color="var(--tx)">{exp.tipoRes}</Tag>}
               {exp.apelacion && <Tag bg="#7c3aed" color="#fff">APELACIÓN JARU</Tag>}
             </div>
             <button className="btn sec sm" onClick={onClose} title="Cerrar expediente">✕ cerrar</button>
           </div>
-          <div style={{ fontSize: 11, color: "#5b6b80", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 2 }}>Línea de tiempo del expediente</div>
+          <div style={{ fontSize: 11, color: "var(--mut)", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 2 }}>Línea de tiempo del expediente</div>
           <Timeline ticketDe={ticketDe}
             estadoPos={i => {
               // Preferir el ticket activo del caso (fuente de verdad); si el caso no tiene
@@ -100,7 +100,7 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
           {/* --- VISOR --- */}
           <div style={{ ...colS, ...bordR, display: "flex", flexDirection: "column", minHeight: mobile ? 380 : "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
-              <b style={{ color: "#e2e8f0", fontSize: 13 }}>Visor — {s.etapa}</b>
+              <b style={{ color: "var(--titulo)", fontSize: 13 }}>Visor — {s.etapa}</b>
               <div style={{ display: "flex", gap: 6 }}>
                 <button className="btn sm" onClick={() => setSubir(v => !v)} title="Subir evidencia y registrar datos de esta etapa">📎 {subir ? "Cerrar" : "Evidencia + datos"}</button>
                 <button className="btn sm" onClick={() => setDocGen(true)} title="Generar el documento de este expediente">📄 Generar documento</button>
@@ -115,12 +115,12 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
               </div>
             )}
             {subir && <SubirEvidencia reclamo={exp.codigo} etapa={s.etapa} etapaNN={ETAPA_NN[s.etapa]} perfil={perfil} onSaveDatos={onSaveDatos} onSubido={onSubido} onClose={() => setSubir(false)} />}
-            <div style={{ flex: 1, marginTop: 8, minHeight: 320, borderRadius: 10, border: "1px solid #1e2a3e", overflow: "hidden", background: "#0b1220", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ flex: 1, marginTop: 8, minHeight: 320, borderRadius: 10, border: "1px solid var(--bd)", overflow: "hidden", background: "var(--card2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               {doc && doc.url
                 ? (esImg(doc.nombre)
                   ? <img src={doc.url} alt={doc.nombre} style={{ maxWidth: "100%", maxHeight: "100%" }} />
                   : <iframe title="visor" src={previewUrl(doc.url)} style={{ width: "100%", height: "100%", border: 0 }} />)
-                : <div style={{ textAlign: "center", color: "#5b6b80", padding: 30 }}>
+                : <div style={{ textAlign: "center", color: "var(--mut)", padding: 30 }}>
                   <div style={{ fontSize: 40 }}>📄</div>
                   <div style={{ fontSize: 13, marginTop: 8 }}>Sin documento en esta etapa</div>
                   <div style={{ fontSize: 11 }}>Sube el PDF/imagen con «📎 Subir evidencia»</div>
@@ -130,18 +130,18 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
               <a className="link" style={{ fontSize: 11 }} href={doc.url} target="_blank" rel="noreferrer">🔗 abrir {doc.nombre} en Drive ↗</a>
               <button className="btn sm" disabled={iaBusy} onClick={async () => { setIaBusy(true); setIaResumen(""); const r = await resumirIA({ url: doc.url, reclamo: exp.codigo, etapa: s.etapa }); setIaBusy(false); setIaResumen(r?.ok ? r.resumen : "⚠ " + (r?.error || "no se pudo resumir (¿configuraste la API key de Gemini?)")); }}>{iaBusy ? "Resumiendo…" : "🤖 Resumir con IA"}</button>
             </div>}
-            {iaResumen && <div style={{ marginTop: 8, background: "rgba(124,58,237,.12)", border: "1px solid #6d28d9", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "#e2e8f0", whiteSpace: "pre-wrap", lineHeight: 1.5 }}>
-              <b style={{ color: "#c4b5fd" }}>🤖 Resumen IA del documento:</b><br />{iaResumen}</div>}
+            {iaResumen && <div style={{ marginTop: 8, background: "rgba(124,58,237,.10)", border: "1px solid #6d28d9", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "var(--tx)", whiteSpace: "pre-wrap", lineHeight: 1.5 }}>
+              <b style={{ color: "#6D28D9" }}>🤖 Resumen IA del documento:</b><br />{iaResumen}</div>}
           </div>
 
           {/* --- Datos del formulario (lo que llenó el trabajador) --- */}
           <div style={{ ...colS, ...bordR }}>
-            {esMiEtapa && <div style={{ background: "rgba(201,130,27,.18)", border: "1px solid #C9821B", borderRadius: 8, padding: "8px 10px", marginBottom: 10, fontSize: 12.5, color: "#fcd9a8" }}>
+            {esMiEtapa && <div style={{ background: "rgba(201,130,27,.12)", border: "1px solid #C9821B", borderRadius: 8, padding: "8px 10px", marginBottom: 10, fontSize: 12.5, color: "#7A4A0A" }}>
               ✋ <b>Esta etapa es tuya.</b> 1) 📎 sube la evidencia y llena los datos · 2) 📄 genera el documento si aplica · 3) pulsa «✔ Terminé esta etapa».
             </div>}
-            <b style={{ color: "#e2e8f0", fontSize: 13 }}>Datos de la etapa</b>
+            <b style={{ color: "var(--titulo)", fontSize: 13 }}>Datos de la etapa</b>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", margin: "8px 0" }}>
-              <Tag>👤 {s.rol}</Tag><Tag>{s.act}</Tag><Tag>⏱ {s.plazo}</Tag>
+              <Tag bg="#E9EEF5" color="var(--tx)">👤 {s.rol}</Tag><Tag bg="#E9EEF5" color="var(--tx)">{s.act}</Tag><Tag bg="#E9EEF5" color="var(--tx)">⏱ {s.plazo}</Tag>
               {estPlazo && <Tag bg={estPlazo.c} color="#fff">{estPlazo.t} · {tk.fechaLimite} ({tk.diasRestantes}d háb.)</Tag>}
               {tk && tk.hecho && <Tag bg="#064e3b" color="#fff">✓ hecho</Tag>}
             </div>
@@ -163,41 +163,41 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
 
             <Sec t="📝 Lo que registró el trabajador (formulario)">
               {datK.length ? <div style={{ display: "grid", gap: 4 }}>
-                {datK.map(k => <div key={k} style={{ fontSize: 12.5 }}><b style={{ color: "#94a3b8" }}>{humaniza(k)}:</b> <span style={{ color: "#e2e8f0" }}>{String(dat[k])}</span></div>)}
+                {datK.map(k => <div key={k} style={{ fontSize: 12.5 }}><b style={{ color: "var(--mut)" }}>{humaniza(k)}:</b> <span style={{ color: "var(--tx)" }}>{String(dat[k])}</span></div>)}
               </div> : <div className="muted" style={{ fontSize: 12 }}>Aún no se registraron datos en esta etapa.</div>}
             </Sec>
 
             <Sec t="¿Qué hizo / qué falta?">
-              {s.pasos.map((p, k) => { const done = tk ? tk.hecho : (sel < ci || exp.estado === "Cerrado"); return <div className="chk" key={k}><span style={{ color: done ? "#22c55e" : tk && tk.estado === "en_proceso" ? "#f59e0b" : "#64748b" }}>{done ? "✓" : "○"}</span> {p}</div>; })}
+              {s.pasos.map((p, k) => { const done = tk ? tk.hecho : (sel < ci || exp.estado === "Cerrado"); return <div className="chk" key={k}><span style={{ color: done ? "#15803D" : tk && tk.estado === "en_proceso" ? "#B45309" : "var(--mut)" }}>{done ? "✓" : "○"}</span> {p}</div>; })}
             </Sec>
             <Sec t="Evidencia requerida">
-              {s.evi.map((ev, k) => { const has = docs.some(d => String(d.nombre).toLowerCase().includes(ev.split(" ")[0].toLowerCase())); return <div className="chk" key={k}><span style={{ color: has ? "#22c55e" : "#ef4444" }}>{has ? "✓" : "✗ falta"}</span> {ev}</div>; })}
+              {s.evi.map((ev, k) => { const has = docs.some(d => String(d.nombre).toLowerCase().includes(ev.split(" ")[0].toLowerCase())); return <div className="chk" key={k}><span style={{ color: has ? "#15803D" : "#DC2626" }}>{has ? "✓" : "✗ falta"}</span> {ev}</div>; })}
             </Sec>
-            {INFO_ETAPA[s.etapa] && <div className="note" style={{ background: "rgba(31,78,140,.12)", border: "1px solid #1e3a5f", color: "#cbd5e1", fontSize: 11.5, marginTop: 8 }}>
-              <b style={{ color: "#93c5fd" }}>Según las bases:</b> {INFO_ETAPA[s.etapa].importa}
+            {INFO_ETAPA[s.etapa] && <div className="note" style={{ background: "rgba(31,78,140,.08)", border: "1px solid var(--bd)", color: "var(--tx)", fontSize: 11.5, marginTop: 8 }}>
+              <b style={{ color: "var(--linkTx)" }}>Según las bases:</b> {INFO_ETAPA[s.etapa].importa}
             </div>}
           </div>
 
           {/* --- Datos del reclamo + navegador de etapas + observaciones --- */}
           <div style={colS}>
-            <b style={{ color: "#e2e8f0", fontSize: 13 }}>Datos del reclamo</b>
+            <b style={{ color: "var(--titulo)", fontSize: 13 }}>Datos del reclamo</b>
             <div style={{ margin: "8px 0" }}>
               {[["Clase", exp.clase], ["Suministro", exp.suministro], ["Dirección", exp.direccion], ["Distrito", `${exp.distrito} · ${exp.provincia}`], ["F. admisión", fmtFecha(exp.fechaAdm)], ["F. límite SIELSE", fmtFecha(exp.fechaLim)], ["Doc. ref.", exp.docRef || "—"]].map(([a, b]) => (
                 <div className="kv" key={a}><b>{a}</b><span>{b}</span></div>
               ))}
             </div>
-            {exp.descripcion && <div style={{ fontSize: 12, color: "#cbd5e1", background: "#0f1828", border: "1px solid #1e2a3e", borderRadius: 8, padding: 8, marginBottom: 10 }}>{exp.descripcion}</div>}
-            <b style={{ color: "#e2e8f0", fontSize: 13 }}>Etapas</b>
+            {exp.descripcion && <div style={{ fontSize: 12, color: "var(--tx)", background: "var(--card2)", border: "1px solid var(--bd)", borderRadius: 8, padding: 8, marginBottom: 10 }}>{exp.descripcion}</div>}
+            <b style={{ color: "var(--titulo)", fontSize: 13 }}>Etapas</b>
             <div style={{ display: "grid", gap: 5, marginTop: 8 }}>
               {FLUJO.map((f, i) => {
                 const t = ticketDe(f.etapa);
                 const est = t ? (t.hecho ? "hecho" : t.estado === "en_proceso" ? "proceso" : "pend") : (exp.estado === "Cerrado" ? "hecho" : i < ci ? "hecho" : i === ci ? "proceso" : "pend");
-                const col2 = est === "hecho" ? "#1E8E5A" : est === "proceso" ? "#2C6FC0" : "#37475e";
+                const col2 = est === "hecho" ? "#1E8E5A" : est === "proceso" ? "#2C6FC0" : "var(--mut)";
                 return (
-                  <div key={i} onClick={() => selEst(i)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 9px", borderRadius: 8, cursor: "pointer", background: i === sel ? "#16233a" : "#0f1828", border: `1px solid ${i === sel ? "#2C6FC0" : "#1e2a3e"}` }}>
-                    <span style={{ width: 18, height: 18, borderRadius: "50%", background: col2, color: "#08111e", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800 }}>{est === "hecho" ? "✓" : est === "proceso" ? "◐" : "○"}</span>
-                    <span style={{ flex: 1, fontSize: 12, color: "#e2e8f0" }}>{f.etapa}</span>
-                    {t && t.abierto && t.vencido && <span style={{ fontSize: 10, color: "#fca5a5" }}>vencido</span>}
+                  <div key={i} onClick={() => selEst(i)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 9px", borderRadius: 8, cursor: "pointer", background: i === sel ? "var(--selBg)" : "var(--card2)", border: `1px solid ${i === sel ? "#2C6FC0" : "var(--bd)"}` }}>
+                    <span style={{ width: 18, height: 18, borderRadius: "50%", background: col2, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800 }}>{est === "hecho" ? "✓" : est === "proceso" ? "◐" : "○"}</span>
+                    <span style={{ flex: 1, fontSize: 12, color: "var(--tx)" }}>{f.etapa}</span>
+                    {t && t.abierto && t.vencido && <span style={{ fontSize: 10, color: "#DC2626" }}>vencido</span>}
                     {t && <span className="muted" style={{ fontSize: 10 }}>{t.responsable.split(" ")[0]}</span>}
                   </div>
                 );
@@ -210,9 +210,9 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
         {/* ===== Modal: generar documento de este expediente ===== */}
         {docGen && (
           <div className="overlay" style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 16, zIndex: 60 }} onClick={e => { if (e.target === e.currentTarget) setDocGen(false); }}>
-            <div style={{ width: "min(880px,94vw)", maxHeight: "90vh", overflowY: "auto", background: "#0c1322", border: "1px solid #1e2a3e", borderRadius: 14, padding: 16 }}>
+            <div style={{ width: "min(880px,94vw)", maxHeight: "90vh", overflowY: "auto", background: "#fff", border: "1px solid var(--bd)", borderRadius: 14, padding: 16 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                <b style={{ color: "#e2e8f0" }}>📄 Generar documento — <span className="mono">{exp.osinerg || exp.codigo}</span></b>
+                <b style={{ color: "var(--titulo)" }}>📄 Generar documento — <span className="mono">{exp.osinerg || exp.codigo}</span></b>
                 <button className="btn sec sm" onClick={() => setDocGen(false)}>✕ cerrar</button>
               </div>
               <Formularios data={[exp]} perfil={perfil} fijo={exp}
@@ -243,16 +243,16 @@ function Observaciones({ reclamo, etapa, perfil, comentarios, onComentar }) {
   };
   return (
     <div style={{ marginTop: 14 }}>
-      <b style={{ color: "#e2e8f0", fontSize: 13 }}>Observaciones ({mis.length})</b>
+      <b style={{ color: "var(--titulo)", fontSize: 13 }}>Observaciones ({mis.length})</b>
       <div style={{ display: "flex", gap: 6, margin: "8px 0" }}>
         <input value={txt} onChange={e => setTxt(e.target.value)} onKeyDown={e => e.key === "Enter" && enviar()}
-          placeholder="Añade una observación… (escribe «MEJORA: …» para proponer una mejora del sistema)" style={{ flex: 1, background: "#0e1726", color: "#e2e8f0", border: "1px solid #334155", borderRadius: 8, padding: "7px 9px", fontSize: 12.5 }} />
+          placeholder="Añade una observación… (escribe «MEJORA: …» para proponer una mejora del sistema)" style={{ flex: 1, background: "#fff", color: "var(--tx)", border: "1px solid var(--bd)", borderRadius: 8, padding: "7px 9px", fontSize: 12.5 }} />
         <button className="btn sm" onClick={enviar}>Enviar</button>
       </div>
       <div style={{ display: "grid", gap: 6 }}>
         {mis.map((c, i) => (
-          <div key={i} style={{ background: "#0f1828", border: "1px solid #1e2a3e", borderRadius: 8, padding: "7px 10px" }}>
-            <div style={{ fontSize: 12.5, color: "#e2e8f0" }}>{c.texto}</div>
+          <div key={i} style={{ background: "var(--card2)", border: "1px solid var(--bd)", borderRadius: 8, padding: "7px 10px" }}>
+            <div style={{ fontSize: 12.5, color: "var(--tx)" }}>{c.texto}</div>
             <div className="muted" style={{ fontSize: 10.5, marginTop: 3 }}>{c.nombre || c.usuario} · {c.rol} · {c.fecha}{c.etapa ? " · " + c.etapa : ""}</div>
           </div>
         ))}
@@ -264,13 +264,13 @@ function Observaciones({ reclamo, etapa, perfil, comentarios, onComentar }) {
 
 const Sec = ({ t, children }) => (
   <div style={{ marginTop: 10 }}>
-    <div style={{ fontWeight: 600, fontSize: 12, color: "#cbd5e1", marginBottom: 4 }}>{t}</div>
+    <div style={{ fontWeight: 600, fontSize: 12, color: "var(--tx)", marginBottom: 4 }}>{t}</div>
     {children}
   </div>
 );
 
-const wrap = { width: "96vw", maxWidth: 1500, height: "92vh", background: "#0c1322", border: "1px solid #1e2a3e", borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 20px 60px rgba(0,0,0,.6)" };
+const wrap = { width: "96vw", maxWidth: 1500, height: "92vh", background: "#fff", border: "1px solid var(--bd)", borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 20px 60px rgba(22,41,75,.15)" };
 const cols = { flex: 1, display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr", overflow: "hidden" };
 const col = { padding: 14, overflowY: "auto" };
-const chip = { background: "#0f1828", color: "#cbd5e1", border: "1px solid #334155", borderRadius: 7, padding: "4px 8px", fontSize: 11, cursor: "pointer" };
+const chip = { background: "var(--card2)", color: "var(--tx)", border: "1px solid var(--bd)", borderRadius: 7, padding: "4px 8px", fontSize: 11, cursor: "pointer" };
 const chipOn = { background: "#1F4E8C", color: "#fff", borderColor: "#2C6FC0" };

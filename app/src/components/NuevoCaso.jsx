@@ -81,11 +81,11 @@ export default function NuevoCaso({ perfil, onCreado, onClose, existentes = [], 
 
   return (
     <div className="overlay" style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{ width: "min(1180px,97vw)", maxHeight: "94vh", display: "flex", flexDirection: "column", background: "#0c1322", border: "1px solid #1e2a3e", borderRadius: 14, boxShadow: "0 20px 60px rgba(0,0,0,.6)" }}>
+      <div style={{ width: "min(1180px,97vw)", maxHeight: "94vh", display: "flex", flexDirection: "column", background: "var(--card)", border: "1px solid var(--bd)", borderRadius: 14, boxShadow: "0 20px 60px rgba(22,41,75,.15)" }}>
         {/* header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px", borderBottom: "1px solid #1e2a3e" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px", borderBottom: "1px solid var(--bd)" }}>
           <div>
-            <h3 style={{ margin: 0, color: "#e6eaf0" }}>➕ Registrar reclamo — mesa de partes TELCOM</h3>
+            <h3 style={{ margin: 0, color: "var(--titulo)" }}>➕ Registrar reclamo — mesa de partes TELCOM</h3>
             <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>1) Escanea/adjunta el Formato 1 · 2) la IA extrae los datos · 3) valídalos contra el PDF · 4) se crea el expediente con su flujo. El detalle queda listo para <b>transcribirlo a SIELSE</b> en su etapa (≤2 días háb.).</div>
           </div>
           <button className="btn sec sm" onClick={onClose}>✕ cerrar</button>
@@ -95,11 +95,11 @@ export default function NuevoCaso({ perfil, onCreado, onClose, existentes = [], 
         <div style={{ display: "flex", gap: 16, padding: 16, overflow: "auto", flexWrap: "wrap" }}>
           {/* ---- FORMULARIO ---- */}
           <div style={{ flex: "1 1 440px", minWidth: 320 }}>
-            <div onClick={() => inputRef.current?.click()} style={{ border: "1px dashed #334155", borderRadius: 8, padding: "12px 10px", textAlign: "center", cursor: "pointer", marginBottom: 10 }}>
-              <div style={{ fontSize: 13, color: "#cbd5e1" }}>{file ? `📄 ${file.name} · cambiar` : "Adjunta el Formato 1 / cargo de recepción (PDF)"}</div>
+            <div onClick={() => inputRef.current?.click()} style={{ border: "1px dashed var(--bd)", borderRadius: 8, padding: "12px 10px", textAlign: "center", cursor: "pointer", marginBottom: 10 }}>
+              <div style={{ fontSize: 13, color: "var(--tx)" }}>{file ? `📄 ${file.name} · cambiar` : "Adjunta el Formato 1 / cargo de recepción (PDF)"}</div>
               <input ref={inputRef} type="file" hidden accept="application/pdf,image/*" onChange={e => setFile(e.target.files[0])} />
             </div>
-            <button onClick={extraer} disabled={iaBusy || !file} style={{ width: "100%", background: "rgba(124,58,237,.18)", color: "#c4b5fd", border: "1px solid #6d28d9", borderRadius: 8, padding: "8px 12px", fontSize: 12.5, cursor: file ? "pointer" : "not-allowed", fontWeight: 600, marginBottom: 12 }}>
+            <button onClick={extraer} disabled={iaBusy || !file} style={{ width: "100%", background: "rgba(109,40,217,.10)", color: "#6D28D9", border: "1px solid #6d28d9", borderRadius: 8, padding: "8px 12px", fontSize: 12.5, cursor: file ? "pointer" : "not-allowed", fontWeight: 600, marginBottom: 12 }}>
               {iaBusy ? "Leyendo documento…" : "🤖 Extraer datos del Formato 1"}
             </button>
 
@@ -112,31 +112,31 @@ export default function NuevoCaso({ perfil, onCreado, onClose, existentes = [], 
                 ["PERIODO_RECLAMADO", "Período reclamado", "text"], ["monto_reclamo", "Monto en reclamo (S/)", "num"],
               ].map(([k, lab, tipo]) => (
                 <label key={k} style={{ fontSize: 12 }}>
-                  <span style={{ color: "#94a3b8" }}>{lab}{sug.has(k) && <span style={badge}>IA</span>}</span>
+                  <span style={{ color: "var(--mut)" }}>{lab}{sug.has(k) && <span style={badge}>IA</span>}</span>
                   <input type={tipo === "num" ? "number" : "text"} value={f[k] || ""} onChange={e => set(k, e.target.value)} style={inp(sug.has(k))} />
                 </label>
               ))}
               <label style={{ fontSize: 12 }}>
-                <span style={{ color: "#94a3b8" }}>Materia{sug.has("NombreClaseReclamo") && <span style={badge}>IA</span>}</span>
+                <span style={{ color: "var(--mut)" }}>Materia{sug.has("NombreClaseReclamo") && <span style={badge}>IA</span>}</span>
                 <select value={f.NombreClaseReclamo || ""} onChange={e => set("NombreClaseReclamo", e.target.value)} style={inp(sug.has("NombreClaseReclamo"))}>
                   <option value="RECLAMOS POR EXCESIVA FACTURACION">Excesiva facturación</option>
                   <option value="RECLAMOS VARIOS">Varios</option>
                 </select>
               </label>
               <label style={{ fontSize: 12 }}>
-                <span style={{ color: "#94a3b8" }}>Forma de presentación</span>
+                <span style={{ color: "var(--mut)" }}>Forma de presentación</span>
                 <select value={f.FORMA_PRESENTACION || ""} onChange={e => set("FORMA_PRESENTACION", e.target.value)} style={inp(false)}>
                   <option value="">—</option><option>Presencial (ventanilla)</option><option>Web</option><option>Teléfono</option><option>Correo</option>
                 </select>
               </label>
               <label style={{ fontSize: 12, gridColumn: "1 / -1" }}>
-                <span style={{ color: "#94a3b8" }}>Descripción{sug.has("DescripcionReclamo") && <span style={badge}>IA</span>}</span>
+                <span style={{ color: "var(--mut)" }}>Descripción{sug.has("DescripcionReclamo") && <span style={badge}>IA</span>}</span>
                 <textarea rows={3} value={f.DescripcionReclamo || ""} onChange={e => set("DescripcionReclamo", e.target.value)} style={inp(sug.has("DescripcionReclamo"))} />
               </label>
             </div>
 
             <div style={{ marginTop: 14, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-              <button onClick={crear} disabled={busy} style={{ background: "#1F4E8C", color: "#fff", border: 0, borderRadius: 8, padding: "9px 18px", fontSize: 14, cursor: "pointer", fontWeight: 600 }}>
+              <button onClick={crear} disabled={busy} style={{ background: "var(--navy)", color: "#fff", border: 0, borderRadius: 8, padding: "9px 18px", fontSize: 14, cursor: "pointer", fontWeight: 600 }}>
                 {busy ? "Creando…" : "Crear expediente"}
               </button>
               <span className="muted" style={{ fontSize: 11 }}>Se genera su flujo de etapas y se archiva el Formato 1 en Recepción.</span>
@@ -145,8 +145,8 @@ export default function NuevoCaso({ perfil, onCreado, onClose, existentes = [], 
 
           {/* ---- VISOR PDF ---- */}
           <div style={{ flex: "1 1 460px", minWidth: 320, display: "flex", flexDirection: "column" }}>
-            <div style={{ fontSize: 11, color: "#64748b", marginBottom: 6, textTransform: "uppercase", letterSpacing: .4 }}>📄 Documento subido — valida los datos aquí</div>
-            <div style={{ flex: 1, minHeight: "62vh", border: "1px solid #1e2a3e", borderRadius: 10, overflow: "hidden", background: "#0e1726", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ fontSize: 11, color: "var(--mut)", marginBottom: 6, textTransform: "uppercase", letterSpacing: .4 }}>📄 Documento subido — valida los datos aquí</div>
+            <div style={{ flex: 1, minHeight: "62vh", border: "1px solid var(--bd)", borderRadius: 10, overflow: "hidden", background: "var(--card2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               {pdfUrl
                 ? <iframe title="pdf" src={pdfUrl} style={{ width: "100%", height: "100%", border: 0 }} />
                 : <div className="muted" style={{ fontSize: 13, textAlign: "center", padding: 24 }}>Sube el Formato 1 (PDF) para previsualizarlo aquí y validar la extracción.</div>}
@@ -158,4 +158,4 @@ export default function NuevoCaso({ perfil, onCreado, onClose, existentes = [], 
   );
 }
 const badge = { marginLeft: 5, fontSize: 9, background: "#6d28d9", color: "#fff", borderRadius: 4, padding: "1px 4px" };
-const inp = sug => ({ width: "100%", marginTop: 3, padding: "7px 9px", borderRadius: 8, fontSize: 13, fontFamily: "inherit", background: "#0e1726", color: "#e2e8f0", border: `1px solid ${sug ? "#7c3aed" : "#334155"}`, boxSizing: "border-box" });
+const inp = sug => ({ width: "100%", marginTop: 3, padding: "7px 9px", borderRadius: 8, fontSize: 13, fontFamily: "inherit", background: "#fff", color: "var(--tx)", border: `1px solid ${sug ? "#7c3aed" : "var(--bd)"}`, boxSizing: "border-box" });

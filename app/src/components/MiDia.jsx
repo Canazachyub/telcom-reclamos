@@ -24,12 +24,12 @@ export default function MiDia({ perfil, misReclamos, tickets = [], recByCode = {
     {/* ¿QUÉ HAGO AHORA? — una sola tarea prioritaria */}
     {prio ? (
       <Card style={{ marginBottom: 14, borderLeft: `4px solid ${prio.vencido ? "#C0392B" : "#C9821B"}` }}>
-        <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".06em", color: "#8a97a8", fontWeight: 700, marginBottom: 8 }}>
+        <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".06em", color: "var(--mut)", fontWeight: 700, marginBottom: 8 }}>
           Tu próxima tarea {prio.vencido ? "· ⚠ vencida" : ""}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <SemaforoPlazo t={prio} big />
-          <b style={{ fontSize: 16, color: "#e6eaf0" }}>{prio.etapa}</b>
+          <b style={{ fontSize: 16, color: "var(--titulo)" }}>{prio.etapa}</b>
           <InfoBoton etapa={prio.etapa} rol={perfil.rol} t={prio} />
         </div>
         <div className="muted" style={{ fontSize: 12.5, margin: "6px 0 10px" }}>
@@ -38,7 +38,7 @@ export default function MiDia({ perfil, misReclamos, tickets = [], recByCode = {
           {prio.penalidadItem && prio.penalidadItem !== "—" && <> · ⚠ penalidad {prio.penalidadItem} (plazo {prio.plazoHabiles} días háb.)</>}
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <button className="btn sm" style={{ background: "#1F4E8C", color: "#fff", border: 0, fontWeight: 600 }} onClick={() => abrir(prio)}>Abrir y trabajar</button>
+          <button className="btn sm" style={{ background: "var(--navy)", color: "#fff", border: 0, fontWeight: 600 }} onClick={() => abrir(prio)}>Abrir y trabajar</button>
           {prio.estado !== "hecho" && <button className="btn sm" onClick={() => onEstadoTicket?.(prio, "hecho")}>Marcar etapa hecha</button>}
         </div>
       </Card>
@@ -72,12 +72,12 @@ function GrupoEtapa({ g, perfil, recByCode, onEstado, onAbrir, defAbierto }) {
     <Card style={{ padding: 0 }}>
       <div onClick={() => setOpen(o => !o)} style={{
         display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", cursor: "pointer",
-        borderLeft: `4px solid ${g.urgente ? "#C9821B" : "#1e3a8a"}`,
+        borderLeft: `4px solid ${g.urgente ? "#C9821B" : "var(--navy)"}`,
       }}>
-        <span style={{ color: "#94a3b8", width: 14 }}>{open ? "▾" : "▸"}</span>
-        <b style={{ color: "#e2e8f0", fontSize: 13 }}>{g.etapa}</b>
+        <span style={{ color: "var(--mut)", width: 14 }}>{open ? "▾" : "▸"}</span>
+        <b style={{ color: "var(--titulo)", fontSize: 13 }}>{g.etapa}</b>
         <span className="muted" style={{ fontSize: 11 }}>{g.abiertos} abierta(s)</span>
-        {g.urgente && <span style={{ marginLeft: "auto", fontSize: 11, color: "#fbbf24" }}>⚠ urgente</span>}
+        {g.urgente && <span style={{ marginLeft: "auto", fontSize: 11, color: "#B45309" }}>⚠ urgente</span>}
       </div>
       {open && (
         <div style={{ padding: "0 12px 12px", display: "grid", gap: 8 }}>

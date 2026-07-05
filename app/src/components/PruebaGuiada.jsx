@@ -248,12 +248,12 @@ export default function PruebaGuiada({ perfil, sinCasos = false }) {
         <button
           onClick={() => setSugForm({ pasoTitulo: "" })}
           title="Enviar una sugerencia u obstáculo al Gerente"
-          style={fabStyle("#7c3aed")}
+          style={fabStyle("#B45309")}
         >Sugerencia</button>
         <button
           onClick={() => setAbierto(v => !v)}
           title="Abrir la guía de prueba paso a paso"
-          style={fabStyle("#1F4E8C")}
+          style={fabStyle("var(--navy)")}
         >Prueba guiada</button>
       </div>
 
@@ -261,23 +261,23 @@ export default function PruebaGuiada({ perfil, sinCasos = false }) {
       {abierto && (
         <div
           onClick={() => setAbierto(false)}
-          style={{ position: "fixed", inset: 0, zIndex: 240, background: "rgba(2,6,23,.35)" }}
+          style={{ position: "fixed", inset: 0, zIndex: 240, background: "rgba(22,41,75,.45)" }}
         >
           <div onClick={e => e.stopPropagation()} style={panelStyle}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 6 }}>
               <div>
-                <b style={{ color: "#e2e8f0", fontSize: 15 }}>Prueba guiada</b>
+                <b style={{ color: "var(--titulo)", fontSize: 15 }}>Prueba guiada</b>
                 <div className="muted" style={{ fontSize: 11.5, marginTop: 2 }}>Pasos para {perfil?.nombre || "tu perfil"} · {perfil?.rol}</div>
               </div>
               <button className="btn sec sm" onClick={() => setAbierto(false)}>✕</button>
             </div>
 
             <div style={{ margin: "10px 0 14px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, color: "#94a3b8", marginBottom: 4 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, color: "var(--mut)", marginBottom: 4 }}>
                 <span>Progreso</span><span>{hechosN} de {total}</span>
               </div>
-              <div style={{ height: 8, borderRadius: 999, background: "#0f172a", overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${total ? (hechosN / total) * 100 : 0}%`, background: "#22c55e", transition: "width .2s" }} />
+              <div style={{ height: 8, borderRadius: 999, background: "var(--card2)", overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${total ? (hechosN / total) * 100 : 0}%`, background: "#15803D", transition: "width .2s" }} />
               </div>
             </div>
 
@@ -290,7 +290,7 @@ export default function PruebaGuiada({ perfil, sinCasos = false }) {
                   {sinCasos && i === PASOS_DIA1.length && (
                     <div style={{ ...sectionHdrStyle, marginTop: 10 }}>Checklist de tu rol</div>
                   )}
-                <div style={{ background: "#0f1828", border: "1px solid #1e2a3e", borderRadius: 10, padding: "9px 11px" }}>
+                <div style={{ background: "var(--card2)", border: "1px solid var(--bd)", borderRadius: 10, padding: "9px 11px" }}>
                   <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
                     <input
                       type="checkbox"
@@ -299,34 +299,34 @@ export default function PruebaGuiada({ perfil, sinCasos = false }) {
                       style={{ marginTop: 3, width: 16, height: 16, flexShrink: 0, cursor: "pointer" }}
                     />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: hechos[i] ? "#22c55e" : "#e2e8f0" }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: hechos[i] ? "#15803D" : "var(--titulo)" }}>
                         {i + 1}. {p.t}
                       </div>
 
                       {p.ctx && (
-                        <div style={{ fontSize: 11.5, color: "#c4b5fd", marginTop: 4, lineHeight: 1.4, fontStyle: "italic" }}>
+                        <div style={{ fontSize: 11.5, color: "#6D28D9", marginTop: 4, lineHeight: 1.4, fontStyle: "italic" }}>
                           {p.ctx}
                         </div>
                       )}
 
                       <div style={{ marginTop: 6, display: "grid", gap: 3 }}>
                         <div style={{ fontSize: 12, lineHeight: 1.4 }}>
-                          <span style={{ color: "#64748b", fontWeight: 600 }}>Qué harás: </span>
-                          <span style={{ color: "#cbd5e1" }}>{p.que}</span>
+                          <span style={{ color: "var(--mut)", fontWeight: 600 }}>Qué harás: </span>
+                          <span style={{ color: "var(--tx)" }}>{p.que}</span>
                         </div>
                         <div style={{ fontSize: 12, lineHeight: 1.4 }}>
-                          <span style={{ color: "#64748b", fontWeight: 600 }}>Cómo: </span>
-                          <span style={{ color: "#cbd5e1" }}>{p.como}</span>
+                          <span style={{ color: "var(--mut)", fontWeight: 600 }}>Cómo: </span>
+                          <span style={{ color: "var(--tx)" }}>{p.como}</span>
                         </div>
                         <div style={{ fontSize: 12, lineHeight: 1.4 }}>
-                          <span style={{ color: "#64748b", fontWeight: 600 }}>Deberías ver: </span>
-                          <span style={{ color: "#cbd5e1" }}>{p.ves}</span>
+                          <span style={{ color: "var(--mut)", fontWeight: 600 }}>Deberías ver: </span>
+                          <span style={{ color: "var(--tx)" }}>{p.ves}</span>
                         </div>
                       </div>
 
                       <button
                         onClick={() => setSugForm({ pasoTitulo: p.t })}
-                        style={{ marginTop: 8, background: "transparent", border: "1px solid #334155", color: "#c4b5fd", borderRadius: 7, padding: "3px 8px", fontSize: 11, cursor: "pointer" }}
+                        style={{ marginTop: 8, background: "transparent", border: "1px solid var(--bd)", color: "#6D28D9", borderRadius: 7, padding: "3px 8px", fontSize: 11, cursor: "pointer" }}
                       >Comentar este paso</button>
                     </div>
                   </div>
@@ -336,7 +336,7 @@ export default function PruebaGuiada({ perfil, sinCasos = false }) {
             </div>
 
             {hechosN === total && (
-              <div className="note" style={{ marginTop: 14, background: "rgba(30,142,90,.15)", border: "1px solid #1E8E5A", color: "#bbf7d0" }}>
+              <div className="note" style={{ marginTop: 14, background: "rgba(21,128,61,.10)", border: "1px solid #1E8E5A", color: "#15803D" }}>
                 Completaste todos los pasos. Gracias por probar la plataforma — si algo te costó, cuéntalo con el botón Sugerencia.
               </div>
             )}
@@ -370,25 +370,25 @@ function SugerenciaForm({ perfil, pasoTitulo, onClose }) {
   return (
     <div
       onClick={onClose}
-      style={{ position: "fixed", inset: 0, zIndex: 260, background: "rgba(2,6,23,.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+      style={{ position: "fixed", inset: 0, zIndex: 260, background: "rgba(22,41,75,.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
     >
-      <div onClick={e => e.stopPropagation()} style={{ width: "min(420px,94vw)", background: "#0c1322", border: "1px solid #1e2a3e", borderRadius: 14, padding: 16, boxShadow: "0 20px 60px rgba(0,0,0,.6)" }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: "min(420px,94vw)", background: "var(--card)", border: "1px solid var(--bd)", borderRadius: 14, padding: 16, boxShadow: "0 20px 60px rgba(22,41,75,.15)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <b style={{ color: "#e2e8f0", fontSize: 14 }}>💡 Enviar sugerencia</b>
+          <b style={{ color: "var(--titulo)", fontSize: 14 }}>💡 Enviar sugerencia</b>
           <button className="btn sec sm" onClick={onClose}>✕</button>
         </div>
-        {pasoTitulo && <div className="muted" style={{ fontSize: 11.5, marginBottom: 8 }}>Sobre el paso: <b style={{ color: "#c4b5fd" }}>{pasoTitulo}</b></div>}
+        {pasoTitulo && <div className="muted" style={{ fontSize: 11.5, marginBottom: 8 }}>Sobre el paso: <b style={{ color: "#6D28D9" }}>{pasoTitulo}</b></div>}
         <textarea
           autoFocus
           value={texto}
           onChange={e => setTexto(e.target.value)}
           placeholder="Cuenta la idea o el obstáculo que encontraste… no lo guardes para después."
           rows={5}
-          style={{ width: "100%", background: "#0e1726", color: "#e2e8f0", border: "1px solid #334155", borderRadius: 8, padding: "9px 10px", fontSize: 13, resize: "vertical", fontFamily: "inherit" }}
+          style={{ width: "100%", background: "var(--card2)", color: "var(--tx)", border: "1px solid var(--bd)", borderRadius: 8, padding: "9px 10px", fontSize: 13, resize: "vertical", fontFamily: "inherit" }}
         />
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 10 }}>
           <button className="btn sec sm" onClick={onClose}>Cancelar</button>
-          <button className="btn sm" disabled={enviando || !texto.trim()} style={{ background: "#7c3aed" }} onClick={enviar}>{enviando ? "Enviando…" : "Enviar"}</button>
+          <button className="btn sm" disabled={enviando || !texto.trim()} style={{ background: "#B45309" }} onClick={enviar}>{enviando ? "Enviando…" : "Enviar"}</button>
         </div>
       </div>
     </div>
@@ -397,16 +397,16 @@ function SugerenciaForm({ perfil, pasoTitulo, onClose }) {
 
 const fabStyle = bg => ({
   background: bg, color: "#fff", border: 0, borderRadius: 999, padding: "12px 18px", fontSize: 13.5,
-  fontWeight: 600, cursor: "pointer", boxShadow: "0 8px 24px rgba(0,0,0,.35)", whiteSpace: "nowrap",
+  fontWeight: 600, cursor: "pointer", boxShadow: "0 8px 24px rgba(22,41,75,.25)", whiteSpace: "nowrap",
 });
 
 const panelStyle = {
   position: "absolute", right: 0, top: 0, height: "100%", width: "min(400px,92vw)",
-  background: "var(--bg)", borderLeft: "1px solid #27324a", overflowY: "auto", padding: 16,
-  boxShadow: "-12px 0 40px rgba(0,0,0,.45)",
+  background: "var(--bg)", borderLeft: "1px solid var(--bd)", overflowY: "auto", padding: 16,
+  boxShadow: "-12px 0 40px rgba(22,41,75,.15)",
 };
 
 const sectionHdrStyle = {
-  fontSize: 11, fontWeight: 700, color: "#7d8ba3", textTransform: "uppercase", letterSpacing: ".05em",
-  margin: "4px 0 8px", paddingBottom: 6, borderBottom: "1px solid #27324a",
+  fontSize: 11, fontWeight: 700, color: "var(--mut)", textTransform: "uppercase", letterSpacing: ".05em",
+  margin: "4px 0 8px", paddingBottom: 6, borderBottom: "1px solid var(--bd)",
 };

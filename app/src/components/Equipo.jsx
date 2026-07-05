@@ -23,7 +23,7 @@ export function AtenderPrimero({ tickets, perfil, recByCode, onEstado, onReasign
             <div style={{ flex: 1, minWidth: 0 }}><TicketCard t={t} rec={recByCode[t.reclamo]} perfil={perfil} onEstado={onEstado} onAbrir={abrir} /></div>
             {puedeAsignar && (
               <select value={t.respId} onChange={e => reasignar(t, e.target.value)} title="Reasignar responsable"
-                style={{ background: "#0e1726", color: "#e2e8f0", border: `1px solid ${TEAM.find(x => x.id === t.respId)?.color || "#334155"}`, borderRadius: 8, padding: "6px 8px", fontSize: 12, minWidth: 190 }}>
+                style={{ background: "var(--card2)", color: "var(--tx)", border: `1px solid ${TEAM.find(x => x.id === t.respId)?.color || "var(--bd)"}`, borderRadius: 8, padding: "6px 8px", fontSize: 12, minWidth: 190 }}>
                 {TEAM.map(m => <option key={m.id} value={m.id}>{m.corto} · {m.rol}</option>)}
                 <option value={0}>Externo / Call Center</option>
               </select>
@@ -56,10 +56,10 @@ export function ResumenDiario({ registros = [], tickets = [] }) {
       <h3>Resumen del día — {hoy} ({deHoy.length} acciones)</h3>
       {Object.keys(byUser).length ? Object.entries(byUser).map(([u, list]) => (
         <div key={u} style={{ marginBottom: 12 }}>
-          <div style={{ fontWeight: 700, color: "#93c5fd", fontSize: 13, marginBottom: 4 }}>{u} <span className="muted" style={{ fontWeight: 400 }}>· {list.length} acción(es)</span></div>
+          <div style={{ fontWeight: 700, color: "var(--linkTx)", fontSize: 13, marginBottom: 4 }}>{u} <span className="muted" style={{ fontWeight: 400 }}>· {list.length} acción(es)</span></div>
           {list.slice(0, 12).map((r, i) => {
             const d = det(r);
-            return <div key={i} className="chk" style={{ fontSize: 12 }}><span style={{ color: "#22c55e" }}>•</span> {accion(r)}{r.reclamo ? ` · ${String(r.reclamo).slice(-6)}` : ""}{d.etapa ? ` · ${d.etapa}` : ""}{d.estado ? ` → ${d.estado}` : ""}</div>;
+            return <div key={i} className="chk" style={{ fontSize: 12 }}><span style={{ color: "#15803D" }}>•</span> {accion(r)}{r.reclamo ? ` · ${String(r.reclamo).slice(-6)}` : ""}{d.etapa ? ` · ${d.etapa}` : ""}{d.estado ? ` → ${d.estado}` : ""}</div>;
           })}
         </div>
       )) : <div className="muted">Sin actividad registrada hoy ({hoy}). Cuando el equipo trabaje, aquí verás el resumen automático.</div>}
@@ -88,15 +88,15 @@ export function ResumenEquipo({ tickets, perfil }) {
               <tr key={o.m.id}>
                 <td><span className="dot" style={{ background: o.m.color }} />{o.m.nombre} <span className="muted" style={{ fontSize: 11 }}>· {o.m.rol}</span></td>
                 <td>{o.total}</td><td>{o.ab}</td>
-                <td style={{ color: o.venc ? "#C0392B" : "#94a3b8", fontWeight: o.venc ? 700 : 400 }}>{o.venc}</td>
-                <td>{o.riesgo ? <span style={{ color: "#fbbf24" }}>⚠ {o.riesgo}</span> : "—"}</td>
-                {ger && <td style={{ color: o.exp ? "#fca5a5" : "#94a3b8", fontWeight: o.exp ? 700 : 400 }}>{o.exp ? soles(o.exp) : "—"}</td>}
+                <td style={{ color: o.venc ? "#C0392B" : "var(--mut)", fontWeight: o.venc ? 700 : 400 }}>{o.venc}</td>
+                <td>{o.riesgo ? <span style={{ color: "#B45309" }}>⚠ {o.riesgo}</span> : "—"}</td>
+                {ger && <td style={{ color: o.exp ? "#DC2626" : "var(--mut)", fontWeight: o.exp ? 700 : 400 }}>{o.exp ? soles(o.exp) : "—"}</td>}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      {!ger && <div className="note" style={{ marginTop: 10, background: "rgba(31,78,140,.15)", border: "1px solid #1F4E8C", color: "#cbd5e1", fontSize: 12 }}>Los importes en S/ de exposición los gestiona Gerencia.</div>}
+      {!ger && <div className="note" style={{ marginTop: 10, background: "var(--hoverBg)", border: "1px solid #1F4E8C", color: "var(--tx)", fontSize: 12 }}>Los importes en S/ de exposición los gestiona Gerencia.</div>}
     </Card>
   );
 }
@@ -125,7 +125,7 @@ export function DineroRiesgo({ tickets, perfil, recByCode, setSelExp }) {
                 <td>{t.etapa}</td><td>{t.responsable}</td>
                 <td>{t.penalidadItem}</td>
                 <td style={{ color: "#C0392B" }}>{t.fechaLimite}</td>
-                <td style={{ fontWeight: 700, color: "#fca5a5" }}>{soles(t.exposicion)}</td>
+                <td style={{ fontWeight: 700, color: "#DC2626" }}>{soles(t.exposicion)}</td>
                 <td><button className="btn sm" onClick={() => abrir(t)}>ver</button></td>
               </tr>
             ))}

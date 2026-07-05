@@ -22,12 +22,12 @@ const copiar = (label, val) => {
 function Fila({ label, value }) {
   const vacio = value == null || value === "";
   return (
-    <div style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "5px 0", borderBottom: "1px solid #16202f" }}>
-      <div style={{ width: 190, flexShrink: 0, fontSize: 11.5, color: "#94a3b8" }}>{label}</div>
-      <div style={{ flex: 1, fontSize: 12.5, color: vacio ? "#5b6b80" : "#e2e8f0", wordBreak: "break-word" }}>{vacio ? "—" : String(value)}</div>
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "5px 0", borderBottom: "1px solid var(--bd)" }}>
+      <div style={{ width: 190, flexShrink: 0, fontSize: 11.5, color: "var(--mut)" }}>{label}</div>
+      <div style={{ flex: 1, fontSize: 12.5, color: vacio ? "var(--mut)" : "var(--tx)", wordBreak: "break-word" }}>{vacio ? "—" : String(value)}</div>
       {!vacio && (
         <button onClick={() => copiar(label, value)} title={"Copiar " + label}
-          style={{ flexShrink: 0, background: "transparent", border: "1px solid #334155", color: "#93c5fd", borderRadius: 6, padding: "1px 6px", fontSize: 11, cursor: "pointer" }}>📋</button>
+          style={{ flexShrink: 0, background: "transparent", border: "1px solid var(--bd)", color: "var(--linkTx)", borderRadius: 6, padding: "1px 6px", fontSize: 11, cursor: "pointer" }}>📋</button>
       )}
     </div>
   );
@@ -35,14 +35,14 @@ function Fila({ label, value }) {
 
 const Bloque = ({ t, children }) => (
   <div style={{ marginBottom: 16 }}>
-    <div style={{ fontSize: 12, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 6 }}>{t}</div>
+    <div style={{ fontSize: 12, fontWeight: 700, color: "var(--tx)", textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 6 }}>{t}</div>
     {children}
   </div>
 );
 
 const Grupo = ({ t, children }) => (
-  <div style={{ marginBottom: 10, background: "#0f1828", border: "1px solid #1e2a3e", borderRadius: 8, padding: "8px 10px" }}>
-    <div style={{ fontSize: 11, fontWeight: 700, color: "#60a5fa", marginBottom: 4 }}>{t}</div>
+  <div style={{ marginBottom: 10, background: "var(--card2)", border: "1px solid var(--bd)", borderRadius: 8, padding: "8px 10px" }}>
+    <div style={{ fontSize: 11, fontWeight: 700, color: "var(--linkTx)", marginBottom: 4 }}>{t}</div>
     {children}
   </div>
 );
@@ -165,9 +165,9 @@ export default function FichaSielse({ exp, datos, evidencias, onClose }) {
     <div className="overlay" style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: mobile ? 0 : 16, zIndex: 70 }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div style={wrapS}>
-        <div style={{ padding: "12px 18px", borderBottom: "1px solid #1e2a3e", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+        <div style={{ padding: "12px 18px", borderBottom: "1px solid var(--bd)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-            <b style={{ color: "#e2e8f0", fontSize: 15 }}>📋 Ficha SIELSE — <span className="mono">{exp.osinerg || exp.codigo}</span></b>
+            <b style={{ color: "var(--titulo)", fontSize: 15 }}>📋 Ficha SIELSE — <span className="mono">{exp.osinerg || exp.codigo}</span></b>
             <span className="muted" style={{ fontSize: 12 }}>{exp.solicitante}</span>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
@@ -202,9 +202,9 @@ export default function FichaSielse({ exp, datos, evidencias, onClose }) {
               {docs.length ? (
                 <div style={{ display: "grid", gap: 6 }}>
                   {docs.map((d, i) => (
-                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, background: "#0f1828", border: "1px solid #1e2a3e", borderRadius: 8, padding: "6px 9px" }}>
-                      <span style={{ fontSize: 10, color: "#93c5fd", fontWeight: 700, flexShrink: 0 }}>{d.etapa}</span>
-                      <span style={{ flex: 1, fontSize: 12, color: "#e2e8f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.nombre}</span>
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--card2)", border: "1px solid var(--bd)", borderRadius: 8, padding: "6px 9px" }}>
+                      <span style={{ fontSize: 10, color: "var(--linkTx)", fontWeight: 700, flexShrink: 0 }}>{d.etapa}</span>
+                      <span style={{ flex: 1, fontSize: 12, color: "var(--tx)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.nombre}</span>
                       {d.url && <a className="link" style={{ fontSize: 11, flexShrink: 0 }} href={d.url} target="_blank" rel="noreferrer">🔗 Drive ↗</a>}
                     </div>
                   ))}
@@ -218,4 +218,4 @@ export default function FichaSielse({ exp, datos, evidencias, onClose }) {
   );
 }
 
-const wrap = { width: "96vw", maxWidth: 1400, height: "92vh", background: "#0c1322", border: "1px solid #1e2a3e", borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 20px 60px rgba(0,0,0,.6)" };
+const wrap = { width: "96vw", maxWidth: 1400, height: "92vh", background: "var(--card)", border: "1px solid var(--bd)", borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 20px 60px rgba(22,41,75,.15)" };

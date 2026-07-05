@@ -16,9 +16,24 @@ import Calendario from "./components/Calendario.jsx";
 import NuevoCaso from "./components/NuevoCaso.jsx";
 import Bandeja from "./components/Bandeja.jsx";
 import PruebaGuiada from "./components/PruebaGuiada.jsx";
+import SalaExpediente from "./components/SalaExpediente.jsx";
 
 const ESTADOS_APP = ["Pendiente","En proceso","Observado","Notificado","Cerrado"];
 const iniciales = n => (n||"").split(" ").map(s=>s[0]).slice(0,2).join("").toUpperCase();
+
+// Mini-timeline de puntos (v4, patrón courier): el avance del caso de un vistazo en las tablas.
+// rojo = etapa hecha · azul marino con halo = etapa actual · gris = pendiente
+function MiniProgreso({ prog }){
+  if(!prog || !prog.total) return <span className="muted">—</span>;
+  return <div style={{display:"flex",gap:3,alignItems:"center"}} title={"hechas "+prog.hechas+"/"+prog.total}>
+    {Array.from({length:prog.total},(_,i)=>{
+      const done=i<prog.hechas, act=i===prog.hechas;
+      return <i key={i} style={{width:8,height:8,borderRadius:"50%",display:"block",
+        background: done?"#E3001B":(act?"#1E3A5F":"#D3DCE8"),
+        boxShadow: act?"0 0 0 2px rgba(227,0,27,.25)":"none"}}/>;
+    })}
+  </div>;
+}
 
 // "Ver como": lista de roles que el Gerente puede simular (uno por perfil operativo/coordinación).
 // Se arma desde USERS (auth.js) para no duplicar nombres/roles a mano.
@@ -36,6 +51,7 @@ function Shell({ perfil, onLogout }){
   const [err, setErr]   = useState(null);
   const [selExp, setSelExpId] = useState(null);
   const [selEtapa, setSelEtapa] = useState(null);
+  const [salaExp, setSalaExp] = useState(null);   // Sala del expediente (v4): VER y coordinar
   const [nuevo, setNuevo] = useState(false);
   const [evidencias, setEvi] = useState([]);
   const [datos, setDatos] = useState({});
@@ -78,8 +94,16 @@ function Shell({ perfil, onLogout }){
       .then(r=>{ if(r && r.ok===false) toast("⚠ No se guardó la reasignación: "+(r.error||"error")); });
   }
 
-  // abre el expediente; si viene desde un ticket, el Drawer arranca en ESA etapa
-  function abrirExp(id, etapa){ setSelExpId(id); setSelEtapa(etapa || null); }
+  // Regla v4 (patrón courier): VER un caso abre la SALA; TRABAJARLO abre el Drawer.
+  // - clic en fila (sin etapa) → Sala del expediente (seguimiento + colaboración)
+  // - desde un ticket / notificación (con etapa) → Drawer directo en ESA etapa (intención de trabajo)
+  function abrirExp(id, etapa){
+    if(id==null){ setSelExpId(null); setSelEtapa(null); return; }
+    if(etapa){ setSelExpId(id); setSelEtapa(etapa); }
+    else setSalaExp(id);
+  }
+  // desde la Sala: "Trabajar esta etapa" abre el Drawer ENCIMA (al cerrarlo vuelves a la Sala)
+  function trabajarDesdeSala(id, etapa){ setSelExpId(id); setSelEtapa(etapa || null); }
 
   // índice reclamo(codigo) -> datos del reclamo (para mostrar OSINERG/solicitante en el ticket)
   const recByCode = {}; (data||[]).forEach(r=>{ recByCode[String(r.codigo)] = r; });
@@ -136,7 +160,7 @@ function Shell({ perfil, onLogout }){
 
   const color = wColor(perfilVista.resp_id) || "#1F4E8C";
 
-  if(err) return <div className="wrap"><div className="card" style={{color:"#fca5a5",border:"1px solid #ef4444"}}>Error cargando datos: {err}</div></div>;
+  if(err) return <div className="wrap"><div className="card" style={{color:"#DC2626",border:"1px solid #F3B4B4"}}>Error cargando datos: {err}</div></div>;
 
   const exp = selExp!=null && data ? data.find(x=>x.id===selExp) : null;
 
@@ -154,7 +178,7 @@ function Shell({ perfil, onLogout }){
               {VER_COMO_OPCIONES.map(u=><option key={u.usuario} value={u.usuario}>{u.nombre.split(" ")[0]} · {ROL_LABEL[u.rol]}</option>)}
             </select>
           )}
-          <button className="btn" onClick={()=>setNuevo(true)} title="Registrar un nuevo expediente" style={{background:"#1F4E8C",color:"#fff",fontWeight:600}}>➕ Nuevo caso</button>
+          <button className="btn" onClick={()=>setNuevo(true)} title="Registrar un nuevo expediente" style={{fontWeight:600}}>➕ Nuevo caso</button>
           {puedeVerTodo(perfilVista.rol) && <a className="btn-ghost" href={STREAMLIT_URL} target="_blank" rel="noreferrer" title="Abrir herramientas de análisis (Streamlit) en pestaña nueva">🔧 Herramientas</a>}
           {data && <Notificaciones perfil={perfilVista} activosTk={activos(tickets)} recByCode={recByCode} setSelExp={abrirExp}/>}
           <div className="av" style={{background:color}} title={perfilVista.nombre}>{iniciales(perfilVista.nombre)}</div>
@@ -164,7 +188,7 @@ function Shell({ perfil, onLogout }){
       </header>
 
       {verComo && (
-        <div className="note" style={{background:"rgba(245,158,11,.15)",border:"1px solid #f59e0b",color:"#fde68a",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8,marginBottom:14}}>
+        <div className="note" style={{background:"#FEF3DF",border:"1px solid #F0C36D",color:"#B45309",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8,marginBottom:14}}>
           <span>👁 Estás viendo la plataforma como <b>{verComo.nombre}</b> ({ROL_LABEL[verComo.rol]}) — modo simulación</span>
           <button className="btn-ghost" onClick={()=>setVerComo(null)} style={{fontWeight:600}}>← Volver a mi vista</button>
         </div>
@@ -177,7 +201,11 @@ function Shell({ perfil, onLogout }){
           ? <Operativo key={"op-"+perfilVista.resp_id} perfil={perfilVista} data={data} setSelExp={abrirExp} tickets={activos(tickets)} activoByCode={activoByCode} progresoDe={progresoDe} recByCode={recByCode} onEstadoTicket={onEstadoTicket} correos={correos} correosCargando={correosCargando} onRecargarCorreos={cargarCorreos} onConvertirCorreo={convertirCorreoEnCaso}/>
           : <Admin key={"ad-"+perfilVista.resp_id} perfil={perfilVista} data={data} evidencias={evidencias} setSelExp={abrirExp} delegar={delegar} updEstado={updEstado} tickets={activos(tickets)} activoByCode={activoByCode} progresoDe={progresoDe} recByCode={recByCode} onEstadoTicket={onEstadoTicket} onReasignarTicket={onReasignarTicket} registros={registros} comentarios={comentarios} correos={correos} correosCargando={correosCargando} onRecargarCorreos={cargarCorreos} onConvertirCorreo={convertirCorreoEnCaso}/>}
 
-      {exp && <Drawer exp={exp} etapaInicial={selEtapa} evidencias={evidencias} datos={datos} tickets={tickets} perfil={perfilVista} comentarios={comentarios} onComentar={onComentar} onEstadoTicket={onEstadoTicket} onClose={()=>abrirExp(null)} onSaveDatos={saveDatos} onSubido={obj=>setEvi(ev=>[obj,...ev])}/>}
+      {salaExp!=null && data && (()=>{ const sx=data.find(x=>x.id===salaExp); return sx ? (
+        <SalaExpediente exp={sx} tickets={tickets} evidencias={evidencias} registros={registros} comentarios={comentarios}
+          perfil={perfilVista} onComentar={onComentar} onTrabajar={trabajarDesdeSala} onClose={()=>setSalaExp(null)}/>
+      ) : null; })()}
+      {exp && <Drawer exp={exp} etapaInicial={selEtapa} evidencias={evidencias} datos={datos} tickets={tickets} perfil={perfilVista} comentarios={comentarios} onComentar={onComentar} onEstadoTicket={onEstadoTicket} onClose={()=>{ setSelExpId(null); setSelEtapa(null); }} onSaveDatos={saveDatos} onSubido={obj=>setEvi(ev=>[obj,...ev])}/>}
       {nuevo && <NuevoCaso perfil={perfilVista} existentes={data||[]} inicial={correoOrigen} onClose={()=>{ setNuevo(false); setCorreoOrigen(null); }} onCreado={()=>{ setNuevo(false); setCorreoOrigen(null); refrescar(); }}/>}
       <PruebaGuiada perfil={perfilVista} sinCasos={!!data && data.length===0}/>
 
@@ -232,9 +260,9 @@ function MejorasSugeridas({ comentarios }){
 // ya sincronizados) o con "Nuevo caso" si tiene el expediente físico escaneado.
 function BienvenidaSinCasos({ onIrBandeja }){
   return (
-    <Card style={{ marginBottom: 14, border: "1px solid #1F4E8C", background: "rgba(31,78,140,.12)" }}>
+    <Card style={{ marginBottom: 14, border: "1px solid #A9C3E4", background: "#EAF1F9" }}>
       <h3 style={{ margin: "0 0 6px" }}>Sistema en blanco — arranque de operación real</h3>
-      <div style={{ fontSize: 13, lineHeight: 1.6, color: "#dbe4f3" }}>
+      <div style={{ fontSize: 13, lineHeight: 1.6, color: "var(--tx)" }}>
         Los reclamos reales están llegando por correo: abre la <b>Bandeja</b> y registra el primero con <b>«Convertir en caso»</b>, o usa <b>«Nuevo caso»</b> si tienes el expediente escaneado.
         Pulsa <b>«Prueba guiada»</b> (abajo a la derecha) para la guía paso a paso.
       </div>
@@ -338,7 +366,7 @@ function Expedientes({ data, setSelExp, delegar, updEstado, canDelegate, activoB
       </div>
     </div>
     <div style={{overflowX:"auto"}}>
-      <table className="tbl"><thead><tr><th>Nº OSINERG</th><th>Solicitante</th><th>Suministro</th><th>Clase</th><th>Etapa</th><th>Responsable</th><th>Límite</th><th>Restan</th><th title="Tipo de resolución histórico registrado en SIELSE — dato informativo, no refleja el avance actual del ticket">Resolución (histórico SIELSE)</th><th>Estado</th></tr></thead><tbody>
+      <table className="tbl"><thead><tr><th>Nº OSINERG</th><th>Solicitante</th><th>Suministro</th><th>Clase</th><th>Progreso</th><th>Etapa</th><th>Responsable</th><th>Límite</th><th>Restan</th><th title="Tipo de resolución histórico registrado en SIELSE — dato informativo, no refleja el avance actual del ticket">Resolución (histórico SIELSE)</th><th>Estado</th></tr></thead><tbody>
         {list.slice(0,200).map(x=>{
           const act = activoByCode[String(x.codigo)];
           const prog = progresoDe ? progresoDe(x.codigo) : null;
@@ -357,6 +385,7 @@ function Expedientes({ data, setSelExp, delegar, updEstado, canDelegate, activoB
           <tr key={x.id} className="clk" onClick={()=>setSelExp(x.id)}>
             <td className="mono">{x.osinerg}</td><td>{x.solicitante}</td><td>{x.suministro}</td>
             <td style={{maxWidth:150,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{x.clase.replace("RECLAMOS ","")}</td>
+            <td><MiniProgreso prog={prog}/></td>
             <td>{etapaTxt}</td>
             <td onClick={e=>e.stopPropagation()}>{canDelegate
               ? <select value={x.resp} onChange={e=>delegar(x.id,e.target.value)} style={{borderLeft:`3px solid ${wColor(x.resp)}`}}>{TEAM.map(t=><option key={t.id} value={t.id}>{t.corto} · {t.rol}</option>)}<option value={0}>Externo / Call Center</option></select>
@@ -438,7 +467,7 @@ function Norma(){
         <div className="kv"><b>5.9</b><span>Resolución mal motivada — S/100 + monto</span></div>
         <div className="kv"><b>5.10</b><span>Apelación fuera de plazo — S/300 + monto</span></div>
         <div className="kv"><b>5.12</b><span>Notif. notarial tardía — S/300 + monto</span></div>
-        <div className="note" style={{background:"var(--card2)",color:"#cbd5e1"}}>Tope: 10% del contrato → ELSE puede resolver.</div></Card>
+        <div className="note" style={{background:"var(--card2)",color:"var(--tx2)"}}>Tope: 10% del contrato → ELSE puede resolver.</div></Card>
     </div>
   </>;
 }
@@ -456,9 +485,9 @@ function Conexion(){
   return <Card><h3>Conexión a Google Sheets + Drive (Apps Script)</h3>
     <div className="row"><span>Google Sheets (base de datos)</span><a className="link" href={SHEET_URL} target="_blank" rel="noreferrer">abrir hoja ↗</a></div>
     <div className="row"><span>Google Drive (evidencias)</span><a className="link" href={DRIVE_URL} target="_blank" rel="noreferrer">abrir carpeta ↗</a></div>
-    <div style={{fontSize:12,color:"#cbd5e1",margin:"12px 0 4px"}}><b>Hojas del libro:</b></div>
+    <div style={{fontSize:12,color:"var(--tx2)",margin:"12px 0 4px"}}><b>Hojas del libro:</b></div>
     <div style={{overflowX:"auto"}}><table className="tbl"><thead><tr><th>Hoja</th><th>Columnas</th></tr></thead><tbody>{tabs.map(t=><tr key={t[0]}><td><b className="mono">{t[0]}</b></td><td className="muted">{t[1]}</td></tr>)}</tbody></table></div>
-    <div className="note" style={{background:"rgba(31,78,140,.18)",border:"1px solid #1F4E8C",color:"#cbd5e1"}}><b>Activación:</b> 1) setup() y setupV2() en Apps Script · 2) generarTickets() + trigger horario recalcularPlazos() · 3) publicar Web App (redeploy) · 4) api.js: APPS_SCRIPT_URL actualizada.</div>
+    <div className="note" style={{background:"#EAF1F9",border:"1px solid #A9C3E4",color:"var(--tx2)"}}><b>Activación:</b> 1) setup() y setupV2() en Apps Script · 2) generarTickets() + trigger horario recalcularPlazos() · 3) publicar Web App (redeploy) · 4) api.js: APPS_SCRIPT_URL actualizada.</div>
   </Card>;
 }
 
@@ -477,7 +506,7 @@ function Operativo({ perfil, data, setSelExp, tickets, activoByCode={}, progreso
       onCerrarDia={()=>postAction("reporte",{rol:perfil.rol, asignados:mine.length, en_atencion:abiertos(misTk).length, cerrados:misTk.filter(t=>t.hecho).length, vencidos:vencidos(misTk).length})}/>}
     {tab==="bandeja" && <Bandeja perfil={perfil} correos={correos} cargando={correosCargando} noDisponible={correos===null && !correosCargando} onRecargar={onRecargarCorreos} existentes={data} onConvertir={onConvertirCorreo}/>}
     {tab==="calendario" && <Calendario tickets={misTk} recByCode={recByCode} perfil={perfil} setSelExp={setSelExp}/>}
-    {tab==="expedientes" && <Card><h3>Mis expedientes ({mine.length}) — clic para abrir y trabajar</h3><div style={{overflowX:"auto"}}><table className="tbl"><thead><tr><th>Nº OSINERG</th><th>Solicitante</th><th>Suministro</th><th>Clase</th><th>Etapa</th><th>Límite</th><th>Restan</th><th>Estado</th></tr></thead><tbody>
+    {tab==="expedientes" && <Card><h3>Mis expedientes ({mine.length}) — clic para ver su seguimiento</h3><div style={{overflowX:"auto"}}><table className="tbl"><thead><tr><th>Nº OSINERG</th><th>Solicitante</th><th>Suministro</th><th>Clase</th><th>Progreso</th><th>Etapa</th><th>Límite</th><th>Restan</th><th>Estado</th></tr></thead><tbody>
       {mine.slice(0,200).map(x=>{
         const act = activoByCode[String(x.codigo)];
         const prog = progresoDe ? progresoDe(x.codigo) : null;
@@ -491,6 +520,7 @@ function Operativo({ perfil, data, setSelExp, tickets, activoByCode={}, progreso
           : (prog && prog.total>0 && prog.hechas===prog.total ? "Completado" : null);
         return <tr key={x.id} className="clk" onClick={()=>setSelExp(x.id)}>
           <td className="mono">{x.osinerg}</td><td>{x.solicitante}</td><td>{x.suministro}</td><td>{x.clase.replace("RECLAMOS ","")}</td>
+          <td><MiniProgreso prog={prog}/></td>
           <td>{etapaTxt}</td><td>{limiteTxt}</td>
           <td style={{textAlign:"center",color:restanColor}}><b>{restanTxt}</b></td>
           <td>
@@ -498,7 +528,7 @@ function Operativo({ perfil, data, setSelExp, tickets, activoByCode={}, progreso
             {prog && <div className="muted" style={{fontSize:10,marginTop:3}}>hechas {prog.hechas}/{prog.total}</div>}
           </td>
         </tr>;})}
-      {!mine.length && <tr><td colSpan={8} className="muted" style={{textAlign:"center",padding:14}}>Sin reclamos asignados. El Coordinador puede delegarte.</td></tr>}
+      {!mine.length && <tr><td colSpan={9} className="muted" style={{textAlign:"center",padding:14}}>Sin reclamos asignados. El Coordinador puede delegarte.</td></tr>}
     </tbody></table></div></Card>}
     {tab==="guia" && <Card><h3>Mi guía — {ROL_LABEL[perfil.rol]}</h3>
       <div className="muted" style={{fontSize:12,marginBottom:12}}>Estas son las etapas del flujo a tu cargo. Para cada una: qué hacer, en qué plazo, qué documento entregar como evidencia y qué penalidad evitar.</div>
