@@ -165,6 +165,14 @@ function gruposRegistro(exp) {
       ["Grabación del reclamo (link)", r.ArchivoGrabacionReclamo, "ArchivoGrabacionReclamo"],
       ["Documento de referencia", r.DocumentoReferencia ?? exp.docRef, "DocumentoReferencia"],
     ]},
+    // Espejo de campos que normalmente digita ELSE en SIELSE: si aún no los digitó allá,
+    // el equipo puede registrarlos aquí para mantener el espejo completo (criterio del gerente).
+    { t: "Denuncia / Distribución (espejo SIELSE)", campos: [
+      ["¿Es interrupción? (0/1)", r.EsInterrupcion, "EsInterrupcion"],
+      ["Código de denuncia", r.CodigoDenuncia, "CodigoDenuncia"],
+      ["Estado de denuncia", r.EstadoDenuncia, "EstadoDenuncia"],
+      ["Exportado a distributivo", r.ExportadoDistributivo, "ExportadoDistributivo"],
+    ]},
   ];
 }
 
