@@ -138,6 +138,9 @@ export const CAMPOS_ETAPA = {
       { k: "RELACION_DOCUMENTOS", label: "Relación de documentos que se elevan", tipo: "textarea" },
       { k: "N_FOJAS", label: "N° total de fojas", tipo: "num" },
       // — transcripción SIELSE (§5 memoria)
+      { k: "FECHA_PRESENTACION_RECURSO", label: "Fecha en que el usuario presentó el recurso", tipo: "date", ph: "arranca los relojes: reconsideración 10 d.h. / elevación 5 d.h." },
+      { k: "N_RECONSIDERACION", label: "N° de Reconsideración (si es reconsideración)", tipo: "text", ph: "el que registra SIELSE en Atención → Reconsideración" },
+      { k: "FECHA_RECONSIDERACION", label: "Fecha de presentación de la reconsideración", tipo: "date", ph: "resolver en ≤10 d háb — penalidad 5.9" },
       { k: "N_EXPEDIENTE_JARU", label: "N° de Expediente (Apelación)", tipo: "text", ph: "el que registra SIELSE en Atención → Apelación" },
       { k: "FECHA_ELEVACION", label: "Fecha de elevación a JARU", tipo: "date", ph: "≤5 d háb desde el recurso (penalidad 5.10)" },
       { k: "N_RESOLUCION_JARU", label: "N° de Resolución JARU", tipo: "text", ph: "cuando OSINERGMIN resuelva" },
@@ -161,7 +164,10 @@ export const CAMPOS_ETAPA = {
       { k: "FECHA_CIERRE", label: "Fecha de cierre en SIELSE", tipo: "date" },
       { k: "MOTIVO_CIERRE", label: "Motivo de cierre", tipo: "text" },
       // — transcripción SIELSE (§5 memoria) · la fecha de cierre ya existe arriba (FECHA_CIERRE)
-      { k: "TIPO_CIERRE_SIELSE", label: "Vía de cierre en SIELSE", tipo: "select", opciones: ["Acto Firme", "Cumplimiento Resolución JARU", "Trato Directo"] },
+      { k: "TIPO_CIERRE_SIELSE", label: "Vía de cierre en SIELSE", tipo: "select", opciones: ["Acto Firme", "Cumplimiento Resolución JARU", "Trato Directo", "Desistimiento del cliente"] },
+      { k: "N_ACTA_TD", label: "N° de Acta de Trato Directo", tipo: "text", ph: "ej. ATD-103-2026 — solo si la vía es Trato Directo" },
+      { k: "FECHA_REUNION_TD", label: "Fecha de la reunión de trato directo", tipo: "date", ph: "solo si la vía es Trato Directo" },
+      { k: "TIPO_ACUERDO_TD", label: "Tipo de acuerdo", tipo: "select", opciones: ["", "Acuerdo Absoluto", "Acuerdo Parcial"] },
     ],
   },
 };

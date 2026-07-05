@@ -58,6 +58,18 @@ export const CATALOGOS_LOCAL = {
   SECTOR_TIPICO: [
     { valor: "Urbano" }, { valor: "Rural de Media Densidad" }, { valor: "Rural de Baja Densidad" },
   ],
+  // Combo obligatorio de la pantalla Solicitud en SIELSE. Aún no capturado en una
+  // solicitud real; el equipo lo puebla en la hoja `catalogos` copiando el desplegable
+  // vivo de SIELSE (§6 memoria) — placeholder mientras tanto.
+  TIPO_DEFICIENCIA: [
+    { valor: "(completar desde el desplegable de SIELSE)" },
+  ],
+  // Sedes de atención del contrato. Las sedes ≠ Cusco tienen +1/+2 días hábiles en
+  // informar OT / entrega de resolución / foliado / cierre (bases del contrato).
+  SEDE: [
+    { valor: "Cusco" }, { valor: "Valle Sagrado" }, { valor: "Quispicanchi" },
+    { valor: "Anta" }, { valor: "Vilcanota" }, { valor: "Provincias Altas" }, { valor: "La Convención" },
+  ],
 };
 
 // filas de la hoja catalogos [{grupo,valor,extra}] -> { GRUPO: [{valor, extra}] }

@@ -20,6 +20,8 @@ import SalaExpediente from "./components/SalaExpediente.jsx";
 import ValorizacionMensual from "./components/ValorizacionMensual.jsx";
 import MuestraTrimestral from "./components/MuestraTrimestral.jsx";
 import MejorasTR from "./components/MejorasTR.jsx";
+import PenalidadesTope from "./components/PenalidadesTope.jsx";
+import { riesgoSAPGlobal } from "./lib/plazosNormativos.js";
 
 const ESTADOS_APP = ["Pendiente","En proceso","Observado","Notificado","Cerrado"];
 const iniciales = n => (n||"").split(" ").map(s=>s[0]).slice(0,2).join("").toUpperCase();
@@ -239,13 +241,18 @@ function Admin({ perfil, data, evidencias, setSelExp, delegar, updEstado, ticket
   const [tab, setTab] = useState("hoy");
   const canDelegate = puedeDelegar(perfil.rol);
   const esGer = perfil.rol==="GERENTE";
+  // config del backend (hoja `config`: PU_ACT01…, topes de penalidad, etc.) — la necesita
+  // PenalidadesTope en la pestaña Equipo; Admin es quien la carga (Reportes ya la carga aparte
+  // para la valorización — aquí es una carga propia, más simple que subir el estado más arriba).
+  const [configEquipo, setConfigEquipo] = useState({});
+  useEffect(()=>{ loadConfig().then(c=>{ if(c) setConfigEquipo(c); }).catch(()=>{}); }, []);
   const tabs = [["hoy","🏠 Hoy"],["equipo","👥 Equipo"],["expedientes","📁 Expedientes"],["bandeja","📧 Bandeja"],["calendario","📅 Calendario"],
     ["reportes","📊 Reportes"],["guia","📖 Guía del flujo"],[esGer?"admin":"_","⚙ Administración"]]
     .filter(t=>t[0]!=="_");
   return <>
     <div className="tabs">{tabs.map(t=><button key={t[0]} className={tab===t[0]?"on":""} onClick={()=>setTab(t[0])}>{t[1]}</button>)}</div>
-    {tab==="hoy"         && <Hoy perfil={perfil} tickets={tickets} recByCode={recByCode} onEstadoTicket={onEstadoTicket} onReasignarTicket={onReasignarTicket} setSelExp={setSelExp} sinCasos={data.length===0} setTab={setTab}/>}
-    {tab==="equipo"      && <><ResumenEquipo tickets={tickets} perfil={perfil}/><div style={{marginTop:14}}><ResumenDiario registros={registros} tickets={tickets}/></div><div style={{marginTop:14}}><VerificacionDiaria tickets={tickets} registros={registros} perfil={perfil}/></div><MejorasSugeridas comentarios={comentarios}/></>}
+    {tab==="hoy"         && <Hoy perfil={perfil} data={data} datos={datos} tickets={tickets} recByCode={recByCode} onEstadoTicket={onEstadoTicket} onReasignarTicket={onReasignarTicket} setSelExp={setSelExp} sinCasos={data.length===0} setTab={setTab}/>}
+    {tab==="equipo"      && <><ResumenEquipo tickets={tickets} perfil={perfil}/><div style={{marginTop:14}}><ResumenDiario registros={registros} tickets={tickets}/></div><div style={{marginTop:14}}><VerificacionDiaria tickets={tickets} registros={registros} perfil={perfil}/></div><MejorasSugeridas comentarios={comentarios}/><div style={{marginTop:14}}><PenalidadesTope registros={registros} config={configEquipo} perfil={perfil}/></div></>}
     {tab==="expedientes" && <ExpedientesTab data={data} setSelExp={setSelExp} delegar={delegar} updEstado={updEstado} canDelegate={canDelegate} evidencias={evidencias} activoByCode={activoByCode} progresoDe={progresoDe}/>}
     {tab==="bandeja"     && <Bandeja perfil={perfil} correos={correos} cargando={correosCargando} noDisponible={correos===null && !correosCargando} onRecargar={onRecargarCorreos} existentes={data} onConvertir={onConvertirCorreo} verExpediente={verExpediente}/>}
     {tab==="calendario"  && <Calendario tickets={tickets} recByCode={recByCode} perfil={perfil} setSelExp={setSelExp} equipo/>}
@@ -294,10 +301,14 @@ function BienvenidaSinCasos({ onIrBandeja }){
 }
 
 // "Hoy": lo urgente del equipo en una sola vista — KPIs + cola priorizada (+ dinero en riesgo, solo Gerente).
-function Hoy({ perfil, tickets, recByCode, onEstadoTicket, onReasignarTicket, setSelExp, sinCasos, setTab }){
+function Hoy({ perfil, data, datos, tickets, recByCode, onEstadoTicket, onReasignarTicket, setSelExp, sinCasos, setTab }){
   const ab=abiertos(tickets), v=vencidos(tickets), pv=porVencer(tickets,2);
   const ger=verMontos(perfil.rol);
   const expo=exposicionTotal(tickets);
+  // Riesgo SAP (silencio administrativo positivo, art. 21.1): motor puro en lib/plazosNormativos.js.
+  // Necesita TODOS los tickets del caso (no solo el activo) para leer, p.ej., cuándo se abrió
+  // Apelación; `tickets` aquí ya viene filtrado a activos desde Shell — es la mejor señal disponible.
+  const riesgoSAP = (data && datos) ? riesgoSAPGlobal(data, datos, tickets) : { total:0, casos:[] };
   return <>
     {sinCasos && <BienvenidaSinCasos onIrBandeja={()=>setTab && setTab("bandeja")}/>}
     <div className={"grid "+(ger?"g4":"g3")}>
@@ -305,6 +316,9 @@ function Hoy({ perfil, tickets, recByCode, onEstadoTicket, onReasignarTicket, se
       <Kpi label="Por vencer (≤2d háb.)" value={pv.length} sub="atender hoy" s={pv.length?"ambar":"verde"}/>
       <Kpi label="Vencidos" value={v.length} sub="su etapa actual fuera de plazo" s={v.length?"rojo":"verde"}/>
       {ger && <Kpi label="Dinero en riesgo" value={"S/ "+expo.toLocaleString("es-PE")} sub="de las etapas actuales" s={expo?"rojo":"verde"}/>}
+    </div>
+    <div className={"grid "+(ger?"g4":"g3")} style={{marginTop:10}}>
+      <Kpi label="Riesgo SAP" value={riesgoSAP.total} sub="relojes SAP vencidos — silencio positivo (pen. 5.5)" s={riesgoSAP.total>0?"rojo":"verde"}/>
     </div>
     <div style={{marginTop:14}}>
       <AtenderPrimero tickets={tickets} perfil={perfil} recByCode={recByCode} onEstado={onEstadoTicket} onReasignar={onReasignarTicket} setSelExp={setSelExp}/>

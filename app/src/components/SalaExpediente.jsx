@@ -3,6 +3,7 @@ import { ETAPAS, FLUJO, fmtFecha, wColor } from "../lib/model.js";
 import { toast } from "./ui.jsx";
 import { GuiaSielseBox } from "../lib/guiaSielse.jsx";
 import FichaSielse from "./FichaSielse.jsx";
+import { relojesDelCaso } from "../lib/plazosNormativos.js";
 
 // ===================== Sala del expediente (v4, patrón courier) =====================
 // Vista de SEGUIMIENTO y colaboración de un caso: dónde está, quién lo tiene, cuánto plazo
@@ -93,6 +94,10 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
   // correos vinculados a este caso — el campo real de vínculo es `reclamo_vinculado` (ver Bandeja.jsx)
   const correosDelCaso = (correos||[]).filter(c=>String(c.reclamo_vinculado||"")===String(exp.codigo));
 
+  // ===== relojes normativos (SAP + elevación) — motor puro en lib/plazosNormativos.js =====
+  const relojes = relojesDelCaso({ exp, datos, tickets });
+  const haySAPVencido = relojes.some(r=>r.esSAP && r.estado==="vencido");
+
   function enviarComentario(){
     const t = texto.trim(); if(!t) return;
     onComentar && onComentar({ reclamo: exp.codigo, etapa: etapaActual, texto: t, nombre: perfil?.nombre });
@@ -135,6 +140,17 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
     correoFila:{ display:"flex", alignItems:"flex-start", gap:9, padding:"8px 2px", borderBottom:"1px solid #EDF1F6" },
     correoAsunto:{ fontSize:12.5, fontWeight:700, color:"var(--titulo)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" },
     correoMeta:{ fontSize:11, color:"var(--mut)", marginTop:2 },
+    relojesBox:{ background:"var(--card)", border:"1px solid var(--bd)", borderRadius:16, padding:15, marginTop:13 },
+    relojBannerSAP:{ display:"flex", alignItems:"center", gap:8, background:"#FDE7E7", border:"1px solid #F3B4B4", color:"#B91C1C", borderRadius:10, padding:"9px 13px", marginBottom:11, fontSize:12.5, fontWeight:700 },
+    relojFila:{ display:"flex", flexWrap:"wrap", alignItems:"center", gap:9, padding:"8px 2px", borderBottom:"1px solid #EDF1F6" },
+    relojNombre:{ fontSize:12.5, color:"var(--titulo)", fontWeight:600, flex:1, minWidth:200 },
+    relojMeta:{ fontSize:11.5, color:"var(--mut)" },
+    relojPill: estado => ({
+      display:"inline-flex", alignItems:"center", gap:5, fontSize:10.5, fontWeight:700, padding:"3px 10px", borderRadius:999,
+      background: estado==="vencido" ? "#FDE7E7" : estado==="por_vencer" ? "#FEF3DF" : estado==="ok" ? "#E5F7EC" : estado==="cumplido" ? "#EDF2F8" : "#EDF2F8",
+      color: estado==="vencido" ? "#DC2626" : estado==="por_vencer" ? "#B45309" : estado==="ok" ? "#15803D" : estado==="cumplido" ? "var(--mut)" : "var(--mut)",
+    }),
+    relojNota:{ fontSize:11, color:"var(--mut2)", width:"100%", marginTop:2 },
   };
 
   return (
@@ -255,6 +271,37 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
           </div>
 
           <div style={{marginTop:12}}><GuiaSielseBox etapa={etapaActual} compacta/></div>
+
+          {/* ===== relojes normativos (SAP + elevación) ===== */}
+          <div style={S.relojesBox}>
+            <div style={{fontSize:13.5,fontWeight:700,color:"var(--titulo)",marginBottom:4}}>⚖ Relojes normativos</div>
+            {haySAPVencido && (
+              <div style={S.relojBannerSAP}>
+                🚨 RIESGO DE SILENCIO POSITIVO — el reclamo puede darse por FUNDADO (penalidad 5.5: S/300 + el monto)
+              </div>
+            )}
+            {relojes.map(r=>{
+              const parpadea = r.esSAP && r.estado==="vencido";
+              return (
+                <div key={r.id} style={S.relojFila}>
+                  <span style={S.relojNombre}>{r.nombre}</span>
+                  <span style={S.relojPill(r.estado)} className={parpadea ? "reloj-parpadea" : ""}>
+                    {r.estado==="vencido" ? (r.esSAP ? "⛔ SAP vencido" : "⛔ vencido")
+                      : r.estado==="por_vencer" ? "⏳ por vencer"
+                      : r.estado==="ok" ? "✓ en plazo"
+                      : r.estado==="cumplido" ? "✓ cumplido"
+                      : "· no aplica"}
+                  </span>
+                  <span style={S.relojMeta}>
+                    {r.limite ? ("vence "+fmtFecha(r.limite)+" · "+(r.dias!=null?Math.abs(r.dias)+" d háb.":"—")) : "sin fecha base"}
+                  </span>
+                  {r.nota && <span style={S.relojNota}>{r.nota}</span>}
+                </div>
+              );
+            })}
+            {!relojes.length && <div className="muted" style={{fontSize:12}}>Sin relojes normativos aplicables a este caso.</div>}
+            <style>{"@media (prefers-reduced-motion: no-preference){ .reloj-parpadea{ animation: reloj-parpadeo 1.1s ease-in-out infinite; } } @keyframes reloj-parpadeo{ 0%,100%{opacity:1;} 50%{opacity:.45;} }"}</style>
+          </div>
 
           {/* ===== documentos del caso ===== */}
           <div style={S.descargas}>

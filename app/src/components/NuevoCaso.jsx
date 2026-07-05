@@ -620,9 +620,14 @@ function Paso3({ f, set, sug, cats }) {
   );
 }
 
+// Fallback local de sedes si el catálogo (Sheet o CATALOGOS_LOCAL) no trae el grupo SEDE todavía.
+const SEDES_FALLBACK = ["Cusco", "Valle Sagrado", "Quispicanchi", "Anta", "Vilcanota", "Provincias Altas", "La Convención"];
+
 /* ===================== PASO 4 — ¿Sobre qué suministro y qué pide? ===================== */
 function Paso4({ f, set, sug, cats }) {
   const sectores = cats?.SECTOR_TIPICO || [];
+  const tiposDeficiencia = (cats?.TIPO_DEFICIENCIA || []).filter(t => t.valor && !/completar desde el desplegable/i.test(t.valor));
+  const sedes = (cats?.SEDE && cats.SEDE.length ? cats.SEDE.map(s => s.valor) : SEDES_FALLBACK);
   return (
     <div>
       <h4 style={{ margin: "0 0 4px", color: "var(--navy)" }}>¿Sobre qué suministro y qué pide?</h4>
@@ -675,6 +680,42 @@ function Paso4({ f, set, sug, cats }) {
             </select>
             <div style={{ fontSize: 10.5, marginTop: 3, color: "var(--mut)" }}>define si aplica NTCSE urbano o rural</div>
           </label>
+
+          <label style={{ fontSize: 12 }}>
+            <span style={lblSpan}>Libro (SIELSE)</span>
+            <input type="text" value={f.LIBRO || ""} onChange={e => set("LIBRO", e.target.value)}
+              placeholder="obligatorio en la pantalla Solicitud" style={inp(false)} />
+          </label>
+          <label style={{ fontSize: 12 }}>
+            <span style={lblSpan}>Zona</span>
+            <input type="text" value={f.ZONA || ""} onChange={e => set("ZONA", e.target.value)} style={inp(false)} />
+          </label>
+          <label style={{ fontSize: 12, gridColumn: "1 / -1" }}>
+            <span style={lblSpan}>Localidad NTCSE</span>
+            <input type="text" value={f.LOCALIDAD_NTCSE || ""} onChange={e => set("LOCALIDAD_NTCSE", e.target.value)}
+              placeholder="obligatorio — define indicadores de calidad" style={inp(false)} />
+          </label>
+          <label style={{ fontSize: 12 }}>
+            <span style={lblSpan}>Tipo de deficiencia</span>
+            {tiposDeficiencia.length
+              ? (
+                <select value={f.TIPO_DEFICIENCIA || ""} onChange={e => set("TIPO_DEFICIENCIA", e.target.value)} style={inp(false)}>
+                  <option value="">—</option>
+                  {tiposDeficiencia.map(t => <option key={t.valor} value={t.valor}>{t.valor}</option>)}
+                </select>
+              )
+              : (
+                <input type="text" value={f.TIPO_DEFICIENCIA || ""} onChange={e => set("TIPO_DEFICIENCIA", e.target.value)}
+                  placeholder="como aparece en el desplegable de SIELSE" style={inp(false)} />
+              )}
+          </label>
+          <label style={{ fontSize: 12 }}>
+            <span style={lblSpan}>Sede</span>
+            <select value={f.SEDE || "Cusco"} onChange={e => set("SEDE", e.target.value)} style={inp(false)}>
+              {sedes.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <div style={{ fontSize: 10.5, marginTop: 3, color: "var(--mut)" }}>Sedes ≠ Cusco: +1/+2 días hábiles en los plazos del contrato</div>
+          </label>
         </div>
       </div>
     </div>
@@ -692,6 +733,8 @@ function Paso5({ f, file, irA }) {
     ["Reclamante", [f.NombreSolicitante, f.DNI].filter(Boolean).join(" · ") || "—", 3],
     ["Suministro", [f.CodigoSuministro, f.DireccionSolicitante].filter(Boolean).join(" · ") || "—", 4],
     ["Sector típico", f.SECTOR_TIPICO || "—", 4],
+    ["Sede", f.SEDE || "Cusco", 4],
+    ["Libro/Zona", [f.LIBRO, f.ZONA].filter(Boolean).join(" · ") || "—", 4],
   ];
   return (
     <div>
