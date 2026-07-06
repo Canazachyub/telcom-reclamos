@@ -95,7 +95,15 @@ export const metaEtapa = e => FLUJO[stageIdx(e)] || FLUJO[0];
 // ===== fechas =====
 export function parseFecha(s){
   if(!s) return null;
-  const m = String(s).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if(s instanceof Date) return isNaN(s) ? null : s;
+  const t = String(s).trim();
+  // ISO del backend: celdas de FECHA reales en el Sheet llegan como "2026-08-21T05:00:00.000Z"
+  // (así quedó la hoja tras importar el Excel de SIELSE). Con hora → Date directo (respeta zona);
+  // solo fecha "2026-08-21" → construir LOCAL para no retroceder un día en Lima (UTC-5).
+  if(/^\d{4}-\d{2}-\d{2}T/.test(t)){ const d = new Date(t); return isNaN(d) ? null : d; }
+  const iso = t.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(iso) return new Date(+iso[1], +iso[2]-1, +iso[3]);
+  const m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
   if(!m) return null;
   return new Date(+m[3], +m[2]-1, +m[1], +(m[4]||0), +(m[5]||0), +(m[6]||0));
 }
