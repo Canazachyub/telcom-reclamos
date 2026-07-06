@@ -390,6 +390,23 @@ function Cartera({ data, setSelExp }){
   </>;
 }
 
+// Estado derivado del flujo: pill suave estilo courier (el estado real lo dicta el avance de
+// etapas — no se edita a mano; así nadie "maquilla" un caso sin trabajarlo).
+const CHIP_ESTADO = {
+  "En proceso": { bg:"#EAF1FB", tx:"#1E3A5F", bd:"#C9DAF0" },
+  "Completado": { bg:"#E8F6EC", tx:"#1E7A38", bd:"#BFE5CB" },
+  "Cerrado":    { bg:"#E8F6EC", tx:"#1E7A38", bd:"#BFE5CB" },
+  "Observado":  { bg:"#FEF3E2", tx:"#B45309", bd:"#FBE0B5" },
+  "Pendiente":  { bg:"#F3F4F6", tx:"#4B5563", bd:"#E5E7EB" },
+};
+function EstadoChip({ estado, prog }){
+  const c = CHIP_ESTADO[estado] || CHIP_ESTADO["Pendiente"];
+  return <div title="Estado real del flujo — avanza solo cuando se trabajan las etapas (no se edita a mano: evita que un caso se 'maquille' sin trabajarlo)">
+    <span style={{display:"inline-block",whiteSpace:"nowrap",padding:"3px 10px",borderRadius:999,fontSize:11.5,fontWeight:700,background:c.bg,color:c.tx,border:"1px solid "+c.bd}}>{estado}</span>
+    {prog && prog.total>0 && <div className="muted" style={{fontSize:10,marginTop:3,whiteSpace:"nowrap"}}>etapas {prog.hechas}/{prog.total}</div>}
+  </div>;
+}
+
 function Expedientes({ data, setSelExp, delegar, updEstado, canDelegate, activoByCode={}, progresoDe }){
   const [filt,setFilt]=useState({resp:"all",etapa:"all",estado:"all",q:"",vence:"all"});
   const [maxFilas,setMaxFilas]=useState(200);
@@ -465,10 +482,7 @@ function Expedientes({ data, setSelExp, delegar, updEstado, canDelegate, activoB
             <td title="Tipo de resolución histórico SIELSE — no es el avance actual">{x.tipoRes||"—"}</td>
             <td onClick={e=>e.stopPropagation()}>
               {estadoDerivado
-                ? <>
-                    <Tag bg={estadoColor(estadoDerivado)} color="#fff">{estadoDerivado}</Tag>
-                    {prog && <div className="muted" style={{fontSize:10,marginTop:3}}>hechas {prog.hechas}/{prog.total}</div>}
-                  </>
+                ? <EstadoChip estado={estadoDerivado} prog={prog}/>
                 : <select value={x.estado} onChange={e=>updEstado(x.id,e.target.value)} style={{borderLeft:`3px solid ${estadoColor(x.estado)}`}}>{ESTADOS_APP.map(s=><option key={s}>{s}</option>)}</select>}
             </td>
           </tr>
@@ -663,10 +677,7 @@ function Operativo({ perfil, data, setSelExp, tickets, activoByCode={}, progreso
           <td><MiniProgreso prog={prog}/></td>
           <td>{etapaTxt}</td><td>{limiteTxt}</td>
           <td style={{textAlign:"center",color:restanColor}}><b>{restanTxt}</b></td>
-          <td>
-            <Tag bg={estadoColor(estadoDerivado||x.estado)} color="#fff">{estadoDerivado||x.estado}</Tag>
-            {prog && <div className="muted" style={{fontSize:10,marginTop:3}}>hechas {prog.hechas}/{prog.total}</div>}
-          </td>
+          <td><EstadoChip estado={estadoDerivado||x.estado} prog={prog}/></td>
         </tr>;})}
       {!mine.length && <tr><td colSpan={9} className="muted" style={{textAlign:"center",padding:14}}>Sin reclamos asignados. El Coordinador puede delegarte.</td></tr>}
     </tbody></table></div></Card>}

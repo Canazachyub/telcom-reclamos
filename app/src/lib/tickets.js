@@ -1,6 +1,6 @@
 // ===== Capa de dominio de TICKETS (esquema v2) =====
 // Un ticket = (reclamo × etapa). Es la unidad de trabajo de toda la UI.
-import { ETAPAS } from "./model.js";
+import { ETAPAS, wName } from "./model.js";
 
 const ORDEN = ETAPAS;  // orden canónico de las 10 etapas
 
@@ -19,7 +19,9 @@ export function mapTicket(r) {
     etapaNN: r.etapa_nn,
     etapa: r.etapa,
     respId: numOr(r.responsable_id, 0),
-    responsable: r.responsable || "",
+    // el nombre VIGENTE del equipo manda sobre el texto grabado en la hoja: tickets antiguos
+    // guardaron nombres de personal que ya salió (los resp_id 4/6/7 se conservaron al reemplazar)
+    responsable: (numOr(r.responsable_id, 0) ? wName(numOr(r.responsable_id, 0)) : "") || r.responsable || "",
     estado,
     abierto: estado === "pendiente" || estado === "en_proceso",
     hecho: estado === "hecho",

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FLUJO, stageIdx, fmtFecha, daysLeft, wName, wColor, DRIVE_URL, ETAPA_NN } from "../lib/model.js";
+import { FLUJO, stageIdx, fmtFecha, parseFecha, daysLeft, wName, wColor, DRIVE_URL, ETAPA_NN } from "../lib/model.js";
 import { estadoColor, urgColor, Tag, toast } from "./ui.jsx";
 import Timeline from "./Timeline.jsx";
 import SubirEvidencia from "./SubirEvidencia.jsx";
@@ -69,6 +69,19 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
   const evisDe = et => (evidencias || []).filter(e => e.exp === exp.codigo && (e.etapa === et || e.etapa === ETAPA_NN[et]));
   const datosDe = et => (datos && datos[exp.codigo + "|" + et]) || {};
   const ticketDe = et => (tickets || []).find(t => t.reclamo === exp.codigo && t.etapa === et);
+  // ESPEJO: lo que YA está digitado en SIELSE (columnas del reclamo) pre-carga el formulario
+  // de la etapa — el equipo corrige, no vuelve a digitar. datos_etapa (lo registrado aquí) manda.
+  const fmtDia = v => { const d = parseFecha(v); return d ? `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}` : (v || ""); };
+  const espejoExp = {
+    N_SOLICITUD_SIELSE: exp.docRef, N_OSINERG_SIELSE: exp.osinerg,
+    FECHA_ADMISION_SIELSE: fmtDia(exp.fechaAdm), SENTIDO_RESOLUCION: exp.tipoRes, SENTIDO_FALLO: exp.tipoRes,
+    MOTIVO_CIERRE: exp.motivoCierre, FECHA_CIERRE: fmtDia(exp.fechaSol), DESCRIPCION_SOLUCION: exp.solucion,
+  };
+  const previosDe = et => {
+    const base = {};
+    Object.entries(espejoExp).forEach(([k, v]) => { if (v != null && String(v).trim() !== "") base[k] = String(v); });
+    return { ...base, ...datosDe(et) };
+  };
 
   const s = FLUJO[sel];
   const docs = evisDe(s.etapa);
@@ -84,7 +97,9 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
   const camposEtapaTodos = especEtapa
     ? [...especEtapa.campos, ...(s.etapa === "Resolución" ? (CAMPOS_POR_FALLO[dat.SENTIDO_FALLO] || []) : [])]
     : [];
-  const camposFaltantes = camposEtapaTodos.filter(c => dat[c.k] == null || dat[c.k] === "").map(c => c.label);
+  // un campo NO falta si ya se registró aquí O si ya está digitado en SIELSE (espejo)
+  const datEf = previosDe(s.etapa);
+  const camposFaltantes = camposEtapaTodos.filter(c => datEf[c.k] == null || datEf[c.k] === "").map(c => c.label);
   const faltantes = [...evisFaltantes, ...camposFaltantes];
   const estPlazo = tk && tk.abierto ? (tk.vencido ? { t: "VENCIDO", c: "#7f1d1d" } : (tk.diasRestantes != null && tk.diasRestantes <= 2 ? { t: "POR VENCER", c: "#78350f" } : { t: "VIGENTE", c: "#14532d" })) : null;
   // Pill de estado de la etapa SELECCIONADA (para la cabecera hero) — según su ticket si existe:
@@ -159,7 +174,7 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
                 ))}
               </div>
             )}
-            {subir && <SubirEvidencia reclamo={exp.codigo} etapa={s.etapa} etapaNN={ETAPA_NN[s.etapa]} perfil={perfil} onSaveDatos={onSaveDatos} onSubido={onSubido} onClose={() => setSubir(false)} />}
+            {subir && <SubirEvidencia key={s.etapa} reclamo={exp.codigo} etapa={s.etapa} etapaNN={ETAPA_NN[s.etapa]} perfil={perfil} previos={previosDe(s.etapa)} onSaveDatos={onSaveDatos} onSubido={onSubido} onClose={() => setSubir(false)} />}
             <div style={{ flex: 1, marginTop: 8, minHeight: 320, borderRadius: 10, border: "1px solid var(--bd)", overflow: "hidden", background: "var(--card2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               {doc && doc.url
                 ? (esImg(doc.nombre)
