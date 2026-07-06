@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { ETAPAS, FLUJO, fmtFecha, wColor } from "../lib/model.js";
 import { toast } from "./ui.jsx";
 import { GuiaSielseBox } from "../lib/guiaSielse.jsx";
+import { CAMPOS_ETAPA, CAMPOS_POR_FALLO } from "../lib/camposEtapa.js";
 import FichaSielse from "./FichaSielse.jsx";
 import { relojesDelCaso } from "../lib/plazosNormativos.js";
 
@@ -46,6 +47,12 @@ function humanizar(r){
   if(t==="reporte") return "cerró su reporte del día";
   return (txt||JSON.stringify(d)).slice(0,110);
 }
+
+// etiqueta bonita de cada campo registrado (clave técnica → label del formulario)
+const LBL_CAMPO = (()=>{ const m={};
+  Object.values(CAMPOS_ETAPA||{}).forEach(s=>(s?.campos||[]).forEach(c=>{ m[c.k]=c.label; }));
+  Object.values(CAMPOS_POR_FALLO||{}).forEach(arr=>(arr||[]).forEach(c=>{ m[c.k]=c.label; }));
+  return m; })();
 
 // ===================== ⚖ Relojes normativos → mini-calendario interactivo =====================
 // Pedido del gerente: "como un calendario de muestra con botones en las fechas calculadas; al
@@ -203,8 +210,9 @@ function CalendarioRelojes({ relojes, ladoALado }){
                 } else if(peor==="ok"){
                   estilo = { ...estilo, border:"2px solid #16A34A", fontWeight:700 };
                 } else if(peor==="cumplido"){
-                  estilo = { ...estilo, background:"#E9EEF5", color:"var(--mut)" };
-                  contenido = <>{d.getDate()}<span style={{fontSize:8.5}}>✓</span></>;
+                  // verde positivo: "esto YA lo cumplí" — informativo, no alarma
+                  estilo = { ...estilo, background:"#E5F7EC", color:"#15803D", border:"1px solid #BFE5CB", fontWeight:700 };
+                  contenido = <>{d.getDate()}<span style={{fontSize:9,marginLeft:1}}>✓</span></>;
                 }
                 if(lista.length>1){
                   badge = (
@@ -246,7 +254,7 @@ function CalendarioRelojes({ relojes, ladoALado }){
                   <div><span style={{display:"inline-block",width:10,height:10,borderRadius:3,background:"#E3001B",marginRight:6}}/>vencido</div>
                   <div><span style={{display:"inline-block",width:10,height:10,borderRadius:3,background:"#F59E0B",marginRight:6}}/>por vencer</div>
                   <div><span style={{display:"inline-block",width:10,height:10,borderRadius:3,border:"2px solid #16A34A",marginRight:6}}/>en plazo</div>
-                  <div><span style={{display:"inline-block",width:10,height:10,borderRadius:3,background:"#E9EEF5",marginRight:6}}/>cumplido ✓</div>
+                  <div><span style={{display:"inline-block",width:10,height:10,borderRadius:3,background:"#E5F7EC",border:"1px solid #BFE5CB",marginRight:6}}/><span style={{color:"#15803D",fontWeight:700}}>cumplido ✓</span> — actividad ya realizada</div>
                   <div><span style={{display:"inline-block",width:6,height:6,borderRadius:"50%",background:"var(--navy)",marginRight:10}}/>inicio del cómputo (base)</div>
                 </div>
               </>
@@ -485,7 +493,7 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
                     <span style={{fontSize:11,fontWeight:700,padding:"2px 9px",borderRadius:999,
                       background: t.hecho?"#E5F7EC":(t.vencido?"#FDE7E7":"#FEF3DF"),
                       color: t.hecho?"#15803D":(t.vencido?"#DC2626":"#B45309")}}>
-                      {t.hecho?"hecha ✓":(t.vencido?"vencida":"en curso/pendiente")}
+                      {t.hecho?"✓ CUMPLIDA":(t.vencido?"⚠ VENCIDA — pendiente":"en curso/pendiente")}
                     </span>
                   ) : <span className="muted" style={{fontSize:11.5}}>{etapaSel==="Apelación (JARU)"?"condicional — solo si el reclamante impugna":"aún sin ticket — nace al avanzar el flujo"}</span>}
                   {t && <span style={{fontSize:12,color:"var(--mut)"}}>Responsable: <b style={{color:"var(--tx)"}}>{t.responsable||"—"}</b>{t.fechaLimite?" · límite "+fmtFecha(t.fechaLimite):""}</span>}
@@ -497,6 +505,38 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
                     {docsEt.slice(0,5).map((d,i)=><a key={i} style={{...S.doc,fontSize:11.5,padding:"3px 10px"}} href={d.url||"#"} target="_blank" rel="noreferrer">⬇ {d.nombre}</a>)}
                   </div>
                 )}
+                {/* lo TRABAJADO en esta etapa (informativo, solo lectura — la edición vive en el área de trabajo) */}
+                {(()=>{
+                  const dEt = (datos && datos[exp.codigo+"|"+etapaSel]) || {};
+                  const ks = Object.keys(dEt).filter(k=>String(dEt[k]??"").trim()!=="");
+                  const actEt = actividadTodo.filter(a=>String(a.etapa||"")===etapaSel).slice(0,3);
+                  return (
+                    <div style={{marginTop:9}}>
+                      {ks.length
+                        ? <>
+                            <div style={{fontSize:10.5,textTransform:"uppercase",letterSpacing:".05em",color:"var(--mut)",fontWeight:700,marginBottom:5}}>📋 Registrado en esta etapa ({ks.length})</div>
+                            <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                              {ks.map(k=>(
+                                <span key={k} title={String(dEt[k])} style={{fontSize:11.5,background:"#F4FBF6",border:"1px solid #BFE5CB",borderRadius:8,padding:"3px 9px",color:"var(--tx)",maxWidth:340,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                                  <b style={{color:"#15803D"}}>✓ {LBL_CAMPO[k]||k}:</b> {String(dEt[k])}
+                                </span>
+                              ))}
+                            </div>
+                          </>
+                        : <div className="muted" style={{fontSize:11.5}}>📋 Aún sin datos registrados en esta etapa — se llenan desde «Evidencia + datos» en el área de trabajo.</div>}
+                      {actEt.length>0 && (
+                        <div style={{marginTop:8}}>
+                          <div style={{fontSize:10.5,textTransform:"uppercase",letterSpacing:".05em",color:"var(--mut)",fontWeight:700,marginBottom:4}}>🕐 Actividad de esta etapa</div>
+                          {actEt.map((a,i)=>(
+                            <div key={i} style={{fontSize:11.5,color:"var(--tx)",padding:"2px 0"}}>
+                              <b style={{color:"var(--titulo)"}}>{a.quien}</b> {a.que} <span className="muted" style={{fontSize:10.5}}>· {a.cuando}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
                 <div style={{marginTop:9}}><GuiaSielseBox etapa={etapaSel} compacta/></div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:10}}>
                   <button className="btn sm" onClick={()=>onTrabajar(exp.id, etapaSel)}>Abrir esta etapa en el trabajo</button>
