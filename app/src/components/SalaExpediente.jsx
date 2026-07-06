@@ -42,6 +42,7 @@ function humanizar(r){
   if(t==="ticket") return "actualizó la etapa"+(d.estado?" → "+(d.estado==="hecho"?"terminada ✓":String(d.estado).replace("_"," ")):"");
   if(t==="edicion") return "editó "+(d.campo||"un campo")+(d.valor!=null?" → "+String(d.valor).slice(0,40):"");
   if(t==="expediente") return "generó el expediente foliado";
+  if(t==="eliminacion") return "🗑 ELIMINÓ el expediente — motivo: "+(d.motivo||"—");
   if(t==="reporte") return "cerró su reporte del día";
   return (txt||JSON.stringify(d)).slice(0,110);
 }
@@ -295,7 +296,7 @@ function CalendarioRelojes({ relojes, ladoALado }){
   );
 }
 
-export default function SalaExpediente({ exp, tickets, evidencias, registros, comentarios, perfil, datos, correos, onComentar, onTrabajar, onClose, onEditar, onEstadoTicket, ladoALado }){
+export default function SalaExpediente({ exp, tickets, evidencias, registros, comentarios, perfil, datos, correos, onComentar, onTrabajar, onClose, onEditar, onEstadoTicket, onEliminar, ladoALado }){
   const [texto, setTexto] = useState("");
   const [verFicha, setVerFicha] = useState(false);
   const [etapaSel, setEtapaSel] = useState(null);   // etapa clickeada en la línea de tiempo
@@ -403,6 +404,17 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
           </div>
           <div style={{display:"flex",gap:8}}>
             <button className="btn-ghost" onClick={()=>setVerFicha(true)} title="Ver el registro SIELSE completo del caso, lo trabajado por fase y sus documentos">📋 Ficha SIELSE</button>
+            {perfil?.rol==="GERENTE" && onEliminar && (
+              <button className="btn-ghost" style={{color:"#DC2626",borderColor:"#F3B4B4"}}
+                title="Eliminar este expediente (solo Gerencia; motivo obligatorio; la bitácora conserva el rastro)"
+                onClick={()=>{
+                  if(!confirm("⚠ Vas a ELIMINAR el expediente "+(exp.osinerg||exp.codigo)+(exp.solicitante?" ("+exp.solicitante+")":"")+".\n\nSe borran el caso, sus etapas y su calendario. La bitácora y los archivos de Drive se conservan como respaldo.\n\n¿Continuar?")) return;
+                  const motivo = prompt("Motivo de la eliminación (obligatorio — queda firmado en la bitácora):");
+                  if(motivo==null) return;
+                  if(!String(motivo).trim()){ toast("⛔ Sin motivo no se elimina"); return; }
+                  onEliminar(exp.codigo, String(motivo).trim());
+                }}>🗑 Eliminar</button>
+            )}
             <button className="btn-ghost" onClick={onClose}>✕ Cerrar</button>
           </div>
         </div>

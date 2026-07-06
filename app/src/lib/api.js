@@ -254,6 +254,12 @@ export async function loadConfig(){
   return {};
 }
 
+// Eliminar expediente (SOLO Gerencia, motivo obligatorio). El backend borra reclamo+tickets+
+// calendario y deja el rastro firmado en la bitácora (registros y datos_etapa se conservan).
+export async function eliminarReclamo(codigo, motivo){
+  return postAction("eliminar_reclamo", { codigo, motivo });
+}
+
 // Catálogos SIELSE (v4): hoja `catalogos` del Sheet (grupo|valor|extra); si aún no existe
 // (falta ejecutarSetupCatalogos o el redeploy), devuelve null y el wizard usa CATALOGOS_LOCAL.
 export async function loadCatalogos(){

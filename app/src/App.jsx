@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { loadReclamos, loadEvidencias, loadDatos, guardarDatos, loadTickets, updTicket, loadComentarios, comentar, loadRegistros, loadCorreos, postAction, editarReclamo, vincularCorreo, loadConfig, USE_MOCK } from "./lib/api.js";
+import { loadReclamos, loadEvidencias, loadDatos, guardarDatos, loadTickets, updTicket, loadComentarios, comentar, loadRegistros, loadCorreos, postAction, editarReclamo, eliminarReclamo, vincularCorreo, loadConfig, USE_MOCK } from "./lib/api.js";
 import { mapTickets, misTickets, activos, abiertos, vencidos, porVencer, exposicionTotal, verMontos, urgColorTicket } from "./lib/tickets.js";
 import { getSesionValida, logout, ROL_LABEL, puedeDelegar, puedeVerTodo, esOperativo, USERS } from "./lib/auth.js";
 import {
@@ -102,6 +102,18 @@ function Shell({ perfil, onLogout }){
     });
   }
   function onComentar(obj){ setComentarios(cs=>[obj,...cs]); comentar(obj); }
+  // Eliminar expediente (SOLO Gerencia, motivo obligatorio). El backend borra caso+tickets+
+  // calendario y firma el rastro en la bitácora; aquí cerramos la Sala y refrescamos todo.
+  function onEliminarExp(codigo, motivo){
+    return eliminarReclamo(codigo, motivo).then(r=>{
+      if(r && r.ok!==false){
+        toast("🗑 Expediente "+codigo+" eliminado — el rastro quedó en la bitácora");
+        setSalaExp(null); setSelExpId(null); setSelEtapa(null);
+        refrescar(); loadRegistros().then(setRegistros).catch(()=>{});
+      } else toast("⚠ No se eliminó: "+((r&&r.error)||"error"));
+      return r;
+    });
+  }
   function refrescar(){ loadReclamos().then(setData).catch(()=>{}); loadTickets().then(rows=>{ if(rows&&rows.length) setTickets(mapTickets(rows)); }).catch(()=>{}); }
   function onReasignarTicket(t, respId, respNombre){
     setTickets(ts=>ts.map(x=>x.id===t.id?{...x,respId:+respId,responsable:respNombre}:x));
@@ -219,7 +231,7 @@ function Shell({ perfil, onLogout }){
       {salaExp!=null && data && (()=>{ const sx=data.find(x=>x.id===salaExp); return sx ? (
         <SalaExpediente exp={sx} tickets={tickets} evidencias={evidencias} registros={registros} comentarios={comentarios} datos={datos} correos={correos}
           perfil={perfilVista} onComentar={onComentar} onTrabajar={trabajarDesdeSala} onEstadoTicket={onEstadoTicket}
-          onEditar={(campo,valor)=>onEditarCampo(sx.codigo,campo,valor)} ladoALado={exp!=null} onClose={()=>setSalaExp(null)}/>
+          onEditar={(campo,valor)=>onEditarCampo(sx.codigo,campo,valor)} onEliminar={onEliminarExp} ladoALado={exp!=null} onClose={()=>setSalaExp(null)}/>
       ) : null; })()}
       {exp && <Drawer exp={exp} etapaInicial={selEtapa} evidencias={evidencias} datos={datos} tickets={tickets} perfil={perfilVista} comentarios={comentarios} registros={registros} onComentar={onComentar} onEstadoTicket={onEstadoTicket} onEditar={(campo,valor)=>onEditarCampo(exp.codigo,campo,valor)} onClose={()=>{ setSelExpId(null); setSelEtapa(null); }} onSaveDatos={saveDatos} onSubido={obj=>setEvi(ev=>[obj,...ev])}/>}
       {nuevo && <NuevoCaso perfil={perfilVista} existentes={data||[]} inicial={correoOrigen ? correoOrigen.prefill : null} onClose={()=>{ setNuevo(false); setCorreoOrigen(null); }} onCreado={(codigoNuevo)=>{
