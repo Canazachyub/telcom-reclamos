@@ -391,7 +391,8 @@ function Cartera({ data, setSelExp }){
 }
 
 function Expedientes({ data, setSelExp, delegar, updEstado, canDelegate, activoByCode={}, progresoDe }){
-  const [filt,setFilt]=useState({resp:"all",etapa:"all",estado:"all",q:""});
+  const [filt,setFilt]=useState({resp:"all",etapa:"all",estado:"all",q:"",vence:"all"});
+  const [maxFilas,setMaxFilas]=useState(200);
   let list=data.filter(x=>{
     if(filt.resp!=="all" && String(x.resp)!==String(filt.resp)) return false;
     if(filt.etapa!=="all" && x.etapa!==filt.etapa) return false;
@@ -399,11 +400,35 @@ function Expedientes({ data, setSelExp, delegar, updEstado, canDelegate, activoB
     if(filt.q){ const q=filt.q.toLowerCase(); if(!`${x.osinerg} ${x.codigo} ${x.solicitante} ${x.suministro}`.toLowerCase().includes(q)) return false; }
     return true;
   });
+  // días restantes por caso: el ticket activo manda (días hábiles); sin tickets, el límite global SIELSE
+  let rows = list.map(x=>{
+    const act = activoByCode[String(x.codigo)];
+    return { x, act, dl: act ? act.diasRestantes : daysLeft(x.fechaLim) };
+  });
+  if(filt.vence!=="all"){
+    rows = rows.filter(({dl})=>{
+      if(dl==null) return false;
+      if(filt.vence==="vencido") return dl<0;
+      if(filt.vence==="hoy") return dl===0;
+      if(filt.vence==="3d") return dl>=0 && dl<=3;
+      if(filt.vence==="semana") return dl>=0 && dl<=7;
+      if(filt.vence==="quincena") return dl>=0 && dl<=15;
+      return true;
+    }).sort((a,b)=>(a.dl??9e9)-(b.dl??9e9));  // el más urgente arriba
+  }
   return <Card>
     <div style={{display:"flex",flexWrap:"wrap",justifyContent:"space-between",gap:8,alignItems:"center"}}>
-      <h3 style={{margin:0}}>Expedientes — clic en una fila para ver su flujo ({list.length}/{data.length})</h3>
+      <h3 style={{margin:0}}>Expedientes — clic en una fila para ver su flujo ({rows.length}/{data.length})</h3>
       <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-        <input className="flt" placeholder="Buscar nº / solicitante / suministro" value={filt.q} onChange={e=>setFilt({...filt,q:e.target.value})} style={{minWidth:220}}/>
+        <input className="flt" placeholder="Buscar nº / código SIELSE / solicitante / suministro" value={filt.q} onChange={e=>setFilt({...filt,q:e.target.value})} style={{minWidth:240}}/>
+        <select className="flt" value={filt.vence} onChange={e=>setFilt({...filt,vence:e.target.value})} style={filt.vence!=="all"?{borderColor:"var(--acc)",color:"var(--acc)",fontWeight:600}:undefined}>
+          <option value="all">⏰ Vencen: todos</option>
+          <option value="vencido">🔴 Ya vencidos</option>
+          <option value="hoy">⚠ Vencen HOY</option>
+          <option value="3d">≤ 3 días</option>
+          <option value="semana">≤ 7 días (esta semana)</option>
+          <option value="quincena">≤ 15 días</option>
+        </select>
         <select className="flt" value={filt.resp} onChange={e=>setFilt({...filt,resp:e.target.value})}><option value="all">Resp: todos</option>{TEAM.map(t=><option key={t.id} value={t.id}>{t.corto}</option>)}<option value={0}>Externos</option></select>
         <select className="flt" value={filt.etapa} onChange={e=>setFilt({...filt,etapa:e.target.value})}><option value="all">Todas las etapas</option>{ETAPAS.map(e=><option key={e}>{e}</option>)}</select>
         <select className="flt" value={filt.estado} onChange={e=>setFilt({...filt,estado:e.target.value})}><option value="all">Todos los estados</option>{ESTADOS_APP.map(e=><option key={e}>{e}</option>)}</select>
@@ -411,23 +436,24 @@ function Expedientes({ data, setSelExp, delegar, updEstado, canDelegate, activoB
     </div>
     <div style={{overflowX:"auto"}}>
       <table className="tbl"><thead><tr><th>Nº OSINERG</th><th>Solicitante</th><th>Suministro</th><th>Clase</th><th>Progreso</th><th>Etapa</th><th>Responsable</th><th>Límite</th><th>Restan</th><th title="Tipo de resolución histórico registrado en SIELSE — dato informativo, no refleja el avance actual del ticket">Resolución (histórico SIELSE)</th><th>Estado</th></tr></thead><tbody>
-        {list.slice(0,200).map(x=>{
-          const act = activoByCode[String(x.codigo)];
+        {rows.slice(0,maxFilas).map(({x,act,dl})=>{
           const prog = progresoDe ? progresoDe(x.codigo) : null;
-          const dl = act ? act.diasRestantes : daysLeft(x.fechaLim);
           const limiteTxt = act ? (act.fechaLimite ? fmtFecha(act.fechaLimite) : "—") : fmtFecha(x.fechaLim);
           const restanTxt = act ? (act.diasRestantes==null ? "—" : (act.vencido ? "vencido "+Math.abs(act.diasRestantes)+"d háb." : act.diasRestantes+"d háb.")) : (dl===null?"—":dl+"d");
           const restanColor = act ? urgColorTicket(act) : urgColor(dl);
           const etapaTxt = act ? act.etapa : x.etapa;
           // Estado mostrado: si hay ticket activo, deriva de su estado; si no hay ticket pero
           // el caso tiene tickets todos hechos, "Completado"; si no tiene tickets, el select v1 (respaldo).
-          const tieneTickets = act || prog;
           const estadoDerivado = act
             ? (act.estado==="en_proceso" ? "En proceso" : "Pendiente")
             : (prog && prog.total>0 && prog.hechas===prog.total ? "Completado" : null);
           return (
           <tr key={x.id} className="clk" onClick={()=>setSelExp(x.id)}>
-            <td className="mono">{x.osinerg}</td><td>{x.solicitante}</td><td>{x.suministro}</td>
+            <td className="mono">{x.osinerg}
+              <button className="btn-ghost" title={"Copiar código SIELSE para buscarlo allá: "+x.codigo}
+                onClick={e=>{ e.stopPropagation(); try{ navigator.clipboard.writeText(String(x.codigo)); toast("Código SIELSE copiado: "+x.codigo); }catch(err){ toast("No se pudo copiar"); } }}
+                style={{padding:"1px 6px",fontSize:10,marginLeft:6,lineHeight:1.4}}>⧉ SIELSE</button>
+            </td><td>{x.solicitante}</td><td>{x.suministro}</td>
             <td style={{maxWidth:150,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{x.clase.replace("RECLAMOS ","")}</td>
             <td><MiniProgreso prog={prog}/></td>
             <td>{etapaTxt}</td>
@@ -449,7 +475,13 @@ function Expedientes({ data, setSelExp, delegar, updEstado, canDelegate, activoB
         );})}
       </tbody></table>
     </div>
-    {list.length>200 && <div className="muted" style={{marginTop:8,fontSize:12}}>Mostrando 200 de {list.length}.</div>}
+    {rows.length>maxFilas && (
+      <div style={{display:"flex",alignItems:"center",gap:10,marginTop:8}}>
+        <span className="muted" style={{fontSize:12}}>Mostrando {maxFilas} de {rows.length} — usa los filtros (⏰ vencimiento, responsable, buscar) para acotar.</span>
+        <button className="btn-ghost" style={{fontSize:12}} onClick={()=>setMaxFilas(m=>m+200)}>Mostrar 200 más</button>
+        <button className="btn-ghost" style={{fontSize:12}} onClick={()=>setMaxFilas(rows.length)}>Mostrar todos ({rows.length})</button>
+      </div>
+    )}
   </Card>;
 }
 
