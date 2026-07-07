@@ -471,7 +471,7 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
                     <div style={{...S.lb(estado), ...(sel?{fontWeight:700, color:"var(--titulo)"}:{})}}>
                       {et==="Apelación (JARU)" ? "Apelación" : et}{cond && !t ? <><br/>(si ocurre)</> : null}
                     </div>
-                    <div style={S.fecha}>{estado==="actual" ? "en curso" : (t && t.hecho && t.fechaLimite ? fmtFecha(t.fechaLimite) : "")}</div>
+                    <div style={S.fecha}>{estado==="actual" ? "en curso" : (t && t.hecho && t.fechaLimite ? "lím. "+fmtFecha(t.fechaLimite) : "")}</div>
                   </div>
                 );
               })}

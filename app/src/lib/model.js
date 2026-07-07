@@ -149,7 +149,10 @@ export function mapReclamo(r, i){
   const venc = String(r.vencido||"0") !== "0";
   const apela = String(r.Apelacion||"0") === "1";
   const admitido = String(r.EsAdmitido||"") === "1";
-  let etapa = cerrado ? "Cierre" : apela ? "Apelación (JARU)" : admitido ? "Resolución" : "Evaluación";
+  // respaldo v1 (solo casos sin tickets) — misma honestidad que _pathDe del backend:
+  // admitido garantiza Recepción+Evaluación; con resolución emitida vive en Firmas
+  const conRes = String(r.NombreTipoResolucionReclamo||"").trim() !== "";
+  let etapa = cerrado ? "Cierre" : apela ? "Apelación (JARU)" : conRes ? "Firmas" : admitido ? "Campo" : "Evaluación";
   let estado = cerrado ? "Cerrado" : venc ? "Observado" : "En proceso";
   return {
     id: i+1,
