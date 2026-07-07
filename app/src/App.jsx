@@ -452,11 +452,11 @@ function Expedientes({ data, setSelExp, delegar, updEstado, canDelegate, activoB
       </div>
     </div>
     <div style={{overflowX:"auto"}}>
-      <table className="tbl"><thead><tr><th>Nº OSINERG</th><th>Solicitante</th><th>Suministro</th><th>Clase</th><th>Progreso</th><th>Etapa</th><th>Responsable</th><th>Límite</th><th>Restan</th><th title="Tipo de resolución histórico registrado en SIELSE — dato informativo, no refleja el avance actual del ticket">Resolución (histórico SIELSE)</th><th>Estado</th></tr></thead><tbody>
+      <table className="tbl"><thead><tr><th>Nº OSINERG</th><th>Solicitante</th><th>Suministro</th><th>Clase</th><th>Progreso</th><th>Etapa</th><th>Responsable</th><th title="Fecha límite de la etapa actual (o límite global SIELSE si aún no tiene flujo)">Límite</th><th title="Días HÁBILES restantes (lun-vie sin feriados) — negativo = vencido">Restan (d háb.)</th><th title="Tipo de resolución histórico registrado en SIELSE — dato informativo, no refleja el avance actual del ticket">Resolución (histórico SIELSE)</th><th>Estado</th></tr></thead><tbody>
         {rows.slice(0,maxFilas).map(({x,act,dl})=>{
           const prog = progresoDe ? progresoDe(x.codigo) : null;
           const limiteTxt = act ? (act.fechaLimite ? fmtFecha(act.fechaLimite) : "—") : fmtFecha(x.fechaLim);
-          const restanTxt = act ? (act.diasRestantes==null ? "—" : (act.vencido ? "vencido "+Math.abs(act.diasRestantes)+"d háb." : act.diasRestantes+"d háb.")) : (dl===null?"—":dl+"d");
+          const restanTxt = act ? (act.diasRestantes==null ? "—" : (act.vencido ? "vencido "+Math.abs(act.diasRestantes)+"d háb." : act.diasRestantes+"d háb.")) : (dl===null?"—":(dl<0?"vencido "+Math.abs(dl)+"d háb.":dl+"d háb."));
           const restanColor = act ? urgColorTicket(act) : urgColor(dl);
           const etapaTxt = act ? act.etapa : x.etapa;
           // Estado mostrado: si hay ticket activo, deriva de su estado; si no hay ticket pero
@@ -465,7 +465,8 @@ function Expedientes({ data, setSelExp, delegar, updEstado, canDelegate, activoB
             ? (act.estado==="en_proceso" ? "En proceso" : "Pendiente")
             : (prog && prog.total>0 && prog.hechas===prog.total ? "Completado" : null);
           return (
-          <tr key={x.id} className="clk" onClick={()=>setSelExp(x.id)}>
+          <tr key={x.id} className="clk" onClick={()=>setSelExp(x.id)}
+            title={"Registrado: "+fmtFecha(x.fechaReg)+" · Admitido: "+(x.fechaAdm?fmtFecha(x.fechaAdm):"aún no")+" · Límite SIELSE: "+fmtFecha(x.fechaLim)+(x.tipoRes?" · Resolución: "+x.tipoRes:"")}>
             <td className="mono">{x.osinerg}
               <button className="btn-ghost" title={"Copiar código SIELSE para buscarlo allá: "+x.codigo}
                 onClick={e=>{ e.stopPropagation(); try{ navigator.clipboard.writeText(String(x.codigo)); toast("Código SIELSE copiado: "+x.codigo); }catch(err){ toast("No se pudo copiar"); } }}
@@ -666,7 +667,7 @@ function Operativo({ perfil, data, setSelExp, tickets, activoByCode={}, progreso
         const prog = progresoDe ? progresoDe(x.codigo) : null;
         const dl = act ? act.diasRestantes : daysLeft(x.fechaLim);
         const limiteTxt = act ? (act.fechaLimite ? fmtFecha(act.fechaLimite) : "—") : fmtFecha(x.fechaLim);
-        const restanTxt = act ? (act.diasRestantes==null ? "—" : (act.vencido ? "vencido "+Math.abs(act.diasRestantes)+"d háb." : act.diasRestantes+"d háb.")) : (dl===null?"—":dl+"d");
+        const restanTxt = act ? (act.diasRestantes==null ? "—" : (act.vencido ? "vencido "+Math.abs(act.diasRestantes)+"d háb." : act.diasRestantes+"d háb.")) : (dl===null?"—":(dl<0?"vencido "+Math.abs(dl)+"d háb.":dl+"d háb."));
         const restanColor = act ? urgColorTicket(act) : urgColor(dl);
         const etapaTxt = act ? act.etapa : x.etapa;
         const estadoDerivado = act

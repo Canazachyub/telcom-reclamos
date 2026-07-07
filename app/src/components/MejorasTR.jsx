@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { toast } from "./ui.jsx";
 import { postAction } from "../lib/api.js";
-import { fmtFecha, parseFecha } from "../lib/model.js";
+import { fmtFecha, parseFecha, esDiaHabil } from "../lib/model.js";
 
 // ===================== Mejoras a los TR (propuesta técnica, vinculante) =====================
 // TELCOM ofertó en su propuesta técnica ("Mejoras a los TR", 20 puntos): (1) informe MENSUAL
@@ -17,10 +17,18 @@ function detalleObj(r) {
   catch (e) { return {}; }
 }
 
+// atraso en días HÁBILES (los plazos R01-R07 de las contratistas son hábiles, no corridos)
 function diffDias(a, b) {
   const da = parseFecha(a), db = parseFecha(b);
   if (!da || !db) return null;
-  return Math.round((db - da) / 86400000);
+  const x = new Date(da.getFullYear(), da.getMonth(), da.getDate());
+  const y = new Date(db.getFullYear(), db.getMonth(), db.getDate());
+  if (x.getTime() === y.getTime()) return 0;
+  const sign = y > x ? 1 : -1;
+  const lo = sign > 0 ? x : y, hi = sign > 0 ? y : x;
+  let c = 0; const t = new Date(lo);
+  while (t < hi) { t.setDate(t.getDate() + 1); if (esDiaHabil(t)) c++; }
+  return sign * c;
 }
 
 function csvEscape(v) {

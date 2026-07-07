@@ -31,7 +31,7 @@ export function InfoBoton({ etapa, rol, t }) {
   if (!info) return null;
   // Plazo concreto de ESTE ticket (fecha límite + días hábiles), si lo tenemos.
   const concreto = t && t.fechaLimite
-    ? { txt: `vence ${fmtDia(t.fechaLimite)} · ${t.vencido ? `vencido ${Math.abs(t.diasRestantes ?? 0)}d` : (t.diasRestantes != null ? `faltan ${t.diasRestantes} día(s) háb.` : "abierto")}`,
+    ? { txt: `vence ${fmtDia(t.fechaLimite)} · ${t.vencido ? `vencido ${Math.abs(t.diasRestantes ?? 0)}d háb.` : (t.diasRestantes != null ? `faltan ${t.diasRestantes} día(s) háb.` : "abierto")}`,
         color: t.vencido ? "#DC2626" : (t.diasRestantes != null && t.diasRestantes <= 2 ? "#B45309" : "#15803D") }
     : null;
   return (

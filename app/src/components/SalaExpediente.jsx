@@ -500,6 +500,7 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
                   {fEt && <span style={{fontSize:11.5,color:"var(--mut2)"}}>({fEt.rol}{fEt.plazo?" · "+fEt.plazo:""})</span>}
                   <button className="btn-ghost" style={{marginLeft:"auto",fontSize:11.5,padding:"4px 9px"}} onClick={()=>setEtapaSel(null)}>✕</button>
                 </div>
+                {fEt?.quien && <div style={{fontSize:11.5,color:"var(--mut)",marginTop:6}}>👥 <b>Quién lo hace:</b> {fEt.quien}</div>}
                 {docsEt.length>0 && (
                   <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:9}}>
                     {docsEt.slice(0,5).map((d,i)=><a key={i} style={{...S.doc,fontSize:11.5,padding:"3px 10px"}} href={d.url||"#"} target="_blank" rel="noreferrer">⬇ {d.nombre}</a>)}

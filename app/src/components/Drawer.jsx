@@ -201,10 +201,15 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
             </div>}
             <b style={{ color: "var(--titulo)", fontSize: 13 }}>Datos de la etapa</b>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", margin: "8px 0" }}>
-              <Tag bg="#E9EEF5" color="var(--tx)">👤 {s.rol}</Tag><Tag bg="#E9EEF5" color="var(--tx)">{s.act}</Tag><Tag bg="#E9EEF5" color="var(--tx)">⏱ {s.plazo}</Tag>
+              <Tag bg="#E9EEF5" color="var(--tx)">👤 {s.rol}</Tag><Tag bg="#E9EEF5" color="var(--tx)">{s.act}</Tag><Tag bg="#E9EEF5" color="var(--tx)" title="Todos los plazos del contrato son en días HÁBILES (lun-vie sin feriados)">⏱ {s.plazo}</Tag>
               {estPlazo && <Tag bg={estPlazo.c} color="#fff">{estPlazo.t} · {tk.fechaLimite} ({tk.diasRestantes}d háb.)</Tag>}
               {tk && tk.hecho && <Tag bg="#064e3b" color="#fff">✓ hecho</Tag>}
             </div>
+            {s.quien && (
+              <div style={{ background: "var(--card2)", border: "1px solid var(--bd)", borderRadius: 8, padding: "7px 10px", margin: "0 0 10px", fontSize: 12, color: "var(--tx)" }}>
+                👥 <b>Quién lo hace:</b> {s.quien}
+              </div>
+            )}
             {tk?.hecho && faltantes.length > 0 && (
               <div style={{ background: "#FEF3DF", border: "1px solid #F0C36D", borderRadius: 8, padding: "7px 10px", margin: "0 0 10px", fontSize: 12, color: "#B45309" }}>
                 ⚠ Esta etapa figura <b>HECHA</b> pero le faltan {faltantes.length} ítem(s) de datos/evidencia — inconsistencia que ELSE puede observar. Súbelos ahora con «📎 Evidencia + datos», o Coordinación puede reabrirla desde la Sala (clic en la etapa → ↩ Reabrir).

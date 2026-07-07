@@ -35,48 +35,58 @@ export const wName  = id => (teamById(id).corto);
 // ===== Flujo del expediente (etapas con pasos + evidencia esperada) =====
 export const FLUJO = [
   {etapa:"Recepción",rol:"Tramitador/Digitador",act:"ACT-03",plazo:"diario",pen:"—",
+    quien:"Lo hacemos NOSOTROS (mesa de partes TELCOM) — el mismo día que ELSE entrega los expedientes.",
     desc:"Cada mañana (8–9am) recoges en ELSE los expedientes nuevos, los ESCANEAS y los registras en NUESTRA plataforma con ➕ Nuevo caso: la IA extrae los datos del Formato 1 y tú los validas contra el escaneo. Aquí nace el expediente digital; el detalle quedará listo para transcribirlo a SIELSE en su etapa.",
     pasos:["Recoger y escanear el expediente","Registrarlo en la app (➕ Nuevo caso · IA extrae, tú validas)","Verificar registro/admisión"],evi:["Cargo de recepción","Formato 1: Reclamo"],
     guia:{formatos:"PDF (documentos) · JPG/PNG (cargos escaneados)",espera:"El cargo de recepción del expediente y el Formato 1 (solicitud del reclamo que ingresó el usuario). Es la primera foja del expediente."}},
   {etapa:"Evaluación",rol:"Analista Legal",act:"ACT-03",plazo:"al recibir",pen:"—",
+    quien:"Lo hace NUESTRO analista legal — apenas recibe el caso define si es de 10 o 30 días hábiles.",
     desc:"Analizas el expediente con la información de SIELSE y defines si el reclamo se resuelve en 10 o 30 días hábiles. Para sustentarlo elaboras el Reporte 1 y el anexo de consumo histórico de los últimos 36 meses.",
     pasos:["Analizar con SIELSE","Definir plazo 10/30 días","Reporte 1 + histórico 36m"],evi:["Reporte 1 (Anexo 3)","Anexo a Reporte 1"],
     guia:{formatos:"PDF (Reporte 1) · XLSX (anexo de consumo histórico)",espera:"El Reporte 1 (Anexo 3 de la Directiva 269-2014) y el anexo con el consumo histórico de 36 meses que sustenta si el reclamo es de 10 o 30 días."}},
   {etapa:"Campo",rol:"Tramitador/Digitador",act:"ACT-03",plazo:"R01-R07",pen:"5.4",
+    quien:"Lo ejecutan las CONTRATISTAS DE CAMPO de ELSE (plazos R01–R07 en días hábiles) — nosotros generamos la OT, CONTROLAMOS que cumplan su plazo y registramos el resultado.",
     desc:"Programas las órdenes de trabajo a las contratistas de campo (verificación de lectura, contraste de medidor, megado) y controlas que cumplan sus plazos R01–R07. Luego recibes y revisas los resultados.",
     penDesc:"no cumplir los trabajos de campo dentro del plazo se penaliza con S/30 por infracción (ítem 5.4).",
     pasos:["Programar OT (lectura/contraste/megado)","Controlar R01-R07","Recibir resultados"],evi:["Ficha verificación de lectura","Certificado de contraste","Ficha de megado","Fotos de campo"],
     guia:{formatos:"PDF (fichas y certificados) · JPG/PNG (fotos de campo)",espera:"Las fichas técnicas de los trabajos de campo (lectura, contraste, megado) y las fotos que actúan como medios probatorios: medidor, fachada e inventario de cargas."}},
-  {etapa:"SIELSE",rol:"Tramitador/Digitador",act:"ACT-03",plazo:"≤2 días",pen:"5.1 / 5.2",
+  {etapa:"SIELSE",rol:"Tramitador/Digitador",act:"ACT-03",plazo:"≤2 días háb.",pen:"5.1 / 5.2",
+    quien:"Lo hacemos NOSOTROS (tramitador) — transcribir a SIELSE en ≤2 días hábiles de recibido cada resultado.",
     desc:"TRANSCRIBES al SIELSE de ELSE todo el detalle que ya está registrado en nuestra app (datos del caso + resultados de campo) y digitalizas los documentos — en máximo 2 días hábiles. Nuestra app es donde trabajamos; SIELSE es donde ELSE y OSINERGMIN lo ven: todo lo que digitas ahí viaja en línea al regulador.",
     penDesc:"no informar el resultado en SIELSE cuesta S/50 (5.1); no digitalizar, S/30 (5.2).",
     pasos:["Abrir el expediente en la app (ahí está TODO el detalle a digitar)","Transcribir a SIELSE datos y resultados","Digitalizar/adjuntar documentos","Registrar aquí la constancia (fecha + captura)"],evi:["Captura SIELSE","PDF digitalizado"],
     guia:{formatos:"JPG/PNG (captura del sistema) · PDF (documento digitalizado)",espera:"La constancia de que el resultado fue informado en SIELSE dentro de los 2 días hábiles y el documento digitalizado adjunto al módulo de reclamos."}},
-  {etapa:"Resolución",rol:"Analista Legal",act:"ACT-01",plazo:"≤8º/27º día",pen:"5.9 / 5.5 +monto",
+  {etapa:"Resolución",rol:"Analista Legal",act:"ACT-01",plazo:"≤8º/27º día háb.",pen:"5.9 / 5.5 +monto",
+    quien:"Lo hace NUESTRO analista legal — entrega el proyecto ≤8º día hábil (reclamos de 10) o ≤27º (de 30), contados desde la admisión.",
     desc:"Proyectas la resolución debidamente motivada: aplicas la norma y los lineamientos JARU, actúas todos los medios probatorios y entregas el documento con sus cédulas (≤8º día hábil para reclamos de 10 días, ≤27º para los de 30).",
     penDesc:"una resolución mal motivada cuesta S/100 + el monto del reclamo (5.9); si JARU declara silencio positivo por mala tramitación, S/300 + el monto (5.5).",
     pasos:["Determinar normas + JARU","Actuar medios probatorios","Redactar resolución motivada","Entregar + cédulas"],evi:["Proyecto de resolución","Cédulas de notificación"],
     guia:{formatos:"PDF (resolución y cédulas) · DOCX (proyecto editable)",espera:"El proyecto de resolución debidamente motivado, con sus medios probatorios actuados, y las cédulas de notificación, entregados dentro del plazo (≤8º/27º día)."}},
   {etapa:"Firmas",rol:"Tramitador / Asistente",act:"ACT-01",plazo:"—",pen:"—",
+    quien:"Firman los FUNCIONARIOS DE ELSE (supervisor comercial, jefe de división, Gerente Comercial) — nosotros gestionamos el circuito y hacemos seguimiento diario.",
     desc:"Gestionas el circuito de firmas de la resolución: visto bueno del supervisor comercial, luego del jefe de división y, finalmente, la firma del Gerente Comercial.",
     pasos:["VB supervisor","VB jefe división","Firma Gerente Comercial"],evi:["Resolución firmada"],
     guia:{formatos:"PDF (resolución con firmas y sellos)",espera:"La resolución con el visto bueno del supervisor comercial, del jefe de división y la firma del Gerente Comercial."}},
-  {etapa:"Notificación",rol:"Asistente Administrativo",act:"ACT-05",plazo:"≤5 días",pen:"5.12 +monto",
+  {etapa:"Notificación",rol:"Asistente Administrativo",act:"ACT-05",plazo:"≤5 días háb.",pen:"5.12 +monto",
+    quien:"La ejecuta el NOTARIO (solo ciudad de Cusco) — nosotros llevamos las cédulas a la notaría (≤4º día háb.) y garantizamos que notifique ≤5 días hábiles desde la emisión.",
     desc:"Llevas las cédulas a la notaría (≤4º día) y garantizas la notificación notarial dentro de los 5 días hábiles desde la emisión de la resolución, con registro fotográfico de la fachada y la caja portamedidor, y recibes el cargo notarial.",
     penDesc:"notificar fuera de los 5 días o no lograr la notificación cuesta S/300 + el monto del reclamo (5.12).",
     pasos:["Cédulas a notaría (≤4d)","Notificación notarial (≤5d)","Registro fotográfico","Recibir cargo"],evi:["Cargo notarial","Foto fachada","Foto portamedidor"],
     guia:{formatos:"PDF (cargo notarial visado) · JPG/PNG (fotos)",espera:"El cargo notarial con nombre, DNI, fecha y hora de quien recibió (o constancia de bajo puerta), más el registro fotográfico de fachada y caja portamedidor."}},
-  {etapa:"Apelación (JARU)",rol:"Analista Junior",act:"ACT-02",plazo:"≤5 días",pen:"5.10 +monto",
+  {etapa:"Apelación (JARU)",rol:"Analista Junior",act:"ACT-02",plazo:"≤5 días háb.",pen:"5.10 +monto",
+    quien:"NOSOTROS elevamos (Formato 6 + oficio, ≤5 días hábiles) — RESUELVE la JARU de OSINERGMIN (segunda instancia, ya no ELSE).",
     desc:"Si el usuario impugna, evalúas el petitorio, redactas el informe de elevación (Formato 6) y el oficio defendiendo la resolución de 1ª instancia, folias el expediente y lo elevas a JARU en ≤5 días hábiles.",
     penDesc:"no elevar la apelación en el plazo o la forma debida cuesta S/300 + el monto del reclamo (5.10).",
     pasos:["Evaluar petitorio","Informe de elevación (Formato 6)","Oficio","Foliar y elevar"],evi:["Informe de elevación","Oficio de elevación","Expediente foliado"],
     guia:{formatos:"PDF (informe, oficio y expediente foliado)",espera:"El informe de elevación (Formato 6 de la Directiva), el oficio de elevación y el expediente foliado, elevados a JARU dentro de los 5 días hábiles."}},
-  {etapa:"Foliado",rol:"Tramitador/Digitador",act:"ACT-03",plazo:"≤2 días",pen:"5.3",
+  {etapa:"Foliado",rol:"Tramitador/Digitador",act:"ACT-03",plazo:"≤2 días háb.",pen:"5.3",
+    quien:"Lo hacemos NOSOTROS (tramitador) — ≤2 días hábiles desde que se recaba la cédula de notificación.",
     desc:"Folias el expediente completo, lo escaneas en un solo archivo PDF y lo adjuntas a SIELSE, dentro de los 2 días hábiles de recabada la cédula de notificación.",
     penDesc:"foliar mal o no foliar el expediente cuesta S/30 (5.3).",
     pasos:["Foliar completo","Escanear PDF único","Adjuntar a SIELSE"],evi:["Expediente PDF foliado"],
     guia:{formatos:"PDF (un solo archivo, todas las fojas foliadas)",espera:"El expediente completo en un único PDF foliado (todos los actuados, en orden), listo para adjuntar a SIELSE y archivar. Evita las penalidades 5.2 y 5.3."}},
-  {etapa:"Cierre",rol:"Tramitador/Digitador",act:"ACT-03",plazo:"≤16 días",pen:"mora",
+  {etapa:"Cierre",rol:"Tramitador/Digitador",act:"ACT-03",plazo:"≤16 días háb.",pen:"mora",
+    quien:"Lo hacemos NOSOTROS en SIELSE — ≤16 días desde la notificación, si el usuario no apeló.",
     desc:"Si el usuario no impugna, cierras el reclamo en SIELSE (≤16 días desde la notificación), verificas que el monto se incluya en el próximo recibo y entregas el expediente a ELSE una vez por semana para su archivo.",
     penDesc:"cerrar el expediente fuera de plazo genera penalidad por mora diaria.",
     pasos:["Cerrar en SIELSE","Verificar monto en recibo","Entrega semanal a ELSE"],evi:["Captura cierre SIELSE","Constancia OSINERGMIN"],
@@ -107,9 +117,27 @@ export function parseFecha(s){
   if(!m) return null;
   return new Date(+m[3], +m[2]-1, +m[1], +(m[4]||0), +(m[5]||0), +(m[6]||0));
 }
+// ===== días HÁBILES (lun-vie, sin feriados Perú/Cusco — alineado con lib/plazosNormativos y backend) =====
+const FERIADOS_FIJOS_MMDD = new Set(["01-01","05-01","06-07","06-24","06-29","07-23","07-28","07-29","08-06","08-30","10-08","11-01","12-08","12-09","12-25"]);
+const FERIADOS_MOVILES_ISO = new Set(["2026-04-02","2026-04-03","2027-03-25","2027-03-26","2028-04-13","2028-04-14"]);
+export function esDiaHabil(d){
+  const dow = d.getDay(); if(dow===0 || dow===6) return false;
+  const mm = String(d.getMonth()+1).padStart(2,"0"), dd = String(d.getDate()).padStart(2,"0");
+  if(FERIADOS_FIJOS_MMDD.has(mm+"-"+dd)) return false;
+  return !FERIADOS_MOVILES_ISO.has(d.getFullYear()+"-"+mm+"-"+dd);
+}
+// días HÁBILES restantes hasta la fecha (negativo = venció hace N d háb.) — los plazos del
+// contrato y de la Directiva son SIEMPRE hábiles; nada se muestra en días corridos.
 export function daysLeft(s, ref=HOY){
   const d = parseFecha(s); if(!d) return null;
-  return Math.round((new Date(d.getFullYear(),d.getMonth(),d.getDate()) - new Date(ref.getFullYear(),ref.getMonth(),ref.getDate()))/86400000);
+  let x = new Date(ref.getFullYear(),ref.getMonth(),ref.getDate());
+  let y = new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  if(x.getTime()===y.getTime()) return 0;
+  const sign = y>x ? 1 : -1;
+  const lo = sign>0 ? x : y, hi = sign>0 ? y : x;
+  let c = 0; const t = new Date(lo);
+  while(t<hi){ t.setDate(t.getDate()+1); if(esDiaHabil(t)) c++; }
+  return sign*c;
 }
 export const fmtFecha = s => { const d=parseFecha(s); return d? d.toLocaleDateString("es-PE") : (s||"—"); };
 

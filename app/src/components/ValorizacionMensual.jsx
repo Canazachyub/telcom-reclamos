@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Card, Tag, toast } from "./ui.jsx";
-import { parseFecha, fmtFecha } from "../lib/model.js";
+import { parseFecha, fmtFecha, esDiaHabil } from "../lib/model.js";
 import { postAction } from "../lib/api.js";
 
 // ===================== Valorización mensual OFICIAL (Ola 7) =====================
@@ -31,14 +31,15 @@ function fechaISO(v) {
 }
 function enMes(iso, ymk) { return !!iso && iso.slice(0, 7) === ymk; }
 
-// Días hábiles (lu-vi) sumados a una fecha — para el 3er día hábil del mes siguiente.
+// Días hábiles sumados a una fecha — para el 3er día hábil del mes siguiente.
+// USA el motor central (lun-vie SIN feriados Perú): un feriado a inicio de mes
+// corre la fecha real de presentación de la valorización.
 function sumarHabiles(date, n) {
   const d = new Date(date);
   let restante = n;
   while (restante > 0) {
     d.setDate(d.getDate() + 1);
-    const dow = d.getDay();
-    if (dow !== 0 && dow !== 6) restante--;
+    if (esDiaHabil(d)) restante--;
   }
   return d;
 }
