@@ -10,7 +10,7 @@ export const USERS = [
   { usuario:"amontufar", nombre:"Alvaro Montufar",  rol:"ANALISTA_JUNIOR", resp_id:4, pin:"2026" },
   { usuario:"mleon",     nombre:"Milagros León",    rol:"ASISTENTE",       resp_id:5, pin:"2026" },
   { usuario:"jcondori",  nombre:"Jocabed Condori",  rol:"TRAMITADOR",      resp_id:6, pin:"2026" },
-  { usuario:"djara",     nombre:"Dante Jara",       rol:"TRAMITADOR",      resp_id:7, pin:"2026" },
+  { usuario:"aramos",    nombre:"Anais Ramos",      rol:"TRAMITADOR",      resp_id:7, pin:"2026" },
   { usuario:"mhurtado",  nombre:"Marilyn Hurtado",  rol:"TRAMITADOR",      resp_id:8, pin:"2026" },
 ];
 

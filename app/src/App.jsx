@@ -42,7 +42,7 @@ function MiniProgreso({ prog }){
 
 // "Ver como": lista de roles que el Gerente puede simular (uno por perfil operativo/coordinación).
 // Se arma desde USERS (auth.js) para no duplicar nombres/roles a mano.
-const VER_COMO_USUARIOS = ["aaraujo","dmarroquin","amontufar","mleon","mhurtado"];
+const VER_COMO_USUARIOS = ["aaraujo","dmarroquin","jvargas","amontufar","mleon","jcondori","aramos","mhurtado"];
 const VER_COMO_OPCIONES = VER_COMO_USUARIOS.map(u=>USERS.find(x=>x.usuario===u)).filter(Boolean);
 
 export default function App(){
@@ -419,10 +419,18 @@ function Expedientes({ data, setSelExp, delegar, updEstado, canDelegate, activoB
   const [maxFilas,setMaxFilas]=useState(200);
   // catálogo de clases presentes en la cartera (filtro tipo Excel)
   const clases = [...new Set(data.map(x=>String(x.clase||"").trim()).filter(Boolean))].sort();
-  // casos que NUESTRO equipo trabajó HOY (bitácora + comentarios de hoy)
+  // casos que NUESTRO equipo trabajó HOY (bitácora + comentarios de hoy) — los registros del
+  // sync (sync_cambio/sync_nuevo) NO cuentan como trabajo del equipo: son movimiento de SIELSE
   const trabajadoHoy = new Set();
-  registros.forEach(r=>{ if(r.reclamo && esFechaHoy(r.fecha)) trabajadoHoy.add(String(r.reclamo)); });
+  registros.forEach(r=>{ if(r.reclamo && esFechaHoy(r.fecha) && String(r.tipo||"").indexOf("sync_")!==0) trabajadoHoy.add(String(r.reclamo)); });
   comentarios.forEach(c=>{ if(c.reclamo && esFechaHoy(c.fecha)) trabajadoHoy.add(String(c.reclamo)); });
+  // QUÉ campos movió SIELSE hoy por caso (rastro sync_cambio que deja el sync diario)
+  const camposSielseHoy = {};
+  registros.forEach(r=>{
+    if(String(r.tipo)!=="sync_cambio" || !esFechaHoy(r.fecha)) return;
+    try{ const d = typeof r.detalle==="string" ? JSON.parse(r.detalle) : (r.detalle||{});
+      if(d && d.campos) camposSielseHoy[String(r.reclamo)] = d.campos; }catch(e){}
+  });
   let list=data.filter(x=>{
     if(filt.resp!=="all" && String(x.resp)!==String(filt.resp)) return false;
     if(filt.etapa!=="all" && x.etapa!==filt.etapa) return false;
@@ -517,7 +525,7 @@ function Expedientes({ data, setSelExp, delegar, updEstado, canDelegate, activoB
             <td>{limiteTxt}</td>
             <td style={{textAlign:"center"}}><b style={{color:restanColor}}>{restanTxt}</b></td>
             <td style={{whiteSpace:"nowrap"}}>
-              {esFechaHoy(x.fechaMod) && <span title={"ELSE lo modificó HOY en SIELSE"+(x.usuarioModifica?" ("+x.usuarioModifica+")":"")+(parseFecha(x.fechaMod)?" a las "+parseFecha(x.fechaMod).toLocaleTimeString("es-PE",{hour:"2-digit",minute:"2-digit"}):"")} style={{fontSize:10.5,fontWeight:700,background:"#EAF1FB",color:"#1E3A5F",border:"1px solid #C9DAF0",borderRadius:6,padding:"2px 6px",marginRight:4}}>📤 SIELSE</span>}
+              {esFechaHoy(x.fechaMod) && <span title={"Modificado HOY en SIELSE"+(x.usuarioModifica?" ("+x.usuarioModifica+")":"")+(parseFecha(x.fechaMod)?" a las "+parseFecha(x.fechaMod).toLocaleTimeString("es-PE",{hour:"2-digit",minute:"2-digit"}):"")+(camposSielseHoy[String(x.codigo)]?"\nQué cambió: "+camposSielseHoy[String(x.codigo)].join(", "):"\n(corre el sync diario para ver QUÉ campos cambiaron)")} style={{fontSize:10.5,fontWeight:700,background:"#EAF1FB",color:"#1E3A5F",border:"1px solid #C9DAF0",borderRadius:6,padding:"2px 6px",marginRight:4}}>📤 SIELSE</span>}
               {trabajadoHoy.has(String(x.codigo)) && <span title="Nuestro equipo trabajó este caso HOY (bitácora)" style={{fontSize:10.5,fontWeight:700,background:"#E8F6EC",color:"#1E7A38",border:"1px solid #BFE5CB",borderRadius:6,padding:"2px 6px"}}>👥 equipo</span>}
               {!esFechaHoy(x.fechaMod) && !trabajadoHoy.has(String(x.codigo)) && <span className="muted" title={"Última modificación en SIELSE: "+(x.fechaMod?fmtFecha(x.fechaMod):"—")} style={{fontSize:10.5}}>{x.fechaMod?fmtFecha(x.fechaMod):"—"}</span>}
             </td>
@@ -669,7 +677,7 @@ function Norma(){
 }
 
 function Personal({ data }){
-  const cvm={1:"Araujo",2:"Marroquin",3:"Vargas",4:"Montufar",5:"Leon",6:"Condori",7:"Jara",8:"Hurtado"};
+  const cvm={1:"Araujo",2:"Marroquin",3:"Vargas",4:"Montufar",5:"Leon",6:"Condori",7:"Ramos",8:"Hurtado"};
   return <Card><h3>Personal — carga y CV</h3><div style={{overflowX:"auto"}}><table className="tbl"><thead><tr><th>Nombre</th><th>Rol</th><th>Reclamos</th><th>En atención</th><th>CV</th></tr></thead><tbody>
     {TEAM.map(t=>{const l=data.filter(x=>x.resp===t.id);return <tr key={t.id}><td><span className="dot" style={{background:t.color}}/>{t.nombre}</td><td>{t.rol}</td><td>{l.length}</td><td>{l.filter(x=>x.estadoCom==="EN ATENCION").length}</td><td><a className="link" href={"../../70_Personal/CV-"+cvm[t.id]+".md"} target="_blank" rel="noreferrer">ver CV ↗</a></td></tr>;})}
     <tr><td className="muted">Externos / Call Center</td><td className="muted">No es del equipo</td><td>{data.filter(x=>x.resp===0).length}</td><td>{data.filter(x=>x.resp===0&&x.estadoCom==="EN ATENCION").length}</td><td>—</td></tr>

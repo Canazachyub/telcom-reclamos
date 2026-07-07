@@ -16,7 +16,7 @@ export const TEAM = [
   { id:4, nombre:"Alvaro Montufar", corto:"Alvaro",   rol:"Analista Junior",          color:"#7c3aed", match:"MONTUFAR" },
   { id:5, nombre:"Milagros León",   corto:"Milagros", rol:"Asistente Administrativo", color:"#b45309", match:"LEON UMERES" },
   { id:6, nombre:"Jocabed Condori", corto:"Jocabed",  rol:"Tramitador/Digitador",     color:"#047857", match:"CONDORI CACERES" },
-  { id:7, nombre:"Dante Jara",      corto:"Dante",    rol:"Tramitador/Digitador",     color:"#047857", match:"JARA PARI" },
+  { id:7, nombre:"Anais Ramos",     corto:"Anais",    rol:"Tramitador/Digitador",     color:"#047857", match:"ANAIS RAMOS" },
   { id:8, nombre:"Marilyn Hurtado", corto:"Marilyn",  rol:"Tramitador/Digitador",     color:"#047857", match:"HURTADO VEGA" },
 ];
 export const EXTERNO = { id:0, corto:"Externo", nombre:"Externo / Call Center", rol:"No es del equipo", color:"#64748b" };

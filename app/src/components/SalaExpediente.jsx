@@ -44,6 +44,8 @@ function humanizar(r){
   if(t==="edicion") return "editó "+(d.campo||"un campo")+(d.valor!=null?" → "+String(d.valor).slice(0,40):"");
   if(t==="expediente") return "generó el expediente foliado";
   if(t==="eliminacion") return "🗑 ELIMINÓ el expediente — motivo: "+(d.motivo||"—");
+  if(t==="sync_cambio") return "📤 SIELSE actualizó: "+((d.campos||[]).join(", ")||"campos del caso");
+  if(t==="sync_nuevo") return "📥 llegó desde SIELSE (sync diario)"+(d.solicitante?" — "+d.solicitante:"");
   if(t==="reporte") return "cerró su reporte del día";
   return (txt||JSON.stringify(d)).slice(0,110);
 }
