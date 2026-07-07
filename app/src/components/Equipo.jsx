@@ -174,11 +174,14 @@ export function VerificacionDiaria({ tickets = [], registros = [], perfil }) {
     const ab = abiertos(ts);
     const venc = ab.filter(t => t.vencido).length;
     const porVenc = ab.filter(t => !t.vencido && t.diasRestantes != null && t.diasRestantes <= 2).length;
+    // etapas de plazo legal duro (riesgo SAP/notarial) — distinguen la urgencia REAL del
+    // volumen: 200 casos "en Campo" no pesan igual que 5 en Resolución/Notificación/Apelación
+    const criticos = ab.filter(t => ETAPAS_SILENCIO.includes(t.etapa)).length;
     const actividadHoy = actividadPorResp[m.id] || 0;
     let semaforo = "verde";
     if (venc > 0) semaforo = "rojo";
     else if (porVenc > 0 || (ab.length > 0 && actividadHoy === 0)) semaforo = "ambar";
-    return { m, enCurso: ab.length, venc, porVenc, actividadHoy, semaforo };
+    return { m, enCurso: ab.length, venc, porVenc, criticos, actividadHoy, semaforo };
   });
 
   const semIcon = { verde: "✓", ambar: "⚠", rojo: "✗" };
@@ -226,7 +229,7 @@ export function VerificacionDiaria({ tickets = [], registros = [], perfil }) {
         <table className="tbl">
           <thead>
             <tr>
-              <th>Trabajador</th><th>En curso</th><th>Vencidos</th><th>Por vencer ≤2d</th><th>Actividad hoy</th><th>Semáforo</th>
+              <th>Trabajador</th><th>En curso</th><th title="Tickets abiertos en Resolución / Notificación / Apelación — plazo legal duro (riesgo SAP 5.5 / notarial 5.12)">🚨 En etapa crítica</th><th>Vencidos</th><th>Por vencer ≤2d</th><th>Actividad hoy</th><th>Semáforo</th>
             </tr>
           </thead>
           <tbody>
@@ -234,6 +237,7 @@ export function VerificacionDiaria({ tickets = [], registros = [], perfil }) {
               <tr key={f.m.id}>
                 <td><span className="dot" style={{ background: f.m.color }} />{f.m.nombre} <span className="muted" style={{ fontSize: 11 }}>· {f.m.rol}</span></td>
                 <td>{f.enCurso}</td>
+                <td style={{ color: f.criticos ? "#B91C1C" : "var(--mut)", fontWeight: f.criticos ? 700 : 400 }}>{f.criticos}</td>
                 <td style={{ color: f.venc ? "#DC2626" : "var(--mut)", fontWeight: f.venc ? 700 : 400 }}>{f.venc}</td>
                 <td style={{ color: f.porVenc ? "#D97706" : "var(--mut)", fontWeight: f.porVenc ? 700 : 400 }}>{f.porVenc}</td>
                 <td>{f.actividadHoy}</td>
