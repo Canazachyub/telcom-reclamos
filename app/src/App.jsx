@@ -471,7 +471,12 @@ function Expedientes({ data, setSelExp, delegar, updEstado, canDelegate, activoB
               <button className="btn-ghost" title={"Copiar código SIELSE para buscarlo allá: "+x.codigo}
                 onClick={e=>{ e.stopPropagation(); try{ navigator.clipboard.writeText(String(x.codigo)); toast("Código SIELSE copiado: "+x.codigo); }catch(err){ toast("No se pudo copiar"); } }}
                 style={{padding:"1px 6px",fontSize:10,marginLeft:6,lineHeight:1.4}}>⧉ SIELSE</button>
-            </td><td>{x.solicitante}</td><td>{x.suministro}</td>
+            </td><td>{x.solicitante}</td>
+            <td className="mono">{x.suministro}
+              {x.suministro && <button className="btn-ghost" title={"Copiar suministro: "+x.suministro}
+                onClick={e=>{ e.stopPropagation(); try{ navigator.clipboard.writeText(String(x.suministro)); toast("Suministro copiado: "+x.suministro); }catch(err){ toast("No se pudo copiar"); } }}
+                style={{padding:"1px 6px",fontSize:10,marginLeft:6,lineHeight:1.4}}>⧉</button>}
+            </td>
             <td style={{maxWidth:150,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{x.clase.replace("RECLAMOS ","")}</td>
             <td><MiniProgreso prog={prog}/></td>
             <td>{etapaTxt}</td>
@@ -674,7 +679,12 @@ function Operativo({ perfil, data, setSelExp, tickets, activoByCode={}, progreso
           ? (act.estado==="en_proceso" ? "En proceso" : "Pendiente")
           : (prog && prog.total>0 && prog.hechas===prog.total ? "Completado" : null);
         return <tr key={x.id} className="clk" onClick={()=>setSelExp(x.id)}>
-          <td className="mono">{x.osinerg}</td><td>{x.solicitante}</td><td>{x.suministro}</td><td>{x.clase.replace("RECLAMOS ","")}</td>
+          <td className="mono">{x.osinerg}</td><td>{x.solicitante}</td>
+          <td className="mono">{x.suministro}
+            {x.suministro && <button className="btn-ghost" title={"Copiar suministro: "+x.suministro}
+              onClick={e=>{ e.stopPropagation(); try{ navigator.clipboard.writeText(String(x.suministro)); toast("Suministro copiado: "+x.suministro); }catch(err){ toast("No se pudo copiar"); } }}
+              style={{padding:"1px 6px",fontSize:10,marginLeft:6,lineHeight:1.4}}>⧉</button>}
+          </td><td>{x.clase.replace("RECLAMOS ","")}</td>
           <td><MiniProgreso prog={prog}/></td>
           <td>{etapaTxt}</td><td>{limiteTxt}</td>
           <td style={{textAlign:"center",color:restanColor}}><b>{restanTxt}</b></td>
