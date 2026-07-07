@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Card, Tag, toast } from "./ui.jsx";
-import { loadCuadernosResumen, loadCuadernoDatos, registroControl, regenerarCuadernos } from "../lib/api.js";
+import { loadCuadernosResumen, loadCuadernoDatos, registroControl, regenerarCuadernos, cuadernosBulk } from "../lib/api.js";
 import { CUADERNOS, MESES_NOMBRE, valCuaderno } from "../lib/cuadernosDef.js";
 import { parseFecha } from "../lib/model.js";
 
@@ -60,10 +60,12 @@ export default function Cuadernos({ data, setSelExp, perfil }) {
   const [resumen, setResumen] = useState(null);
   const [sel, setSel] = useState(null);            // def del cuaderno abierto
   const [filas, setFilas] = useState(null);
-  const [filtro, setFiltro] = useState("");        // mes (mensual) o fecha_evento
+  const [filtro, setFiltro] = useState("");        // mes (mensual) o mes de fecha_evento
+  const [dia, setDia] = useState("");              // FECHA exacta (YYYY-MM-DD) — filtro fino por día
   const [q, setQ] = useState("");
   const [tope, setTope] = useState(300);
   const [edit, setEdit] = useState(null);          // fila en edición | {} alta
+  const [pegar, setPegar] = useState(false);       // modal "pegar desde Excel"
   const [regen, setRegen] = useState(false);
   const [verFlujo, setVerFlujo] = useState(false); // flujograma "¿cómo funciona esta sección?"
   const esJefe = perfil && (perfil.rol === "GERENTE" || perfil.rol === "COORDINADOR");
@@ -71,8 +73,9 @@ export default function Cuadernos({ data, setSelExp, perfil }) {
   const cargarResumen = () => loadCuadernosResumen().then(setResumen);
   useEffect(() => { cargarResumen(); }, []);
 
+  const recargar = () => loadCuadernoDatos(sel.fuente).then(setFilas);
   const abrir = def => {
-    setSel(def); setFilas(null); setFiltro(""); setQ(""); setTope(300);
+    setSel(def); setFilas(null); setFiltro(""); setDia(""); setQ(""); setTope(300);
     loadCuadernoDatos(def.fuente).then(setFilas);
   };
 
@@ -86,7 +89,9 @@ export default function Cuadernos({ data, setSelExp, perfil }) {
   const filtradas = useMemo(() => {
     if (!filas) return [];
     let out = filas;
-    if (sel && filtro) {
+    if (sel && dia) {                                   // FECHA exacta manda sobre el mes
+      out = out.filter(f => String(f.fecha_evento || "").slice(0, 10) === dia);
+    } else if (sel && filtro) {
       out = sel.fuente === "mensual"
         ? out.filter(f => String(f.mes) === filtro)
         : out.filter(f => String(f.fecha_evento || "").slice(0, 7) === filtro);
@@ -96,7 +101,7 @@ export default function Cuadernos({ data, setSelExp, perfil }) {
       out = out.filter(f => JSON.stringify(f).toUpperCase().includes(t));
     }
     return out;
-  }, [filas, filtro, q, sel]);
+  }, [filas, filtro, dia, q, sel]);
 
   // opciones del filtro: meses (mensual) o meses de fecha_evento (registros)
   const opcionesFiltro = useMemo(() => {
@@ -117,11 +122,21 @@ export default function Cuadernos({ data, setSelExp, perfil }) {
     else toast("No se pudo regenerar: " + (r && r.error || "sin respuesta"));
   };
 
-  // Etiqueta legible del período elegido en el filtro (para el título del cargo).
+  // Etiqueta legible del período elegido (día exacto > mes > todos) — para el título del cargo.
   const periodoLabel = () => {
+    if (dia) return fmtF(dia);
     if (!filtro) return "todos los períodos";
     const op = opcionesFiltro.find(([v]) => String(v) === String(filtro));
     return op ? op[1] : filtro;
+  };
+
+  // subir filas pegadas de Excel (upsert idempotente por sesión)
+  const subirPegado = async rows => {
+    const r = await cuadernosBulk(sel.fuente, rows);
+    if (r && r.ok) {
+      toast(`Subido: ${r.nuevos} nuevo(s) · ${r.actualizados} actualizado(s)`);
+      setPegar(false); recargar(); cargarResumen();
+    } else toast("No se pudo subir: " + (r && r.error || "sin respuesta"));
   };
 
   // 🖨 cargo imprimible: bloques por fecha con ENTREGADO/RECIBIDO en blanco (mockup 8.4).
@@ -180,7 +195,7 @@ export default function Cuadernos({ data, setSelExp, perfil }) {
     if (r && r.ok) {
       toast(form.id ? "Registro actualizado" : "Registro creado");
       setEdit(null);
-      loadCuadernoDatos(sel.fuente).then(setFilas);
+      recargar();
       cargarResumen();
     } else toast("Error: " + (r && r.error || "sin respuesta"));
   };
@@ -244,20 +259,31 @@ export default function Cuadernos({ data, setSelExp, perfil }) {
           <b>{sel.emoji} {sel.nombre}</b>
           <span className="muted" style={{ fontSize: 11.5 }}>{filas ? filtradas.length + " filas" : "cargando…"}</span>
         </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           {opcionesFiltro.length > 0 &&
-            <select value={filtro} onChange={e => setFiltro(e.target.value)}>
-              <option value="">— todo —</option>
+            <select value={filtro} onChange={e => { setFiltro(e.target.value); setDia(""); }} title="Filtrar por mes">
+              <option value="">— mes —</option>
               {opcionesFiltro.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>}
-          <input placeholder="🔎 buscar…" value={q} onChange={e => setQ(e.target.value)} style={{ minWidth: 140 }} />
           {sel.fuente !== "mensual" &&
-            <button className="btn sm" onClick={() => setEdit({ tipo: sel.fuente, fecha_evento: hoyISO() })}>➕ Registrar</button>}
-          {sel.cargo && <button className="btn sm" onClick={imprimirCargo}>🖨 Cargo</button>}
+            <label title="Filtrar por FECHA exacta (para emitir el cargo de ese día)" style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11.5 }}>
+              <span className="muted">📅 día</span>
+              <input type="date" value={dia} onChange={e => { setDia(e.target.value); setFiltro(""); }} />
+              {dia && <button className="btn sm" title="Quitar filtro de día" onClick={() => setDia("")}>✕</button>}
+            </label>}
+          <input placeholder="🔎 buscar…" value={q} onChange={e => setQ(e.target.value)} style={{ minWidth: 130 }} />
+          {sel.fuente !== "mensual" && <>
+            <button className="btn sm" onClick={() => setEdit({ tipo: sel.fuente, fecha_evento: dia || hoyISO() })}>➕ Registrar</button>
+            <button className="btn sm" title="Copia filas de tu Excel y pégalas aquí — se suben al sistema" onClick={() => setPegar(true)}>📋 Pegar de Excel</button>
+          </>}
+          {sel.fuente !== "mensual" && <button className="btn sm" title="Imprimir el cargo del período/día filtrado" onClick={imprimirCargo}>🖨 Cargo</button>}
           <button className="btn sm" title="Descargar la vista actual (respeta el filtro) para abrirla en Excel" onClick={exportarCSV}>🧮 Excel</button>
         </div>
       </div>
-      <div className="muted" style={{ fontSize: 11, marginTop: 6 }}>{sel.titulo} — clic en una fila abre la Sala del expediente; ✏ edita el registro (queda en bitácora).</div>
+      <div className="muted" style={{ fontSize: 11, marginTop: 6 }}>
+        {sel.titulo} — clic en una fila abre la Sala del expediente; ✏ edita el registro (queda en bitácora).
+        {" "}Para emitir un cargo de un día: elige 📅 <b>día</b> y pulsa 🖨 Cargo.
+      </div>
     </Card>
     <Card>
       <div style={{ overflowX: "auto" }}>
@@ -299,6 +325,7 @@ export default function Cuadernos({ data, setSelExp, perfil }) {
       </div>
     </Card>
     {edit && <EditorRegistro fila={edit} def={sel} onCerrar={() => setEdit(null)} onGuardar={guardarEdicion} />}
+    {pegar && <PegarExcel def={sel} diaInicial={dia || hoyISO()} onCerrar={() => setPegar(false)} onSubir={subirPegado} />}
   </>;
 }
 
@@ -354,47 +381,95 @@ function EditorRegistro({ fila, def, onCerrar, onGuardar }) {
   </div>;
 }
 
-/* ===== flujograma: cómo funciona esta sección y qué se integró ===== */
+/* ===== guía para el TRABAJADOR: cómo trabajar esta sección (no es la arquitectura) ===== */
 function ComoFunciona() {
-  const paso = (emoji, titulo, sub) => (
-    <div style={{ flex: "1 1 150px", minWidth: 140, background: "var(--card2)", border: "1px solid var(--bd)",
-      borderRadius: 10, padding: "10px 12px" }}>
+  const tarjeta = (emoji, titulo, texto) => (
+    <div style={{ flex: "1 1 240px", minWidth: 220, background: "var(--card2)", border: "1px solid var(--bd)", borderRadius: 10, padding: "11px 13px" }}>
       <div style={{ fontSize: 13, fontWeight: 700, color: "var(--titulo,#16294B)" }}>{emoji} {titulo}</div>
-      <div className="muted" style={{ fontSize: 11, marginTop: 3 }}>{sub}</div>
+      <div className="muted" style={{ fontSize: 11.5, marginTop: 4, lineHeight: 1.45 }}>{texto}</div>
     </div>
   );
-  const flecha = <div style={{ alignSelf: "center", color: "var(--mut)", fontSize: 20, padding: "0 2px" }}>→</div>;
   return (
     <div style={{ marginTop: 12, padding: 14, border: "1px dashed var(--bd)", borderRadius: 12, background: "var(--card)" }}>
-      <div style={{ fontWeight: 700, color: "var(--titulo,#16294B)", marginBottom: 4 }}>¿Cómo funciona esta sección?</div>
+      <div style={{ fontWeight: 700, color: "var(--titulo,#16294B)", marginBottom: 4 }}>¿Cómo trabajo en Cuadernos?</div>
       <div className="muted" style={{ fontSize: 12, marginBottom: 12 }}>
-        Los <b>22 cuadernos Excel</b> del sistema anterior ahora viven DENTRO de la plataforma, unificados
-        en 2 tablas, pero conservando los formatos de siempre. Nadie edita los Excel originales: todo cambio
-        queda firmado en la bitácora (quién y cuándo) — evidencia para OSINERGMIN.
+        Son los <b>mismos cuadernos de siempre</b>, ahora dentro de la plataforma. Abre un cuaderno tocando su
+        tarjeta. Todo lo que hagas queda registrado con tu nombre (evidencia) y se sincroniza con el Sheet.
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "stretch" }}>
-        {paso("📚", "22 cuadernos Excel", "Padrones mensuales (1-12) + temáticos (13-22)")}
-        {flecha}
-        {paso("⬇️", "Importador", "1,498 filas de padrón · 9,974 registros · 0 duplicados")}
-        {flecha}
-        {paso("🗄️", "2 tablas del Sheet", "cuaderno_mensual + registros_control (una sola fuente)")}
-        {flecha}
-        {paso("📒", "Este hub", "Tarjetas con contadores y huecos · clic = ver el cuaderno")}
-      </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "stretch", marginTop: 8 }}>
-        {paso("✏️", "Editar / ➕ Registrar", "Corriges o agregas una fila — firma en bitácora")}
-        {flecha}
-        {paso("🖨️", "Cargo por período", "Imprime el cargo del mes elegido, con ENTREGADO/RECIBIDO")}
-        {flecha}
-        {paso("🧮", "Exportar a Excel", "Bajas la vista filtrada para trabajarla en Excel")}
-        {flecha}
-        {paso("🔄", "Regenerar", "Reconstruye el Google Sheet «CUADERNOS 2026» (jefes)")}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {tarjeta("🔎", "Buscar un dato", "Abre el cuaderno y usa el buscador o filtra por 📅 día / mes. Toca una fila para abrir el expediente completo (Sala).")}
+        {tarjeta("➕", "Registrar / ✏ corregir", "«➕ Registrar» agrega una fila; «✏» corrige una existente. Los campos son los del cuaderno (EJECUTADO, DEVUELTO…). Queda firmado.")}
+        {tarjeta("📋", "Pegar desde tu Excel", "«📋 Pegar de Excel»: elige el día, copia las filas de tu Excel y pégalas. Se suben todas juntas. Pegar el mismo día otra vez actualiza (no duplica).")}
+        {tarjeta("🖨️", "Emitir un cargo", "Elige el 📅 día y pulsa «🖨 Cargo»: sale el cargo de ESE día con ENTREGADO POR / RECIBIDO POR / DNI / FECHA-HORA para firmar.")}
+        {tarjeta("🧮", "Llevarlo a Excel", "«🧮 Excel» descarga lo que estás viendo (respeta el filtro) para trabajarlo en tu Excel si lo necesitas.")}
+        {tarjeta("🟡", "Celda amarilla = falta", "Una celda amarilla es un dato pendiente de llenar. Complétalo con ✏ o pegando el día.")}
       </div>
       <div className="muted" style={{ fontSize: 11, marginTop: 10 }}>
-        <b>Lo que se integró:</b> cruce automático con el expediente de la plataforma (clic en una fila abre su
-        Sala), celda ámbar = dato pendiente, semáforo de plazo de elevación en Apelaciones, y coexistencia con
-        los datos firmados por etapa (si una etapa ya registró el dato, ese manda sobre el importado).
+        ¿Dudas? El cuaderno «19 Apelaciones» además te marca en rojo/ámbar el plazo de elevación a JARU. Si un
+        dato ya lo cargó otra etapa del expediente, ese manda — aquí lo verás igual.
       </div>
     </div>
   );
+}
+
+/* ===== 📋 PEGAR DESDE EXCEL: crear un día y subir filas copiadas del Excel local =====
+ * El usuario copia celdas de su Excel (separadas por TAB) y las pega. Cada columna se
+ * mapea, EN ORDEN, a las columnas del cuaderno (def.cols). El «día del cargo» se aplica
+ * como fecha_evento a las filas que no traigan la suya. Subida = upsert idempotente. */
+function PegarExcel({ def, diaInicial, onCerrar, onSubir }) {
+  const cols = (def.cols || []).filter(c => c[1] && c[1] !== "item");
+  const [dia, setDia] = useState(diaInicial);
+  const [texto, setTexto] = useState("");
+  const [subiendo, setSubiendo] = useState(false);
+
+  const filas = useMemo(() => {
+    return String(texto || "").split(/\r?\n/).filter(l => l.trim()).map(linea => {
+      const celdas = linea.split("\t");
+      const row = {}, extra = {};
+      cols.forEach((c, i) => {
+        const path = c[1], val = (celdas[i] == null ? "" : String(celdas[i])).trim();
+        if (path.indexOf("extra.") === 0) { if (val) extra[path.slice(6)] = val; }
+        else if (val) row[path] = val;
+      });
+      if (Object.keys(extra).length) row.extra = extra;
+      if (!row.fecha_evento && dia) row.fecha_evento = dia;
+      return row;
+    });
+  }, [texto, dia]);
+
+  const valFila = (row, path) => path.indexOf("extra.") === 0 ? (row.extra ? row.extra[path.slice(6)] || "" : "") : (row[path] || "");
+  const subir = async () => { setSubiendo(true); await onSubir(filas); setSubiendo(false); };
+
+  return <div className="modal-bg" onClick={onCerrar} style={{ position: "fixed", inset: 0, background: "rgba(22,41,75,.45)", zIndex: 90, display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, padding: 18, width: "min(900px,96vw)", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 12px 40px rgba(0,0,0,.25)" }}>
+      <h3 style={{ marginTop: 0 }}>📋 Pegar desde Excel — {def.nombre}</h3>
+      <div className="muted" style={{ fontSize: 11.5, marginBottom: 8 }}>
+        Copia las filas de tu Excel (sin la columna «N°») y pégalas abajo. Las columnas deben ir <b>en este orden</b>:
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 10 }}>
+        {cols.map((c, i) => <span key={c[0]} style={{ fontSize: 10.5, background: "var(--card2)", border: "1px solid var(--bd)", borderRadius: 6, padding: "2px 7px" }}>{i + 1}. {c[0]}</span>)}
+      </div>
+      <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+        <span className="muted">📅 Día del cargo (fecha del evento):</span>
+        <input type="date" value={dia} onChange={e => setDia(e.target.value)} />
+        <span className="muted" style={{ fontSize: 10.5 }}>se aplica a las filas sin fecha propia</span>
+      </label>
+      <textarea value={texto} onChange={e => setTexto(e.target.value)} placeholder="Pega aquí (Ctrl+V) las filas copiadas de tu Excel…"
+        style={{ width: "100%", minHeight: 120, fontFamily: "ui-monospace,monospace", fontSize: 12, boxSizing: "border-box" }} />
+      {filas.length > 0 && <>
+        <div className="muted" style={{ fontSize: 11.5, margin: "10px 0 4px" }}>Vista previa — {filas.length} fila(s) a subir:</div>
+        <div style={{ overflowX: "auto", maxHeight: 240, border: "1px solid var(--bd)", borderRadius: 8 }}>
+          <table className="tbl"><thead><tr><th>N°</th>{cols.map(c => <th key={c[0]}>{c[0]}</th>)}</tr></thead>
+            <tbody>{filas.slice(0, 100).map((row, i) => <tr key={i}>
+              <td>{i + 1}</td>{cols.map(c => { const v = valFila(row, c[1]); return <td key={c[0]}>{esISO(v) ? fmtF(v) : v}</td>; })}
+            </tr>)}</tbody></table>
+        </div>
+      </>}
+      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 12, alignItems: "center" }}>
+        <span className="muted" style={{ fontSize: 10.5, marginRight: "auto" }}>Pegar el mismo día otra vez actualiza, no duplica.</span>
+        <button className="btn sm" onClick={onCerrar}>Cancelar</button>
+        <button className="btn sm primary" disabled={!filas.length || subiendo} onClick={subir}>{subiendo ? "Subiendo…" : `Subir ${filas.length} fila(s)`}</button>
+      </div>
+    </div>
+  </div>;
 }
