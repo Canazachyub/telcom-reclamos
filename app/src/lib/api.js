@@ -1,19 +1,35 @@
 // ===== Capa de acceso a datos =====
 import { mapReclamo } from "./model.js";
 
-export const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby873l5XjLOfkrjwl7R0E-lqN7FcWzwVruQOM9T0W8FU7lP_mz6nkKkcI3CcKdry8im/exec";
+// ===== BACKEND V2 (corte 2026-07-07) — router declarativo, GETs con token =====
+export const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxJUZgISsiaXr1rNOFS5alyULjmhYkxGvn0AdmWytIrCcNIS3rYQPUGUtDD5F8-i4pI4w/exec";
+// ROLLBACK V1 (vivo ~1 semana): descomentar esta línea y recompilar para volver atrás.
+// export const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby873l5XjLOfkrjwl7R0E-lqN7FcWzwVruQOM9T0W8FU7lP_mz6nkKkcI3CcKdry8im/exec";
 export const USE_MOCK = false;            // false = login y escrituras al backend real
 const SESION_KEY = "sesion_reclamos";
 
 function getToken(){ try { return JSON.parse(localStorage.getItem(SESION_KEY))?.token; } catch { return null; } }
+// V2: TODOS los GET de datos exigen sesión — el token viaja en la URL
+const GET_URL = a => APPS_SCRIPT_URL + "?action=" + a + "&token=" + encodeURIComponent(getToken() || "");
+// Si el backend responde "sesión inválida" (token del V1 o expirado): cerrar sesión y
+// recargar UNA vez para que el usuario re-loguee — sin esto caería en silencio al respaldo local.
+function sesionExpirada(j){
+  if(j && typeof j === "object" && !Array.isArray(j) && /sesi/i.test(String(j.error || "")) ){
+    try { localStorage.removeItem(SESION_KEY); } catch(e){}
+    if (!sessionStorage.getItem("relogin_v2")) { sessionStorage.setItem("relogin_v2", "1"); location.reload(); }
+    return true;
+  }
+  return false;
+}
 
 // Lectura de reclamos EN VIVO desde el Sheet (fuente de verdad). El JSON local queda
 // solo como respaldo si la API no responde (sin red / CORS).
 export async function loadReclamos(){
   try{
-    const res = await fetch(APPS_SCRIPT_URL + "?action=reclamos");
+    const res = await fetch(GET_URL("reclamos"));
     const raw = await res.json();
     if(Array.isArray(raw)) return raw.map(mapReclamo);   // [] válido = cartera en blanco
+    if(sesionExpirada(raw)) return [];                   // fuerza re-login, NO respaldo viejo
   }catch(e){ /* cae al respaldo local */ }
   try{
     const res = await fetch("./reclamos.json");
@@ -33,7 +49,7 @@ const NN_TO_ETAPA = {
 export async function loadEvidencias(){
   if(!APPS_SCRIPT_URL) return [];
   try{
-    const res = await fetch(APPS_SCRIPT_URL + "?action=registros");
+    const res = await fetch(GET_URL("registros"));
     const rows = await res.json();
     if(!Array.isArray(rows)) return [];
     const mapped = rows.filter(r => r.tipo === "evidencia").map(r => {
@@ -76,7 +92,7 @@ export async function loadEvidencias(){
 export async function loadTickets(){
   if(!APPS_SCRIPT_URL) return [];
   try{
-    const res = await fetch(APPS_SCRIPT_URL + "?action=tickets");
+    const res = await fetch(GET_URL("tickets"));
     const rows = await res.json();
     return Array.isArray(rows) ? rows : [];
   }catch(e){ return []; }
@@ -86,7 +102,7 @@ export async function loadTickets(){
 export async function loadCalendario(){
   if(!APPS_SCRIPT_URL) return [];
   try{
-    const res = await fetch(APPS_SCRIPT_URL + "?action=calendario");
+    const res = await fetch(GET_URL("calendario"));
     const rows = await res.json();
     return Array.isArray(rows) ? rows : [];
   }catch(e){ return []; }
@@ -118,7 +134,7 @@ export async function extraerCamposIA({ file, fileId, url, etapa, campos, reclam
 export async function loadRegistros(){
   if(!APPS_SCRIPT_URL) return [];
   try{
-    const res = await fetch(APPS_SCRIPT_URL + "?action=registros");
+    const res = await fetch(GET_URL("registros"));
     const rows = await res.json();
     return Array.isArray(rows) ? rows : [];
   }catch(e){ return []; }
@@ -200,7 +216,7 @@ export async function subirArchivo(reclamo, etapaNN, file){
 export async function loadDatos(){
   if(!APPS_SCRIPT_URL) return {};
   try{
-    const res = await fetch(APPS_SCRIPT_URL + "?action=registros");
+    const res = await fetch(GET_URL("registros"));
     const rows = await res.json();
     if(!Array.isArray(rows)) return {};
     const map = {};
@@ -223,7 +239,7 @@ export async function guardarDatos({ exp, etapa, rol, campos }){
 export async function loadComentarios(){
   if(!APPS_SCRIPT_URL) return [];
   try{
-    const res = await fetch(APPS_SCRIPT_URL + "?action=registros");
+    const res = await fetch(GET_URL("registros"));
     const rows = await res.json();
     if(!Array.isArray(rows)) return [];
     return rows.filter(r => r.tipo === "comentario").map(r => {
@@ -247,7 +263,7 @@ export async function editarReclamo(codigo, campo, valor){
 // devuelve {} y el caller usa sus valores por defecto (placeholder).
 export async function loadConfig(){
   try{
-    const r = await fetch(APPS_SCRIPT_URL + "?action=config");
+    const r = await fetch(GET_URL("config"));
     const j = await r.json();
     if(j && typeof j==="object" && !Array.isArray(j)) return j;
   }catch(e){ /* respaldo: {} */ }
@@ -264,7 +280,7 @@ export async function eliminarReclamo(codigo, motivo){
 // (falta ejecutarSetupCatalogos o el redeploy), devuelve null y el wizard usa CATALOGOS_LOCAL.
 export async function loadCatalogos(){
   try{
-    const res = await fetch(APPS_SCRIPT_URL + "?action=catalogos");
+    const res = await fetch(GET_URL("catalogos"));
     const raw = await res.json();
     if(Array.isArray(raw) && raw.length) return raw;   // [{grupo, valor, extra}]
   }catch(e){ /* respaldo local */ }
