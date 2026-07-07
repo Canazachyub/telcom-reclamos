@@ -113,6 +113,12 @@ export async function updTicket(ticket_id, estado, reclamo, responsable_id, resp
   return postAction("upd_ticket", { ticket_id, estado, reclamo, responsable_id, responsable });
 }
 
+// TOMAR (auto-asignarse) una tarea del pozo del equipo — self-claim entre pares del mismo rol.
+// El backend fija el responsable = quien llama y lo firma en bitácora (tipo tomar_tarea).
+export async function tomarTarea(ticket_id, reclamo){
+  return postAction("tomar_tarea", { ticket_id, reclamo });
+}
+
 // Resume un documento del expediente con IA (Gemini lee escaneos/PDF). Devuelve {ok,resumen}.
 export async function resumirIA({ fileId, url, texto, prompt, reclamo, etapa }){
   return postAction("resumir_ia", { fileId, url, texto, prompt, reclamo, etapa });

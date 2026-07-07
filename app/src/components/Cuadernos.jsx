@@ -19,6 +19,33 @@ const fmtF = v => {
 };
 const hoyISO = () => new Date().toISOString().slice(0, 10);
 
+// ¿el valor parece una fecha/fecha-hora ISO? -> se muestra como dd/mm/yyyy (nunca "2026-06-18T05:00:00.000Z")
+const esISO = v => /^\d{4}-\d{2}-\d{2}/.test(String(v || ""));
+const fmtCel = v => (esISO(v) ? fmtF(v) : (v == null ? "" : String(v)));
+
+// Campos que son FECHA (llevan date-picker en el editor y se muestran dd/mm/yyyy).
+const CAMPOS_FECHA = new Set(["fecha_evento", "f2", "f3", "f4"]);
+// No se ofrecen para editar (autogenerados o de solo lectura).
+const NO_EDITABLES = new Set(["item", "usuario", "origen", "cod_reclamo", "numero_osinerg"]);
+
+// Campos editables de un cuaderno, derivados de SUS columnas reales (etiquetas de siempre):
+// así el formulario de «1ra Inspección» dice EJECUTADO/DEVUELTO en vez de «Fecha 2/3».
+function camposEditables(def) {
+  const vistos = new Set(), out = [];
+  (def.cols || []).forEach(([label, path]) => {
+    if (!path || NO_EDITABLES.has(path) || vistos.has(path)) return;
+    vistos.add(path);
+    out.push({ path, label, fecha: CAMPOS_FECHA.has(path), extra: path.indexOf("extra.") === 0 });
+  });
+  if (!vistos.has("observaciones")) out.push({ path: "observaciones", label: "Observaciones", ancho: true });
+  return out;
+}
+// extra{} de una fila (para no PISAR los demás campos extra al guardar uno).
+const extraDe = fila => {
+  try { return typeof fila.extra === "string" ? JSON.parse(fila.extra || "{}") : (fila.extra || {}); }
+  catch (e) { return {}; }
+};
+
 function semaforoElev(fila) {          // solo APELACION: plazo máx de elevación (5 d.h. — pen. 5.10)
   const plazo = String(fila.f2 || "").slice(0, 10);
   const elevada = valCuaderno(fila, "extra.siged");
@@ -38,6 +65,7 @@ export default function Cuadernos({ data, setSelExp, perfil }) {
   const [tope, setTope] = useState(300);
   const [edit, setEdit] = useState(null);          // fila en edición | {} alta
   const [regen, setRegen] = useState(false);
+  const [verFlujo, setVerFlujo] = useState(false); // flujograma "¿cómo funciona esta sección?"
   const esJefe = perfil && (perfil.rol === "GERENTE" || perfil.rol === "COORDINADOR");
 
   const cargarResumen = () => loadCuadernosResumen().then(setResumen);
@@ -89,30 +117,62 @@ export default function Cuadernos({ data, setSelExp, perfil }) {
     else toast("No se pudo regenerar: " + (r && r.error || "sin respuesta"));
   };
 
-  // 🖨 cargo imprimible: bloques por fecha con ENTREGADO/RECIBIDO en blanco (mockup 8.4)
+  // Etiqueta legible del período elegido en el filtro (para el título del cargo).
+  const periodoLabel = () => {
+    if (!filtro) return "todos los períodos";
+    const op = opcionesFiltro.find(([v]) => String(v) === String(filtro));
+    return op ? op[1] : filtro;
+  };
+
+  // 🖨 cargo imprimible: bloques por fecha con ENTREGADO/RECIBIDO en blanco (mockup 8.4).
+  // Respeta el PERÍODO elegido en el filtro (mes/fecha) — como los Excel, ahora unificado pero filtrable.
   const imprimirCargo = () => {
     const porFecha = {};
     filtradas.forEach(f => { const k = String(f.fecha_evento || "s/f").slice(0, 10); (porFecha[k] = porFecha[k] || []).push(f); });
     const bloques = Object.keys(porFecha).sort().map(fecha => {
       const rows = porFecha[fecha].map((f, i) =>
-        `<tr><td>${i + 1}</td>${sel.cols.map(c => `<td>${valCuaderno(f, c[1]) || ""}</td>`).join("")}</tr>`).join("");
+        `<tr><td>${i + 1}</td>${sel.cols.map(c => `<td>${fmtCel(valCuaderno(f, c[1]))}</td>`).join("")}</tr>`).join("");
       return `<h3>${sel.titulo}${fecha !== "s/f" ? " — " + fmtF(fecha) : ""}</h3>
         <table><thead><tr><th>N°</th>${sel.cols.map(c => `<th>${c[0]}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>
-        <div class="firmas"><span>ENTREGADO POR: ____________________________</span>
-        <span>RECIBIDO POR: ____________________________</span>
-        <span>FECHA / HORA: ______________  DNI: ______________</span></div>`;
+        <div class="firmas">
+          <div class="fila"><span class="et">ENTREGADO POR:</span><span class="ln"></span></div>
+          <div class="fila"><span class="et">RECIBIDO POR:</span><span class="ln"></span></div>
+          <div class="fila"><span class="et">DNI:</span><span class="ln corto"></span>
+            <span class="et">FECHA / HORA:</span><span class="ln corto"></span></div>
+          <div class="fila"><span class="et">FIRMA / SELLO:</span><span class="ln"></span></div>
+        </div>`;
     }).join("");
     const w = window.open("", "_blank");
-    w.document.write(`<html><head><title>Cargo — ${sel.nombre}</title><style>
-      body{font-family:Arial,sans-serif;font-size:11px;margin:24px}
+    w.document.write(`<html><head><title>Cargo — ${sel.nombre} — ${periodoLabel()}</title><style>
+      body{font-family:Arial,sans-serif;font-size:11px;margin:24px;color:#111}
       h2{margin:0 0 2px}h3{margin:18px 0 6px}
       table{border-collapse:collapse;width:100%}td,th{border:1px solid #333;padding:3px 5px;text-align:left}
-      th{background:#eee}.firmas{display:flex;gap:24px;flex-wrap:wrap;margin:14px 0 4px;font-size:12px}
+      th{background:#eee}
+      .firmas{margin:20px 0 30px}
+      .firmas .fila{display:flex;align-items:flex-end;gap:10px;margin:16px 0}
+      .firmas .et{font-weight:bold;white-space:nowrap;font-size:12px}
+      .firmas .ln{flex:1;border-bottom:1px solid #333;height:22px}
+      .firmas .ln.corto{flex:0 0 210px}
       @media print{.firmas{page-break-inside:avoid}}</style></head><body>
       <h2>INGENIERIA TELCOM E.I.R.L. · CP-026-2026-ELSE</h2>
-      <div>📒 ${sel.nombre} — cargo generado por la plataforma ${new Date().toLocaleString("es-PE")}</div>
+      <div>📒 <b>${sel.nombre}</b> — período: <b>${periodoLabel()}</b> · ${filtradas.length} registro(s)
+        · cargo generado por la plataforma ${new Date().toLocaleString("es-PE")}</div>
       ${bloques}</body></html>`);
     w.document.close(); w.print();
+  };
+
+  // 🧮 exportar a Excel/CSV la vista actual (para trabajarla también en Excel). Sin fugas: solo lo filtrado.
+  const exportarCSV = () => {
+    const esc = v => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
+    const head = ["N°", ...sel.cols.map(c => c[0])];
+    const lineas = [head.map(esc).join(";")];
+    filtradas.forEach((f, i) => lineas.push([i + 1, ...sel.cols.map(c => fmtCel(valCuaderno(f, c[1])))].map(esc).join(";")));
+    const blob = new Blob(["﻿" + lineas.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${sel.key}_${(filtro || "todo").replace(/\W+/g, "-")}.csv`;
+    a.click(); URL.revokeObjectURL(a.href);
+    toast("Exportado — ábrelo en Excel");
   };
 
   const guardarEdicion = async form => {
@@ -140,11 +200,13 @@ export default function Cuadernos({ data, setSelExp, perfil }) {
             </div>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
+            <button className="btn sm" onClick={() => setVerFlujo(v => !v)}>{verFlujo ? "▲ Ocultar" : "ⓘ ¿Cómo funciona?"}</button>
             {resumen && resumen.sheetUrl &&
               <a className="btn sm" href={resumen.sheetUrl} target="_blank" rel="noreferrer">🔗 Google Sheet</a>}
             {esJefe && <button className="btn sm" disabled={regen} onClick={regenerar}>{regen ? "Regenerando…" : "🔄 Regenerar"}</button>}
           </div>
         </div>
+        {verFlujo && <ComoFunciona />}
         {!resumen && <div className="note" style={{ marginTop: 10 }}>
           Cargando contadores… (si no aparecen, el backend V2 aún no tiene el módulo Cuadernos desplegado)</div>}
       </Card>
@@ -192,6 +254,7 @@ export default function Cuadernos({ data, setSelExp, perfil }) {
           {sel.fuente !== "mensual" &&
             <button className="btn sm" onClick={() => setEdit({ tipo: sel.fuente, fecha_evento: hoyISO() })}>➕ Registrar</button>}
           {sel.cargo && <button className="btn sm" onClick={imprimirCargo}>🖨 Cargo</button>}
+          <button className="btn sm" title="Descargar la vista actual (respeta el filtro) para abrirla en Excel" onClick={exportarCSV}>🧮 Excel</button>
         </div>
       </div>
       <div className="muted" style={{ fontSize: 11, marginTop: 6 }}>{sel.titulo} — clic en una fila abre la Sala del expediente; ✏ edita el registro (queda en bitácora).</div>
@@ -239,41 +302,99 @@ export default function Cuadernos({ data, setSelExp, perfil }) {
   </>;
 }
 
-/* ===== modal de alta/edición de una fila de registros_control ===== */
-const CAMPOS_EDIT = [
-  ["fecha_evento", "Fecha del evento", "date"], ["reclamo", "Reclamo (REC… / código)", "text"],
-  ["suministro", "Suministro", "text"], ["ruta", "Ruta", "text"],
-  ["correlativo", "Correlativo / carta", "text"], ["resolucion", "Resolución", "text"],
-  ["f2", "Fecha 2 (según cuaderno)", "text"], ["f3", "Fecha 3 (según cuaderno)", "text"],
-  ["f4", "Fecha 4 (según cuaderno)", "text"], ["estado", "Estado", "text"],
-  ["observaciones", "Observaciones", "text"],
-];
-
+/* ===== modal de alta/edición — CUADERNO-AWARE =====
+ * Los campos y ETIQUETAS salen de las columnas reales del cuaderno (def.cols): el
+ * formulario de «1ra Inspección» dice EJECUTADO/DEVUELTO en vez de «Fecha 2/3». Las
+ * fechas llevan date-picker. Los campos `extra.*` se editan y se MERGEAN sin pisar los demás. */
 function EditorRegistro({ fila, def, onCerrar, onGuardar }) {
+  // cada campo sabe si es fecha (por su path base O porque su valor viene en ISO) → date-picker
+  const campos = useMemo(() => camposEditables(def).map(c => {
+    const raw = c.extra ? valCuaderno(fila, c.path) : (fila[c.path] != null ? String(fila[c.path]) : "");
+    return { ...c, fecha: c.fecha || esISO(raw) };
+  }), [def, fila]);
   const [form, setForm] = useState(() => {
     const o = { id: fila.id, tipo: fila.tipo || def.fuente };
-    CAMPOS_EDIT.forEach(([k]) => o[k] = fila[k] != null ? String(fila[k]).slice(0, k === "fecha_evento" ? 10 : 200) : "");
+    campos.forEach(c => {
+      const v = c.extra ? valCuaderno(fila, c.path) : (fila[c.path] != null ? String(fila[c.path]) : "");
+      o[c.path] = c.fecha && v ? String(v).slice(0, 10) : v;   // date-picker necesita YYYY-MM-DD
+    });
     return o;
   });
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const guardar = () => {
+    const payload = { id: form.id, tipo: form.tipo, reclamo: form.reclamo };
+    const extra = { ...extraDe(fila) };
+    let hayExtra = false;
+    campos.forEach(c => {
+      if (c.extra) { extra[c.path.slice(6)] = form[c.path]; hayExtra = true; }
+      else payload[c.path] = form[c.path];
+    });
+    if (hayExtra) payload.extra = extra;   // solo si el cuaderno tiene campos extra (los base quedan intactos)
+    onGuardar(payload);
+  };
   return <div className="modal-bg" onClick={onCerrar} style={{ position: "fixed", inset: 0, background: "rgba(22,41,75,.45)", zIndex: 90, display: "flex", alignItems: "center", justifyContent: "center" }}>
-    <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, padding: 18, width: "min(560px,94vw)", maxHeight: "88vh", overflowY: "auto", boxShadow: "0 12px 40px rgba(0,0,0,.25)" }}>
+    <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, padding: 18, width: "min(620px,94vw)", maxHeight: "88vh", overflowY: "auto", boxShadow: "0 12px 40px rgba(0,0,0,.25)" }}>
       <h3 style={{ marginTop: 0 }}>{form.id ? "✏ Editar" : "➕ Registrar"} — {def.nombre}</h3>
+      <div className="muted" style={{ fontSize: 11, marginBottom: 10 }}>
+        Campos y nombres de <b>{def.nombre}</b> (los mismos del cuaderno). Las fechas se eligen del calendario;
+        se muestran como dd/mm/aaaa. Todo cambio queda firmado en la bitácora.
+      </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-        {CAMPOS_EDIT.map(([k, label, tipo]) =>
-          <label key={k} style={{ fontSize: 11.5, display: "flex", flexDirection: "column", gap: 3, gridColumn: k === "observaciones" ? "1/-1" : undefined }}>
-            <span className="muted">{label}</span>
-            <input type={tipo} value={form[k]} onChange={e => set(k, e.target.value)} />
+        {campos.map(c =>
+          <label key={c.path} style={{ fontSize: 11.5, display: "flex", flexDirection: "column", gap: 3, gridColumn: c.ancho ? "1/-1" : undefined }}>
+            <span className="muted">{c.label}</span>
+            <input type={c.fecha ? "date" : "text"} value={form[c.path] || ""} onChange={e => set(c.path, e.target.value)} />
           </label>)}
       </div>
-      <div className="muted" style={{ fontSize: 10.5, margin: "8px 0" }}>
-        El significado de Fecha 2/3/4 depende del cuaderno (p.ej. 1ra Inspección: F2=EJECUTADO, F3=DEVUELTO ·
-        Notaría: F2=DEVUELTO, F3=EJECUTADOS). Todo cambio queda firmado en la bitácora.
-      </div>
-      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 12 }}>
         <button className="btn sm" onClick={onCerrar}>Cancelar</button>
-        <button className="btn sm primary" onClick={() => onGuardar(form)}>Guardar</button>
+        <button className="btn sm primary" onClick={guardar}>Guardar</button>
       </div>
     </div>
   </div>;
+}
+
+/* ===== flujograma: cómo funciona esta sección y qué se integró ===== */
+function ComoFunciona() {
+  const paso = (emoji, titulo, sub) => (
+    <div style={{ flex: "1 1 150px", minWidth: 140, background: "var(--card2)", border: "1px solid var(--bd)",
+      borderRadius: 10, padding: "10px 12px" }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--titulo,#16294B)" }}>{emoji} {titulo}</div>
+      <div className="muted" style={{ fontSize: 11, marginTop: 3 }}>{sub}</div>
+    </div>
+  );
+  const flecha = <div style={{ alignSelf: "center", color: "var(--mut)", fontSize: 20, padding: "0 2px" }}>→</div>;
+  return (
+    <div style={{ marginTop: 12, padding: 14, border: "1px dashed var(--bd)", borderRadius: 12, background: "var(--card)" }}>
+      <div style={{ fontWeight: 700, color: "var(--titulo,#16294B)", marginBottom: 4 }}>¿Cómo funciona esta sección?</div>
+      <div className="muted" style={{ fontSize: 12, marginBottom: 12 }}>
+        Los <b>22 cuadernos Excel</b> del sistema anterior ahora viven DENTRO de la plataforma, unificados
+        en 2 tablas, pero conservando los formatos de siempre. Nadie edita los Excel originales: todo cambio
+        queda firmado en la bitácora (quién y cuándo) — evidencia para OSINERGMIN.
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "stretch" }}>
+        {paso("📚", "22 cuadernos Excel", "Padrones mensuales (1-12) + temáticos (13-22)")}
+        {flecha}
+        {paso("⬇️", "Importador", "1,498 filas de padrón · 9,974 registros · 0 duplicados")}
+        {flecha}
+        {paso("🗄️", "2 tablas del Sheet", "cuaderno_mensual + registros_control (una sola fuente)")}
+        {flecha}
+        {paso("📒", "Este hub", "Tarjetas con contadores y huecos · clic = ver el cuaderno")}
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "stretch", marginTop: 8 }}>
+        {paso("✏️", "Editar / ➕ Registrar", "Corriges o agregas una fila — firma en bitácora")}
+        {flecha}
+        {paso("🖨️", "Cargo por período", "Imprime el cargo del mes elegido, con ENTREGADO/RECIBIDO")}
+        {flecha}
+        {paso("🧮", "Exportar a Excel", "Bajas la vista filtrada para trabajarla en Excel")}
+        {flecha}
+        {paso("🔄", "Regenerar", "Reconstruye el Google Sheet «CUADERNOS 2026» (jefes)")}
+      </div>
+      <div className="muted" style={{ fontSize: 11, marginTop: 10 }}>
+        <b>Lo que se integró:</b> cruce automático con el expediente de la plataforma (clic en una fila abre su
+        Sala), celda ámbar = dato pendiente, semáforo de plazo de elevación en Apelaciones, y coexistencia con
+        los datos firmados por etapa (si una etapa ya registró el dato, ese manda sobre el importado).
+      </div>
+    </div>
+  );
 }

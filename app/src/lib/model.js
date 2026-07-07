@@ -102,6 +102,18 @@ export const ETAPA_NN = {
 export const stageIdx = e => ETAPAS.indexOf(e);
 export const metaEtapa = e => FLUJO[stageIdx(e)] || FLUJO[0];
 
+// Rol canónico (enum) que trabaja cada etapa — ESPEJO de Dominio.ETAPAS[..][2] del backend
+// (V2_01_Nucleo.gs). Base del "tomar tarea": un trabajador solo puede auto-asignarse un
+// ticket cuya etapa la trabaja SU rol (sustitución entre pares; p.ej. los 3 tramitadores
+// entre sí). Debe coincidir EXACTO con el gate de H_tomar_tarea; si cambia el backend, cambiar aquí.
+export const ETAPA_ROL = {
+  "Recepción":"TRAMITADOR", "Evaluación":"ANALISTA_LEGAL", "Campo":"TRAMITADOR", "SIELSE":"TRAMITADOR",
+  "Resolución":"ANALISTA_LEGAL", "Firmas":"TRAMITADOR", "Notificación":"ASISTENTE",
+  "Apelación (JARU)":"ANALISTA_JUNIOR", "Foliado":"TRAMITADOR", "Cierre":"TRAMITADOR",
+};
+// ¿Este rol puede TOMAR (auto-asignarse) un ticket de esta etapa? Mismo rol = sí.
+export const puedeTomar = (rol, etapa) => !!rol && ETAPA_ROL[etapa] === rol;
+
 // ===== fechas =====
 export function parseFecha(s){
   if(!s) return null;

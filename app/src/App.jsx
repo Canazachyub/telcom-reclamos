@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { loadReclamos, loadEvidencias, loadDatos, guardarDatos, loadTickets, updTicket, loadComentarios, comentar, loadRegistros, loadCorreos, postAction, editarReclamo, eliminarReclamo, vincularCorreo, loadConfig, USE_MOCK } from "./lib/api.js";
+import { loadReclamos, loadEvidencias, loadDatos, guardarDatos, loadTickets, updTicket, tomarTarea, loadComentarios, comentar, loadRegistros, loadCorreos, postAction, editarReclamo, eliminarReclamo, vincularCorreo, loadConfig, USE_MOCK } from "./lib/api.js";
 import { mapTickets, misTickets, activos, abiertos, vencidos, porVencer, exposicionTotal, verMontos, urgColorTicket } from "./lib/tickets.js";
 import { getSesionValida, logout, ROL_LABEL, puedeDelegar, puedeVerTodo, esOperativo, USERS } from "./lib/auth.js";
 import {
-  TEAM, teamById, wName, wColor, ETAPAS, FLUJO, daysLeft, fmtFecha, parseFecha, SHEET_URL, DRIVE_URL, STREAMLIT_URL
+  TEAM, teamById, wName, wColor, ETAPAS, ETAPA_ROL, FLUJO, daysLeft, fmtFecha, parseFecha, SHEET_URL, DRIVE_URL, STREAMLIT_URL
 } from "./lib/model.js";
 import { Kpi, Card, Tag, HBars, Donut, estadoColor, urgColor, toast } from "./components/ui.jsx";
 import Drawer from "./components/Drawer.jsx";
@@ -21,6 +21,7 @@ import ValorizacionMensual from "./components/ValorizacionMensual.jsx";
 import MuestraTrimestral from "./components/MuestraTrimestral.jsx";
 import MejorasTR from "./components/MejorasTR.jsx";
 import Cuadernos from "./components/Cuadernos.jsx";
+import TrabajoEquipo from "./components/TrabajoEquipo.jsx";
 import PenalidadesTope from "./components/PenalidadesTope.jsx";
 import { riesgoSAPGlobal } from "./lib/plazosNormativos.js";
 
@@ -120,6 +121,18 @@ function Shell({ perfil, onLogout }){
     setTickets(ts=>ts.map(x=>x.id===t.id?{...x,respId:+respId,responsable:respNombre}:x));
     updTicket(t.id, undefined, t.reclamo, respId, respNombre)
       .then(r=>{ if(r && r.ok===false) toast("⚠ No se guardó la reasignación: "+(r.error||"error")); });
+  }
+  // TOMAR (auto-asignarse) una tarea del pozo del equipo — el nuevo responsable es SIEMPRE
+  // quien tiene la sesión activa (perfilVista). Optimista; si el backend rechaza, avisa y refresca.
+  function onTomarTarea(t){
+    const respId = perfilVista.resp_id;
+    const m = TEAM.find(x=>x.id===respId);
+    const nombre = m ? m.nombre : "";
+    setTickets(ts=>ts.map(x=>x.id===t.id?{...x,respId:+respId,responsable:nombre}:x));
+    tomarTarea(t.id, t.reclamo).then(r=>{
+      if(r && r.ok===false){ toast("⚠ No se pudo tomar: "+(r.error||"error")); refrescar(); }
+      else toast("✋ Tomaste "+t.etapa+" · …"+String(t.reclamo).slice(-6)+" — está en tu «Mi día»");
+    });
   }
 
   // Regla v4 (patrón courier): VER un caso abre la SALA; TRABAJARLO abre el Drawer.
@@ -226,7 +239,7 @@ function Shell({ perfil, onLogout }){
           El Drawer recibe todos (muestra el historial completo de etapas del expediente). */}
       {!data ? <div className="card">Cargando reclamos…</div>
         : esOperativo(perfilVista.rol)
-          ? <Operativo key={"op-"+perfilVista.resp_id} perfil={perfilVista} data={data} setSelExp={abrirExp} tickets={activos(tickets)} activoByCode={activoByCode} progresoDe={progresoDe} recByCode={recByCode} onEstadoTicket={onEstadoTicket} correos={correos} correosCargando={correosCargando} onRecargarCorreos={cargarCorreos} onConvertirCorreo={convertirCorreoEnCaso} verExpediente={(codigo)=>{ const r=(data||[]).find(x=>String(x.codigo)===String(codigo)); if(r) abrirExp(r.id); }}/>
+          ? <Operativo key={"op-"+perfilVista.resp_id} perfil={perfilVista} data={data} setSelExp={abrirExp} tickets={activos(tickets)} activoByCode={activoByCode} progresoDe={progresoDe} recByCode={recByCode} onEstadoTicket={onEstadoTicket} onTomarTarea={onTomarTarea} correos={correos} correosCargando={correosCargando} onRecargarCorreos={cargarCorreos} onConvertirCorreo={convertirCorreoEnCaso} verExpediente={(codigo)=>{ const r=(data||[]).find(x=>String(x.codigo)===String(codigo)); if(r) abrirExp(r.id); }}/>
           : <Admin key={"ad-"+perfilVista.resp_id} perfil={perfilVista} data={data} evidencias={evidencias} setSelExp={abrirExp} delegar={delegar} updEstado={updEstado} tickets={activos(tickets)} todosTickets={tickets} datos={datos} activoByCode={activoByCode} progresoDe={progresoDe} recByCode={recByCode} onEstadoTicket={onEstadoTicket} onReasignarTicket={onReasignarTicket} registros={registros} comentarios={comentarios} correos={correos} correosCargando={correosCargando} onRecargarCorreos={cargarCorreos} onConvertirCorreo={convertirCorreoEnCaso} verExpediente={(codigo)=>{ const r=(data||[]).find(x=>String(x.codigo)===String(codigo)); if(r) abrirExp(r.id); }}/>}
 
       {salaExp!=null && data && (()=>{ const sx=data.find(x=>x.id===salaExp); return sx ? (
@@ -700,16 +713,22 @@ function Conexion(){
 /* ===================== OPERATIVO ===================== */
 // 4 pestañas. El trabajo real (evidencia + datos + documento + marcar hecho) se hace
 // dentro del expediente: Mi día → "Abrir y trabajar" → Drawer en la etapa del ticket.
-function Operativo({ perfil, data, setSelExp, tickets, activoByCode={}, progresoDe, recByCode, onEstadoTicket, correos, correosCargando, onRecargarCorreos, onConvertirCorreo, verExpediente }){
+function Operativo({ perfil, data, setSelExp, tickets, activoByCode={}, progresoDe, recByCode, onEstadoTicket, onTomarTarea, correos, correosCargando, onRecargarCorreos, onConvertirCorreo, verExpediente }){
   const [tab,setTab]=useState("midia");
   const mine=data.filter(x=>x.resp===perfil.resp_id);
   const misTk=misTickets(tickets||[], perfil);
-  const tabs=[["midia","🏠 Mi día"],["expedientes","📁 Mis expedientes"],["bandeja","📧 Bandeja"],["calendario","📅 Mi calendario"],["guia","📖 Mi guía"]];
+  // nº de tareas de MIS PARES por tomar (mismo rol, no mías) → badge en la pestaña colaborativa
+  const nPozo = abiertos(tickets||[]).filter(t=>ETAPA_ROL[t.etapa]===perfil.rol && t.respId!==perfil.resp_id).length;
+  const tabs=[["midia","🏠 Mi día"],["expedientes","📁 Mis expedientes"],
+    ["equipo","🌐 Trabajo del equipo"+(nPozo?" ("+nPozo+")":"")],["cuadernos","📒 Cuadernos"],
+    ["bandeja","📧 Bandeja"],["calendario","📅 Mi calendario"],["guia","📖 Mi guía"]];
   return <>
     <div className="tabs">{tabs.map(t=><button key={t[0]} className={tab===t[0]?"on":""} onClick={()=>setTab(t[0])}>{t[1]}</button>)}</div>
     {tab==="midia" && data.length===0 && <BienvenidaSinCasos onIrBandeja={()=>setTab("bandeja")}/>}
     {tab==="midia" && <MiDia perfil={perfil} misReclamos={mine} tickets={misTk} recByCode={recByCode} onEstadoTicket={onEstadoTicket} setSelExp={setSelExp}
       onCerrarDia={()=>postAction("reporte",{rol:perfil.rol, asignados:mine.length, en_atencion:abiertos(misTk).length, cerrados:misTk.filter(t=>t.hecho).length, vencidos:vencidos(misTk).length})}/>}
+    {tab==="equipo" && <TrabajoEquipo perfil={perfil} tickets={tickets} recByCode={recByCode} onTomar={onTomarTarea} onEstado={onEstadoTicket} setSelExp={setSelExp}/>}
+    {tab==="cuadernos" && <Cuadernos data={data} setSelExp={setSelExp} perfil={perfil}/>}
     {tab==="bandeja" && <Bandeja perfil={perfil} correos={correos} cargando={correosCargando} noDisponible={correos===null && !correosCargando} onRecargar={onRecargarCorreos} existentes={data} onConvertir={onConvertirCorreo} verExpediente={verExpediente}/>}
     {tab==="calendario" && <Calendario tickets={misTk} recByCode={recByCode} perfil={perfil} setSelExp={setSelExp}/>}
     {tab==="expedientes" && <Card><h3>Mis expedientes ({mine.length}) — clic para ver su seguimiento</h3><div style={{overflowX:"auto"}}><table className="tbl"><thead><tr><th>Nº OSINERG</th><th>Solicitante</th><th>Suministro</th><th>Clase</th><th>Progreso</th><th>Etapa</th><th>Límite</th><th>Restan</th><th>Estado</th></tr></thead><tbody>
