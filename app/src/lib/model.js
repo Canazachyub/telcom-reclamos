@@ -174,6 +174,7 @@ export function mapReclamo(r, i){
     fechaLim: r.FechaLimiteAtencion, fechaSol: r.FechaHoraSolucionReclamo,
     fechaEstimada: r.FechaEstimadaSolucion,
     usuarioCrea: r.UsuarioCrea, usuarioModifica: r.UsuarioModifica,
+    fechaMod: r.FechaModificacion,   // última modificación registrada EN SIELSE (viene del export)
     sucursal: r.CodigoSucursal,
     raw: r,
   };

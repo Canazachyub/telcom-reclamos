@@ -265,7 +265,7 @@ function Admin({ perfil, data, evidencias, setSelExp, delegar, updEstado, ticket
     <div className="tabs">{tabs.map(t=><button key={t[0]} className={tab===t[0]?"on":""} onClick={()=>setTab(t[0])}>{t[1]}</button>)}</div>
     {tab==="hoy"         && <Hoy perfil={perfil} data={data} datos={datos} tickets={tickets} recByCode={recByCode} onEstadoTicket={onEstadoTicket} onReasignarTicket={onReasignarTicket} setSelExp={setSelExp} sinCasos={data.length===0} setTab={setTab}/>}
     {tab==="equipo"      && <><ResumenEquipo tickets={tickets} perfil={perfil}/><div style={{marginTop:14}}><ResumenDiario registros={registros} tickets={tickets}/></div><div style={{marginTop:14}}><VerificacionDiaria tickets={tickets} registros={registros} perfil={perfil}/></div><MejorasSugeridas comentarios={comentarios}/><div style={{marginTop:14}}><PenalidadesTope registros={registros} config={configEquipo} perfil={perfil}/></div></>}
-    {tab==="expedientes" && <ExpedientesTab data={data} setSelExp={setSelExp} delegar={delegar} updEstado={updEstado} canDelegate={canDelegate} evidencias={evidencias} activoByCode={activoByCode} progresoDe={progresoDe}/>}
+    {tab==="expedientes" && <ExpedientesTab data={data} setSelExp={setSelExp} delegar={delegar} updEstado={updEstado} canDelegate={canDelegate} evidencias={evidencias} activoByCode={activoByCode} progresoDe={progresoDe} registros={registros} comentarios={comentarios}/>}
     {tab==="bandeja"     && <Bandeja perfil={perfil} correos={correos} cargando={correosCargando} noDisponible={correos===null && !correosCargando} onRecargar={onRecargarCorreos} existentes={data} onConvertir={onConvertirCorreo} verExpediente={verExpediente}/>}
     {tab==="calendario"  && <Calendario tickets={tickets} recByCode={recByCode} perfil={perfil} setSelExp={setSelExp} equipo/>}
     {tab==="reportes"    && <Reportes data={data} setSelExp={setSelExp} tickets={todosTickets} registros={registros} datos={datos} evidencias={evidencias} perfil={perfil}/>}
@@ -339,12 +339,12 @@ function Hoy({ perfil, data, datos, tickets, recByCode, onEstadoTicket, onReasig
   </>;
 }
 
-function ExpedientesTab({ data, setSelExp, delegar, updEstado, canDelegate, evidencias, activoByCode, progresoDe }){
+function ExpedientesTab({ data, setSelExp, delegar, updEstado, canDelegate, evidencias, activoByCode, progresoDe, registros, comentarios }){
   const [sub,setSub]=useState("lista");
   return <>
     <div className="tabs">{[["lista","Expedientes"],["evidencias","Evidencias subidas ("+evidencias.length+")"]].map(t=>
       <button key={t[0]} className={sub===t[0]?"on":""} onClick={()=>setSub(t[0])}>{t[1]}</button>)}</div>
-    {sub==="lista" && <Expedientes data={data} setSelExp={setSelExp} delegar={delegar} updEstado={updEstado} canDelegate={canDelegate} activoByCode={activoByCode} progresoDe={progresoDe}/>}
+    {sub==="lista" && <Expedientes data={data} setSelExp={setSelExp} delegar={delegar} updEstado={updEstado} canDelegate={canDelegate} activoByCode={activoByCode} progresoDe={progresoDe} registros={registros} comentarios={comentarios}/>}
     {sub==="evidencias" && <EvidenciasAdmin evidencias={evidencias}/>}
   </>;
 }
@@ -407,13 +407,35 @@ function EstadoChip({ estado, prog }){
   </div>;
 }
 
-function Expedientes({ data, setSelExp, delegar, updEstado, canDelegate, activoByCode={}, progresoDe }){
-  const [filt,setFilt]=useState({resp:"all",etapa:"all",estado:"all",q:"",vence:"all"});
+// ¿la fecha (ISO o dd/mm/yyyy) es HOY?
+function esFechaHoy(v){
+  const d = parseFecha(v); if(!d) return false;
+  const n = new Date();
+  return d.getFullYear()===n.getFullYear() && d.getMonth()===n.getMonth() && d.getDate()===n.getDate();
+}
+
+function Expedientes({ data, setSelExp, delegar, updEstado, canDelegate, activoByCode={}, progresoDe, registros=[], comentarios=[] }){
+  const [filt,setFilt]=useState({resp:"all",etapa:"all",estado:"all",clase:"all",act:"all",q:"",vence:"all"});
   const [maxFilas,setMaxFilas]=useState(200);
+  // catálogo de clases presentes en la cartera (filtro tipo Excel)
+  const clases = [...new Set(data.map(x=>String(x.clase||"").trim()).filter(Boolean))].sort();
+  // casos que NUESTRO equipo trabajó HOY (bitácora + comentarios de hoy)
+  const trabajadoHoy = new Set();
+  registros.forEach(r=>{ if(r.reclamo && esFechaHoy(r.fecha)) trabajadoHoy.add(String(r.reclamo)); });
+  comentarios.forEach(c=>{ if(c.reclamo && esFechaHoy(c.fecha)) trabajadoHoy.add(String(c.reclamo)); });
   let list=data.filter(x=>{
     if(filt.resp!=="all" && String(x.resp)!==String(filt.resp)) return false;
     if(filt.etapa!=="all" && x.etapa!==filt.etapa) return false;
     if(filt.estado!=="all" && x.estado!==filt.estado) return false;
+    if(filt.clase!=="all" && String(x.clase||"").trim()!==filt.clase) return false;
+    if(filt.act!=="all"){
+      const sielseHoy = esFechaHoy(x.fechaMod);
+      const equipoHoy = trabajadoHoy.has(String(x.codigo));
+      if(filt.act==="sielse_hoy" && !sielseHoy) return false;
+      if(filt.act==="equipo_hoy" && !equipoHoy) return false;
+      if(filt.act==="hoy" && !sielseHoy && !equipoHoy) return false;
+      if(filt.act==="sin_hoy" && (sielseHoy || equipoHoy)) return false;
+    }
     if(filt.q){ const q=filt.q.toLowerCase(); if(!`${x.osinerg} ${x.codigo} ${x.solicitante} ${x.suministro}`.toLowerCase().includes(q)) return false; }
     return true;
   });
@@ -446,13 +468,22 @@ function Expedientes({ data, setSelExp, delegar, updEstado, canDelegate, activoB
           <option value="semana">≤ 7 días (esta semana)</option>
           <option value="quincena">≤ 15 días</option>
         </select>
+        <select className="flt" value={filt.act} onChange={e=>setFilt({...filt,act:e.target.value})} style={filt.act!=="all"?{borderColor:"var(--navy)",color:"var(--navy)",fontWeight:600}:undefined}
+          title="Actividad de HOY: lo que ELSE movió en SIELSE (FechaModificacion del export) y lo que nuestro equipo trabajó aquí (bitácora)">
+          <option value="all">⚡ Actividad: toda</option>
+          <option value="sielse_hoy">📤 Movido en SIELSE HOY</option>
+          <option value="equipo_hoy">👥 Trabajado por el equipo HOY</option>
+          <option value="hoy">✅ Con actividad HOY (cualquiera)</option>
+          <option value="sin_hoy">😴 SIN actividad hoy</option>
+        </select>
+        <select className="flt" value={filt.clase} onChange={e=>setFilt({...filt,clase:e.target.value})}><option value="all">Todas las clases</option>{clases.map(c=><option key={c} value={c}>{c.replace("RECLAMOS ","")}</option>)}</select>
         <select className="flt" value={filt.resp} onChange={e=>setFilt({...filt,resp:e.target.value})}><option value="all">Resp: todos</option>{TEAM.map(t=><option key={t.id} value={t.id}>{t.corto}</option>)}<option value={0}>Externos</option></select>
         <select className="flt" value={filt.etapa} onChange={e=>setFilt({...filt,etapa:e.target.value})}><option value="all">Todas las etapas</option>{ETAPAS.map(e=><option key={e}>{e}</option>)}</select>
         <select className="flt" value={filt.estado} onChange={e=>setFilt({...filt,estado:e.target.value})}><option value="all">Todos los estados</option>{ESTADOS_APP.map(e=><option key={e}>{e}</option>)}</select>
       </div>
     </div>
     <div style={{overflowX:"auto"}}>
-      <table className="tbl"><thead><tr><th>Nº OSINERG</th><th>Solicitante</th><th>Suministro</th><th>Clase</th><th>Progreso</th><th>Etapa</th><th>Responsable</th><th title="Fecha límite de la etapa actual (o límite global SIELSE si aún no tiene flujo)">Límite</th><th title="Días HÁBILES restantes (lun-vie sin feriados) — negativo = vencido">Restan (d háb.)</th><th title="Tipo de resolución histórico registrado en SIELSE — dato informativo, no refleja el avance actual del ticket">Resolución (histórico SIELSE)</th><th>Estado</th></tr></thead><tbody>
+      <table className="tbl"><thead><tr><th>Nº OSINERG</th><th>Solicitante</th><th>Suministro</th><th>Clase</th><th>Progreso</th><th>Etapa</th><th>Responsable</th><th title="Fecha límite de la etapa actual (o límite global SIELSE si aún no tiene flujo)">Límite</th><th title="Días HÁBILES restantes (lun-vie sin feriados) — negativo = vencido">Restan (d háb.)</th><th title="📤 = ELSE lo modificó HOY en SIELSE (según el último export) · 👥 = nuestro equipo lo trabajó HOY en la plataforma">Actividad HOY</th><th title="Tipo de resolución histórico registrado en SIELSE — dato informativo, no refleja el avance actual del ticket">Resolución (histórico SIELSE)</th><th>Estado</th></tr></thead><tbody>
         {rows.slice(0,maxFilas).map(({x,act,dl})=>{
           const prog = progresoDe ? progresoDe(x.codigo) : null;
           const limiteTxt = act ? (act.fechaLimite ? fmtFecha(act.fechaLimite) : "—") : fmtFecha(x.fechaLim);
@@ -485,6 +516,11 @@ function Expedientes({ data, setSelExp, delegar, updEstado, canDelegate, activoB
               : <span><span className="dot" style={{background:wColor(x.resp)}}/>{wName(x.resp)}</span>}</td>
             <td>{limiteTxt}</td>
             <td style={{textAlign:"center"}}><b style={{color:restanColor}}>{restanTxt}</b></td>
+            <td style={{whiteSpace:"nowrap"}}>
+              {esFechaHoy(x.fechaMod) && <span title={"ELSE lo modificó HOY en SIELSE"+(x.usuarioModifica?" ("+x.usuarioModifica+")":"")+(parseFecha(x.fechaMod)?" a las "+parseFecha(x.fechaMod).toLocaleTimeString("es-PE",{hour:"2-digit",minute:"2-digit"}):"")} style={{fontSize:10.5,fontWeight:700,background:"#EAF1FB",color:"#1E3A5F",border:"1px solid #C9DAF0",borderRadius:6,padding:"2px 6px",marginRight:4}}>📤 SIELSE</span>}
+              {trabajadoHoy.has(String(x.codigo)) && <span title="Nuestro equipo trabajó este caso HOY (bitácora)" style={{fontSize:10.5,fontWeight:700,background:"#E8F6EC",color:"#1E7A38",border:"1px solid #BFE5CB",borderRadius:6,padding:"2px 6px"}}>👥 equipo</span>}
+              {!esFechaHoy(x.fechaMod) && !trabajadoHoy.has(String(x.codigo)) && <span className="muted" title={"Última modificación en SIELSE: "+(x.fechaMod?fmtFecha(x.fechaMod):"—")} style={{fontSize:10.5}}>{x.fechaMod?fmtFecha(x.fechaMod):"—"}</span>}
+            </td>
             <td title="Tipo de resolución histórico SIELSE — no es el avance actual">{x.tipoRes||"—"}</td>
             <td onClick={e=>e.stopPropagation()}>
               {estadoDerivado
