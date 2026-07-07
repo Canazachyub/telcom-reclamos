@@ -304,6 +304,17 @@ export async function loadCuadernosResumen(){
   }catch(e){ /* sin backend */ }
   return null;
 }
+// Registros de cuadernos de UN expediente (cruce por código / N° OSINERG) — conecta SIELSE ⇄ cuadernos.
+export async function loadCuadernosPorCaso(codigo, osinerg){
+  try{
+    const url = GET_URL("cuadernos_por_caso") + "&codigo=" + encodeURIComponent(codigo||"") + "&osinerg=" + encodeURIComponent(osinerg||"");
+    const r = await fetch(url);
+    const j = await r.json();
+    if(Array.isArray(j)) return j;
+    sesionExpirada(j);
+  }catch(e){ /* sin backend */ }
+  return [];
+}
 // Filas de UN cuaderno: fuente='mensual' (+mes opcional 1-12) o un tipo de registros_control.
 export async function loadCuadernoDatos(fuente, mes){
   try{

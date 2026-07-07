@@ -1,10 +1,15 @@
-import { useState, useMemo } from "react";
-import { ETAPAS, FLUJO, fmtFecha, wColor, TEAM } from "../lib/model.js";
+import { useState, useMemo, useEffect } from "react";
+import { ETAPAS, FLUJO, fmtFecha, wColor, TEAM, puedeTomar, teamById } from "../lib/model.js";
 import { toast } from "./ui.jsx";
 import { GuiaSielseBox } from "../lib/guiaSielse.jsx";
 import { CAMPOS_ETAPA, CAMPOS_POR_FALLO } from "../lib/camposEtapa.js";
 import FichaSielse from "./FichaSielse.jsx";
 import { relojesDelCaso } from "../lib/plazosNormativos.js";
+import { CUADERNOS, valCuaderno } from "../lib/cuadernosDef.js";
+import { loadCuadernosPorCaso } from "../lib/api.js";
+
+// def de cuaderno por su `fuente` (tipo de registros_control) — para nombres/columnas
+const CUAD_POR_FUENTE = {}; CUADERNOS.forEach(c => { CUAD_POR_FUENTE[c.fuente] = c; });
 
 // ===================== Sala del expediente (v4, patrón courier) =====================
 // Vista de SEGUIMIENTO y colaboración de un caso: dónde está, quién lo tiene, cuánto plazo
@@ -306,12 +311,21 @@ function CalendarioRelojes({ relojes, ladoALado }){
   );
 }
 
-export default function SalaExpediente({ exp, tickets, evidencias, registros, comentarios, perfil, datos, correos, onComentar, onTrabajar, onClose, onEditar, onEstadoTicket, onReasignarTicket, onEliminar, ladoALado }){
+export default function SalaExpediente({ exp, tickets, evidencias, registros, comentarios, perfil, datos, correos, onComentar, onTrabajar, onClose, onEditar, onEstadoTicket, onReasignarTicket, onTomarTarea, onEliminar, ladoALado }){
   const [texto, setTexto] = useState("");
   const [verFicha, setVerFicha] = useState(false);
   const [etapaSel, setEtapaSel] = useState(null);   // etapa clickeada en la línea de tiempo
   const [verTodaAct, setVerTodaAct] = useState(false); // feed comprimido (5) vs completo
+  const [cuadRegs, setCuadRegs] = useState(null);   // registros de CUADERNOS de este caso (2ª fuente)
   const puedeCorregir = ["GERENTE","COORDINADOR"].includes(perfil?.rol);
+
+  // 2ª fuente: los registros de los cuadernos (Excel) que cruzan con ESTE expediente
+  useEffect(() => {
+    let vivo = true;
+    setCuadRegs(null);
+    loadCuadernosPorCaso(exp.codigo, exp.osinerg).then(r => { if (vivo) setCuadRegs(r || []); });
+    return () => { vivo = false; };
+  }, [exp.codigo, exp.osinerg]);
 
   // tickets del caso en orden de flujo; el ACTIVO es el primero no-hecho
   const propios = (tickets||[]).filter(t=>String(t.reclamo)===String(exp.codigo))
@@ -566,6 +580,11 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
                 {TEAM.map(m=><option key={m.id} value={m.id}>{m.corto} · {m.rol}</option>)}
                 <option value={0}>Externo / Call Center</option>
               </select>}
+            {/* Tomar la etapa — trabajador del MISMO rol que no la tiene (self-claim, queda en bitácora) */}
+            {act && onTomarTarea && act.respId!==perfil?.resp_id && puedeTomar(perfil?.rol, act.etapa) &&
+              perfil?.rol!=="COORDINADOR" && perfil?.rol!=="GERENTE" &&
+              <button className="btn sm" title={"Tomar esta etapa — hoy la tiene "+(act.responsable||"sin asignar")}
+                onClick={()=>onTomarTarea(act)} style={{fontWeight:700}}>✋ Tomar</button>}
             {sig && <><span style={{color:"var(--mut2)"}}>→</span>
               <span style={{color:"var(--mut)"}}>Sigue: {sig.etapa} · <b style={{color:"var(--tx)"}}>{sig.responsable||"por asignar"}</b></span></>}
             {ladoALado
@@ -594,6 +613,31 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
               <a key={i} style={S.doc} href={d.url||"#"} target="_blank" rel="noreferrer" title={d.etapa}>⬇ {d.nombre||("documento "+(i+1))}</a>
             ))}
             {!docs.length && <span className="muted" style={{fontSize:12}}>Aún no hay documentos subidos — aparecerán aquí al trabajar las etapas.</span>}
+          </div>
+
+          {/* ===== 2ª fuente: los CUADERNOS (Excel) que cruzan este mismo expediente ===== */}
+          <div style={{marginTop:14, background:"var(--card2)", border:"1px solid var(--bd)", borderRadius:12, padding:"11px 13px"}}>
+            <div style={{fontSize:13.5, fontWeight:700, color:"var(--titulo)"}}>📒 En los cuadernos {cuadRegs!=null && cuadRegs.length>0 ? "("+cuadRegs.length+")" : ""}</div>
+            <div className="muted" style={{fontSize:11, margin:"2px 0 8px"}}>Segunda fuente: lo que registran los cuadernos de este caso (la fuente SIELSE es todo lo de arriba).</div>
+            {cuadRegs==null && <div className="muted" style={{fontSize:12}}>Cargando cuadernos…</div>}
+            {cuadRegs!=null && cuadRegs.length===0 && <div className="muted" style={{fontSize:12}}>Este expediente aún no figura en ningún cuaderno.</div>}
+            {cuadRegs!=null && cuadRegs.length>0 && (()=>{
+              const porTipo={}; cuadRegs.forEach(r=>{ (porTipo[r.tipo]=porTipo[r.tipo]||[]).push(r); });
+              const campo=(r,k)=>{ const v=valCuaderno(r,k); return /^\d{4}-\d{2}-\d{2}/.test(String(v))?fmtFecha(String(v).slice(0,10)):v; };
+              return <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                {Object.keys(porTipo).map(tipo=>{ const def=CUAD_POR_FUENTE[tipo]; return (
+                  <div key={tipo} style={{borderLeft:"3px solid var(--linkTx)",paddingLeft:9}}>
+                    <div style={{fontSize:12.5,fontWeight:700,color:"var(--tx)"}}>{def?def.emoji+" "+def.nombre:tipo} <span className="muted" style={{fontWeight:400}}>· {porTipo[tipo].length}</span></div>
+                    {porTipo[tipo].slice(0,6).map((r,i)=>{
+                      const partes=[campo(r,"fecha_evento"),r.correlativo,r.resolucion,r.estado,campo(r,"f2"),r.observaciones]
+                        .map(x=>String(x==null?"":x).trim()).filter(Boolean);
+                      return <div key={i} className="muted" style={{fontSize:11.5,marginTop:2}}>• {partes.join(" · ")||"(sin datos)"}</div>;
+                    })}
+                    {porTipo[tipo].length>6 && <div className="muted" style={{fontSize:11,marginTop:2}}>… y {porTipo[tipo].length-6} más (ver en 📒 Cuadernos)</div>}
+                  </div>
+                );})}
+              </div>;
+            })()}
           </div>
         </div>
 

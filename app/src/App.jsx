@@ -244,7 +244,7 @@ function Shell({ perfil, onLogout }){
 
       {salaExp!=null && data && (()=>{ const sx=data.find(x=>x.id===salaExp); return sx ? (
         <SalaExpediente exp={sx} tickets={tickets} evidencias={evidencias} registros={registros} comentarios={comentarios} datos={datos} correos={correos}
-          perfil={perfilVista} onComentar={onComentar} onTrabajar={trabajarDesdeSala} onEstadoTicket={onEstadoTicket} onReasignarTicket={onReasignarTicket}
+          perfil={perfilVista} onComentar={onComentar} onTrabajar={trabajarDesdeSala} onEstadoTicket={onEstadoTicket} onReasignarTicket={onReasignarTicket} onTomarTarea={onTomarTarea}
           onEditar={(campo,valor)=>onEditarCampo(sx.codigo,campo,valor)} onEliminar={onEliminarExp} ladoALado={exp!=null} onClose={()=>setSalaExp(null)}/>
       ) : null; })()}
       {exp && <Drawer exp={exp} etapaInicial={selEtapa} evidencias={evidencias} datos={datos} tickets={tickets} perfil={perfilVista} comentarios={comentarios} registros={registros} onComentar={onComentar} onEstadoTicket={onEstadoTicket} onEditar={(campo,valor)=>onEditarCampo(exp.codigo,campo,valor)} onClose={()=>{ setSelExpId(null); setSelEtapa(null); }} onSaveDatos={saveDatos} onSubido={obj=>setEvi(ev=>[obj,...ev])}/>}
