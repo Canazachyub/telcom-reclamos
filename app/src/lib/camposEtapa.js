@@ -32,6 +32,8 @@ export const CAMPOS_ETAPA = {
       { k: "N_OSINERG_SIELSE", label: "Correlativo OSINERG (al Admitir)", tipo: "text", ph: "se genera al pulsar Admitir en SIELSE" },
       { k: "FECHA_ADMISION_SIELSE", label: "Fecha de admisión (SIELSE)", tipo: "date", ph: "dd/mm/aaaa — arranca el reloj de plazos" },
       { k: "DIRECCION_NOTIFICACION", label: "Dirección de notificación", tipo: "text", ph: "la registrada en la pestaña Reclamo de SIELSE" },
+      // — 📒 cuadernos 2026 (Fase 2): alimenta el padrón mensual y 1RA INSPECCIÓN
+      { k: "REQUIERE_INSPECCION", label: "¿Requiere inspección?", tipo: "select", opciones: ["", "SI", "NO", "ENCUESTA", "TRATO DIRECTO"] },
     ],
   },
   "Campo": {
@@ -68,6 +70,13 @@ export const CAMPOS_ETAPA = {
       { k: "FECHA_INFORME_OT", label: "Fecha en que se informó el resultado en SIELSE", tipo: "date", ph: "dd/mm/aaaa — plazo ≤2 d háb (penalidad 5.1)" },
       // — Mejoras a los TR (informe mensual/semestral de incumplimientos de contratistas de campo)
       { k: "CAUSA_INCUMPLIMIENTO_OT", label: "Si la OT llegó tarde: causa", tipo: "select", opciones: ["", "Contratista de campo demoró", "Acceso/ubicación del predio", "Clima", "Reprogramación de ELSE", "Datos errados del suministro", "Otro"] },
+      // — 📒 cuadernos 2026 (Fase 2): alimentan 1RA INSPECCIÓN, 14 CONTRASTES y 15 CARTAS CVR
+      { k: "FECHA_ENTREGA_CONSORCIO", label: "Fecha de entrega al consorcio", tipo: "date", ph: "cuando la OT sale al consorcio de campo" },
+      { k: "FECHA_EJECUTADO_OT", label: "Fecha EJECUTADO (consorcio)", tipo: "date" },
+      { k: "FECHA_DEVUELTO_OT", label: "Fecha DEVUELTO (consorcio)", tipo: "date" },
+      { k: "HORA_EJEC", label: "Hora de ejecución del contraste", tipo: "text", ph: "09:30" },
+      { k: "PRE_NOTIFICACION", label: "Pre-notificación del contraste", tipo: "date", ph: "carta/correo previo al usuario" },
+      { k: "N_CARTA_CVR", label: "N° carta de contraste (CVR)", tipo: "text", ph: "CVR-0112-2026" },
     ],
   },
   "SIELSE": {
@@ -125,6 +134,10 @@ export const CAMPOS_ETAPA = {
       // — transcripción SIELSE (§5 memoria)
       { k: "FECHA_RECEPCION_CLIENTE", label: "Fecha de recepción por el cliente", tipo: "date", ph: "va en el informe Con Resolución de SIELSE" },
       { k: "FECHA_NOTIFICACION_NOTARIAL", label: "Fecha de notificación notarial", tipo: "date", ph: "≤5° día desde emisión (penalidad 5.12)" },
+      // — 📒 cuadernos 2026 (Fase 2): alimentan 18 NOTARÍA y su retorno
+      { k: "FECHA_ENTREGA_NOTARIA", label: "Fecha de entrega a notaría", tipo: "date" },
+      { k: "FECHA_DEVUELTO_NOTARIA", label: "Fecha DEVUELTO de notaría", tipo: "date" },
+      { k: "FECHA_EJECUTADO_NOTIF", label: "Fecha EJECUTADO (notificación)", tipo: "date" },
     ],
   },
   "Apelación (JARU)": {
@@ -145,6 +158,14 @@ export const CAMPOS_ETAPA = {
       { k: "FECHA_ELEVACION", label: "Fecha de elevación a JARU", tipo: "date", ph: "≤5 d háb desde el recurso (penalidad 5.10)" },
       { k: "N_RESOLUCION_JARU", label: "N° de Resolución JARU", tipo: "text", ph: "cuando OSINERGMIN resuelva" },
       { k: "TIPO_RESOLUCION_OSINERG", label: "Tipo de Resolución OSINERG", tipo: "text", ph: "el sentido que fija JARU" },
+      // — 📒 cuadernos 2026 (Fase 2): completan el registro JARU del cuaderno 19
+      { k: "COD_MGD", label: "Cód. único de expediente MGD", tipo: "text" },
+      { k: "FECHA_ELEVACION_SIGED", label: "Fecha de elevación SIGED", tipo: "date" },
+      { k: "MONTO_DESPLAZADO", label: "Monto desplazado", tipo: "text", ph: "S/ o 'PARA 04/2027'" },
+      { k: "FECHA_RESJARU", label: "Fecha de RESJARU", tipo: "date" },
+      { k: "N_RES_JARU", label: "N° de resolución JARU", tipo: "text" },
+      { k: "DECISION_JARU", label: "Decisión JARU", tipo: "select", opciones: ["", "INFUNDADO", "FUNDADO", "FUNDADO EN PARTE", "IMPROCEDENTE", "NULO"] },
+      { k: "MEDIDA_CORRECTIVA", label: "Medida correctiva ELSE", tipo: "textarea" },
     ],
   },
   "Foliado": {
@@ -168,6 +189,12 @@ export const CAMPOS_ETAPA = {
       { k: "N_ACTA_TD", label: "N° de Acta de Trato Directo", tipo: "text", ph: "ej. ATD-103-2026 — solo si la vía es Trato Directo" },
       { k: "FECHA_REUNION_TD", label: "Fecha de la reunión de trato directo", tipo: "date", ph: "solo si la vía es Trato Directo" },
       { k: "TIPO_ACUERDO_TD", label: "Tipo de acuerdo", tipo: "select", opciones: ["", "Acuerdo Absoluto", "Acuerdo Parcial"] },
+      // — 📒 cuadernos 2026 (Fase 2): post-fundado — alimentan 17 CAMBIOS DE MEDIDOR y 21 SUSPENDIDOS
+      { k: "FECHA_CAMBIO_MEDIDOR", label: "Fecha de cambio de medidor / punto caliente", tipo: "date" },
+      { k: "TELEFONO_USUARIO", label: "Teléfono del usuario", tipo: "text", ph: "para coordinar el cambio de medidor" },
+      { k: "LECTURA_OK", label: "Fecha de lectura OK", tipo: "date" },
+      { k: "LECTURA_1", label: "Fecha de lectura 1", tipo: "date" },
+      { k: "LECTURA_2", label: "Fecha de lectura 2", tipo: "date" },
     ],
   },
 };

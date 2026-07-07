@@ -20,6 +20,7 @@ import SalaExpediente from "./components/SalaExpediente.jsx";
 import ValorizacionMensual from "./components/ValorizacionMensual.jsx";
 import MuestraTrimestral from "./components/MuestraTrimestral.jsx";
 import MejorasTR from "./components/MejorasTR.jsx";
+import Cuadernos from "./components/Cuadernos.jsx";
 import PenalidadesTope from "./components/PenalidadesTope.jsx";
 import { riesgoSAPGlobal } from "./lib/plazosNormativos.js";
 
@@ -593,7 +594,7 @@ function Reportes({ data, setSelExp, tickets, registros, datos, evidencias, perf
   let tot=0;
 
   return <>
-    <div className="tabs">{[["cartera","Cartera"],["diario","Diario"],["semanal","Semanal"],["mensual","Valorización (estimada)"],["mensualoficial","Valorización oficial"],["muestra","Muestra ACT-04"],["mejoras","Mejoras TR"]].map(x=><button key={x[0]} className={rtab===x[0]?"on":""} onClick={()=>setR(x[0])}>{x[1]}</button>)}</div>
+    <div className="tabs">{[["cartera","Cartera"],["diario","Diario"],["semanal","Semanal"],["mensual","Valorización (estimada)"],["mensualoficial","Valorización oficial"],["muestra","Muestra ACT-04"],["mejoras","Mejoras TR"],["cuadernos","📒 Cuadernos"]].map(x=><button key={x[0]} className={rtab===x[0]?"on":""} onClick={()=>setR(x[0])}>{x[1]}</button>)}</div>
     {rtab==="cartera" && <Cartera data={data} setSelExp={setSelExp}/>}
     {rtab==="diario" && <Card><h3>Reporte diario por trabajador</h3><div style={{overflowX:"auto"}}><table className="tbl"><thead><tr><th>Trabajador</th><th>Asignados</th><th>En atención</th><th>Cerrados</th><th>Vencidos</th></tr></thead><tbody>
       {porResp.map(o=><tr key={o.t.id}><td><span className="dot" style={{background:o.t.color}}/>{o.t.nombre}</td><td>{o.list.length}</td><td>{o.list.filter(x=>x.estadoCom==="EN ATENCION").length}</td><td>{o.list.filter(x=>x.estado==="Cerrado").length}</td><td style={{color:"#C9821B"}}>{o.list.filter(x=>x.vencido).length||0}</td></tr>)}
@@ -634,6 +635,7 @@ function Reportes({ data, setSelExp, tickets, registros, datos, evidencias, perf
     {rtab==="mensualoficial" && <ValorizacionMensual data={data} tickets={tickets} evidencias={evidencias} registros={registros} datos={datos} config={config} perfil={perfil}/>}
     {rtab==="muestra" && <MuestraTrimestral data={data} tickets={tickets} evidencias={evidencias} registros={registros} perfil={perfil} setSelExp={setSelExp}/>}
     {rtab==="mejoras" && <MejorasTR data={data} tickets={tickets} datos={datos} registros={registros} perfil={perfil}/>}
+    {rtab==="cuadernos" && <Cuadernos data={data} setSelExp={setSelExp} perfil={perfil}/>}
   </>;
 }
 

@@ -287,6 +287,37 @@ export async function loadCatalogos(){
   return null;
 }
 
+// ===== 📒 CUADERNOS 2026 (V2_06) =====
+// Contadores para el hub (total/huecos/cruces por tipo + por mes + url del Sheet generado).
+export async function loadCuadernosResumen(){
+  try{
+    const r = await fetch(GET_URL("cuadernos_resumen"));
+    const j = await r.json();
+    if(j && j.ok) return j;
+    sesionExpirada(j);
+  }catch(e){ /* sin backend */ }
+  return null;
+}
+// Filas de UN cuaderno: fuente='mensual' (+mes opcional 1-12) o un tipo de registros_control.
+export async function loadCuadernoDatos(fuente, mes){
+  try{
+    const url = GET_URL("cuadernos_datos") + "&fuente=" + encodeURIComponent(fuente) + (mes ? "&mes=" + mes : "");
+    const r = await fetch(url);
+    const j = await r.json();
+    if(Array.isArray(j)) return j;
+    sesionExpirada(j);
+  }catch(e){ /* sin backend */ }
+  return null;
+}
+// Alta (sin id) o edición (con id) de una fila de registros_control — queda en bitácora.
+export async function registroControl(payload){
+  return postAction("registro_control", payload);
+}
+// Regenera el Google Sheet «📒 CUADERNOS 2026» (solo Coordinación/Gerencia).
+export async function regenerarCuadernos(){
+  return postAction("regenerar_cuadernos", {});
+}
+
 // Escrituras (delegar / estado / evidencia / reporte). Real si hay sesión válida; simula si token mock.
 export async function postAction(action, payload){
   const token = getToken();

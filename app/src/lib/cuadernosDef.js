@@ -1,0 +1,130 @@
+// ===== 📒 CUADERNOS 2026 — definición espejo (frontend) =====
+// Espejo de CUADERNOS_DEF del backend (V2_06_Cuadernos.gs): conserva los TÍTULOS y
+// COLUMNAS originales de los 22 Excel. `campo` es la ruta dentro de la fila de las
+// hojas cuaderno_mensual / registros_control ('extra.x' = dentro del JSON extra).
+// Decisión de gerencia: fecha_evento reemplaza los encabezados-fecha; aquí la
+// periodicidad vuelve como FILTRO/agrupación.
+
+export const CUADERNOS = [
+  { key: "mensual", fuente: "mensual", emoji: "📅", nombre: "Padrón mensual (libros 1-12)",
+    titulo: "PADRÓN DE RECLAMOS 2026", agrupacion: "mes",
+    cols: [["N°", "item"], ["Cód. de Reclamo", "cod_reclamo"], ["N° de Solicitud", "n_solicitud"],
+           ["Ruta", "ruta"], ["NumeroOsinergmin", "numero_osinerg"], ["Suministro", "suministro"],
+           ["Evaluacion", "evaluacion"], ["OBS", "obs"], ["CORR", "corr"], ["RES", "res"],
+           ["FechaRegistroReclamo", "fecha_registro"], ["Fecha máxima de solución", "fecha_maxima"],
+           ["Reclamante", "reclamante"], ["Origen", "origen"]],
+    caso: "n_solicitud" },
+  { key: "resol_oficina", fuente: "RESOL_OFICINA", emoji: "📤", nombre: "Resoluciones a Oficina",
+    titulo: "EXPEDIENTE COMPLETO MÁS RESOLUCIONES ENVIADAS", agrupacion: "fecha_evento", cargo: true,
+    cols: [["RUTA", "ruta"], ["RECLAMO", "reclamo"], ["SUMINISTRO", "suministro"],
+           ["FECHA/REGISTRO", "f3"], ["CORRELATIVO", "correlativo"], ["RESOLUCIÓN", "resolucion"],
+           ["EMISIÓN", "f2"], ["OBSERVACIONES", "observaciones"]] },
+  { key: "1ra_inspeccion", fuente: "1RA_INSPECCION", emoji: "🔍", nombre: "1ra Inspección",
+    titulo: "RECLAMOS ENTREGADOS - 1ER INSPECCION A CONSORCIO ENERGIA", agrupacion: "fecha_evento", cargo: true,
+    cols: [["RUTA", "ruta"], ["RECLAMO", "reclamo"], ["SUMINISTRO", "suministro"],
+           ["SI/NO/ENCUESTA", "estado"], ["FECHA", "f4"], ["F. MÁXIMA", "extra.f_maxima"],
+           ["RECLAMANTE", "extra.reclamante"], ["EJECUTADO", "f2"], ["DEVUELTO", "f3"],
+           ["OBSERVACION", "observaciones"]] },
+  { key: "correlativos", fuente: "CORRELATIVO", emoji: "🔢", nombre: "13 Correlativos",
+    titulo: "CORRELATIVOS 2026 — serie heredada (SOLO ARCHIVO; la serie viva es C-xxxx-2026 TELCOM)",
+    agrupacion: null,
+    cols: [["RECLAMO", "reclamo"], ["CORRELATIVO", "correlativo"], ["RESOLUCIÓN", "resolucion"],
+           ["FECHA", "fecha_evento"], ["USUARIO", "usuario"], ["OBSERVACIONES", "observaciones"]] },
+  { key: "oposiciones", fuente: "OPOSICION", emoji: "⚖️", nombre: "13 Oposiciones",
+    titulo: "OPOSICIONES", agrupacion: null,
+    cols: [["RECLAMO", "reclamo"], ["FECHA DE ENTREGA", "fecha_evento"], ["FECHA RESO", "f2"],
+           ["USUARIO", "usuario"], ["SECTOR", "extra.sector"], ["OBSERVACIONES", "observaciones"]] },
+  { key: "contrastes", fuente: "CONTRASTE_MEGADO", emoji: "🧪", nombre: "14 Contrastes y Megado",
+    titulo: "PRUEBAS DE CONTRASTE Y MEGADO — CONSORCIO COMERCIAL", agrupacion: "fecha_evento", fase2: true,
+    cols: [["Suministro", "suministro"], ["ruta", "ruta"], ["Codigo de Reclamo", "reclamo"],
+           ["NombreSolicitante", "extra.solicitante"], ["Direccion", "extra.direccion"],
+           ["F. Registro", "extra.f_registro"], ["PRE-NOTIFICACIÓN", "f2"],
+           ["Fecha Notificación", "fecha_evento"], ["FECHA EJEC", "f3"], ["HORA EJEC", "extra.hora_ejec"],
+           ["F. MÁX DEVOLUCIÓN", "extra.f_max_devolucion"], ["OBSERVACION", "observaciones"]] },
+  { key: "cartas_cvr", fuente: "CARTA_CVR", emoji: "✉️", nombre: "15 Cartas de Contraste",
+    titulo: "CARTAS PARA NOTIFICAR POR CONSORCIO ENERGIA", agrupacion: "fecha_evento", cargo: true, fase2: true,
+    cols: [["RUTA", "ruta"], ["CARTA", "correlativo"], ["SUMINISTRO", "suministro"],
+           ["FECHA/REGISTRO", "f4"], ["USUARIO", "extra.usuario"], ["EJECUTADO", "f2"], ["DEVUELTO", "f3"]] },
+  { key: "reintegros", fuente: "REINTEGRO", emoji: "💰", nombre: "16 Reintegros",
+    titulo: "REINTEGROS 2026 (formato de estreno TELCOM)", agrupacion: null, fase2: true,
+    cols: [["RECLAMO", "reclamo"], ["SUMINISTRO", "suministro"], ["CORRELATIVO", "correlativo"],
+           ["RESOLUCIÓN", "resolucion"], ["FECHA", "fecha_evento"], ["MONTO REINTEGRO", "extra.monto"],
+           ["ESTADO", "estado"], ["OBSERVACIONES", "observaciones"]] },
+  { key: "cambios_medidor", fuente: "CAMBIO_MEDIDOR", emoji: "🔌", nombre: "17 Cambios de Medidor",
+    titulo: "CAMBIOS DE MEDIDOR Y RESOLUCIONES FUNDADAS", agrupacion: "fecha_evento", fase2: true,
+    cols: [["SUMINISTRO", "suministro"], ["Motivo OT", "extra.motivo_ot"], ["USUARIO", "extra.usuario"],
+           ["RECLAMO", "reclamo"], ["RESOLUCIÓN", "resolucion"], ["TELEFONO", "extra.telefono"],
+           ["F. MÁX EJECUCIÓN", "extra.f_max_ejec"]] },
+  { key: "contraste_resultado", fuente: "CONTRASTE_RESULTADO", emoji: "🧾", nombre: "17 Contrastes (resultado)",
+    titulo: "CONTRASTES — CONFORME / NO CONFORME", agrupacion: "fecha_evento", fase2: true,
+    cols: [["SUMINISTRO", "suministro"], ["USUARIO", "extra.usuario"], ["RECLAMO", "reclamo"],
+           ["TELEFONO", "extra.telefono"], ["CONTRASTE", "estado"],
+           ["F. MÁX EJECUCIÓN", "extra.f_max_ejec"], ["OBSERVACION", "observaciones"]] },
+  { key: "cargo_consorcio", fuente: "NOTIF_CONSORCIO", emoji: "📮", nombre: "18 Cargo Consorcio",
+    titulo: "RECLAMOS ENTREGADOS A CONSORCIO ENERGIA - RESOLUCIONES ENVIADAS", agrupacion: "fecha_evento", cargo: true,
+    cols: [["RUTA", "ruta"], ["RECLAMO", "reclamo"], ["SUMINISTRO", "suministro"],
+           ["CORRELATIVO", "correlativo"], ["RESOLUCIÓN", "resolucion"], ["FECHA RESO", "f4"],
+           ["EJECUTADOS", "f2"], ["DEVUELTO", "f3"], ["OBSERVACIONES", "observaciones"]] },
+  { key: "notaria", fuente: "NOTARIA", emoji: "🖋️", nombre: "18 Notaría",
+    titulo: "Oficina de reclamos para notaría — resoluciones para notificar", agrupacion: "fecha_evento", cargo: true,
+    cols: [["RUTA", "ruta"], ["RECLAMO", "reclamo"], ["SUMINISTRO", "suministro"],
+           ["CORRELATIVO", "correlativo"], ["RESOLUCIÓN", "resolucion"], ["FECHA RESO", "f4"],
+           ["DEVUELTO", "f2"], ["EJECUTADOS", "f3"], ["OBSERVACIONES", "observaciones"]] },
+  { key: "notaria_retorno", fuente: "NOTARIA_RETORNO", emoji: "✅", nombre: "18 Retorno Notaría",
+    titulo: "TELCOM con firma de notario para ejecución", agrupacion: "fecha_evento", cargo: true,
+    cols: [["RUTA", "ruta"], ["RECLAMO", "reclamo"], ["SUMINISTRO", "suministro"],
+           ["CORRELATIVO", "correlativo"], ["RESOLUCIÓN", "resolucion"], ["FECHA RESO", "f4"],
+           ["DEVUELTO DE NOTARIA", "f2"], ["EJECUTADOS", "f3"], ["OBSERVACIONES", "observaciones"]] },
+  { key: "apelaciones", fuente: "APELACION", emoji: "🏛️", nombre: "19 Apelaciones (JARU)",
+    titulo: "APELACIONES — REGISTRO JARU COMPLETO", agrupacion: null, semaforoElev: true,
+    cols: [["CÓD. MGD", "extra.mgd"], ["NRO DE RECLAMO", "reclamo"], ["SUMINISTRO", "suministro"],
+           ["RECURRENTE", "extra.recurrente"], ["RES. QUE APELA", "resolucion"],
+           ["F. APELACION", "fecha_evento"], ["PLAZO MÁX ELEV", "f2"], ["F. ELEV. SIGED", "extra.siged"],
+           ["N° OFICIO", "extra.oficio"], ["MONTO DESPLAZADO", "extra.monto_desplazado"],
+           ["F. INF. SIELSE", "extra.f_informe_sielse"], ["F. RESJARU", "extra.f_resjaru"],
+           ["N° RES JARU", "extra.n_res_jaru"], ["DECISIÓN JARU", "extra.decision_jaru"],
+           ["MEDIDA CORRECTIVA", "extra.medida_correctiva"], ["ESTADO", "estado"]] },
+  { key: "cargos_apelacion", fuente: "APELACION_CARGO", emoji: "📨", nombre: "19 Cargos de Apelación",
+    titulo: "CARGOS DE ENTREGA DE APELACIONES", agrupacion: "fecha_evento", cargo: true,
+    cols: [["CÓDIGO MGD", "extra.mgd"], ["NRO DE RECLAMO", "reclamo"], ["RECURRENTE", "extra.recurrente"],
+           ["OBSERVACIONES", "observaciones"], ["F. APELACION", "f2"], ["PLAZO MÁX ELEV", "f3"],
+           ["DESTINO", "extra.destino"]] },
+  { key: "cerrados", fuente: "CERRADO_ENTREGA", emoji: "📦", nombre: "20 Reclamos Cerrados",
+    titulo: "EXPEDIENTES DE RECLAMO TRAMITADOS EN PRIMERA INSTANCIA", agrupacion: "fecha_evento", cargo: true,
+    cols: [["NUMERO DE RECLAMO", "reclamo"], ["SUMINISTRO", "suministro"],
+           ["ESTADO DEL RECLAMO", "estado"], ["OBSERVACIONES", "observaciones"]] },
+  { key: "espera_cedula", fuente: "ESPERA_CEDULA", emoji: "⏳", nombre: "20 Espera de Cédula",
+    titulo: "EXPEDIENTES A LA ESPERA DE CÉDULA / SECCIONES", agrupacion: "seccion",
+    cols: [["NUMERO DE RECLAMO", "reclamo"], ["SUMINISTRO", "suministro"],
+           ["ESTADO DEL RECLAMO", "estado"], ["SECCIÓN", "extra.seccion"], ["OBSERVACIONES", "observaciones"]] },
+  { key: "suspendidos", fuente: "SUSPENDIDO", emoji: "⏸️", nombre: "21 Suspendidos p/ Reintegro",
+    titulo: "SUSPENDIDOS PARA REINTEGRO — control de lecturas", agrupacion: null, fase2: true,
+    cols: [["ESTADO", "estado"], ["RECLAMO", "reclamo"], ["SUMINISTRO", "suministro"],
+           ["CORRELATIVO", "correlativo"], ["RESOLUCIÓN", "resolucion"],
+           ["F. cambio medidor", "extra.f_cambio_medidor"], ["Lectura ok", "extra.lectura_ok"],
+           ["Lectura 1", "extra.lectura_1"], ["Lectura 2", "extra.lectura_2"],
+           ["Observacion", "observaciones"], ["DÍAS SUSP.", "extra.dias_susp"]] },
+  { key: "sectores", fuente: "SECTOR", emoji: "🗺️", nombre: "22 Sectores (otras sedes)",
+    titulo: "SECTORES — reclamos de otras sedes", agrupacion: null,
+    cols: [["Cód. de Reclamo", "extra.cod_reclamo"], ["NumeroOsinergmin", "reclamo"],
+           ["Suministro", "suministro"], ["Reclamante", "extra.reclamante"],
+           ["FechaRegistro", "fecha_evento"], ["F. máxima", "f2"], ["F. Resolución", "extra.f_resolucion"],
+           ["Sector", "extra.sector"], ["OBSERVACIONES", "observaciones"]] },
+];
+
+export const MESES_NOMBRE = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio",
+  "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+// valor de una celda: campo directo o dentro del JSON `extra`
+export function valCuaderno(fila, campo){
+  if (campo.indexOf("extra.") === 0){
+    if (!fila.__extra){
+      try { fila.__extra = typeof fila.extra === "string" ? JSON.parse(fila.extra || "{}") : (fila.extra || {}); }
+      catch(e){ fila.__extra = {}; }
+    }
+    const v = fila.__extra[campo.slice(6)];
+    return v == null ? "" : String(v);
+  }
+  const v = fila[campo];
+  return v == null ? "" : String(v);
+}
