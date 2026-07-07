@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { ETAPAS, FLUJO, fmtFecha, wColor } from "../lib/model.js";
+import { ETAPAS, FLUJO, fmtFecha, wColor, TEAM } from "../lib/model.js";
 import { toast } from "./ui.jsx";
 import { GuiaSielseBox } from "../lib/guiaSielse.jsx";
 import { CAMPOS_ETAPA, CAMPOS_POR_FALLO } from "../lib/camposEtapa.js";
@@ -306,7 +306,7 @@ function CalendarioRelojes({ relojes, ladoALado }){
   );
 }
 
-export default function SalaExpediente({ exp, tickets, evidencias, registros, comentarios, perfil, datos, correos, onComentar, onTrabajar, onClose, onEditar, onEstadoTicket, onEliminar, ladoALado }){
+export default function SalaExpediente({ exp, tickets, evidencias, registros, comentarios, perfil, datos, correos, onComentar, onTrabajar, onClose, onEditar, onEstadoTicket, onReasignarTicket, onEliminar, ladoALado }){
   const [texto, setTexto] = useState("");
   const [verFicha, setVerFicha] = useState(false);
   const [etapaSel, setEtapaSel] = useState(null);   // etapa clickeada en la línea de tiempo
@@ -558,6 +558,14 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
           <div style={S.resp}>
             <span style={S.ava(act?wColor(act.respId):"#8B9BB1")}>{iniciales(act?act.responsable:"—")}</span>
             <span>Encargado ahora: <b style={{color:"var(--titulo)"}}>{act?act.responsable:(cerrado?"— (cerrado)":"—")}</b></span>
+            {/* Reasignar la etapa actual — SOLO Coordinador/Gerente (upd_ticket, gate de jefe) */}
+            {act && onReasignarTicket && (perfil?.rol==="COORDINADOR"||perfil?.rol==="GERENTE") &&
+              <select value={act.respId} title={"Reasignar «"+act.etapa+"» a otro responsable"}
+                onChange={e=>{ const m=TEAM.find(x=>x.id===+e.target.value); onReasignarTicket(act, +e.target.value, m?m.nombre:"Externo / Call Center"); }}
+                style={{ background:"var(--card)", color:"var(--tx)", border:`1px solid ${wColor(act.respId)}`, borderRadius:8, padding:"4px 7px", fontSize:12 }}>
+                {TEAM.map(m=><option key={m.id} value={m.id}>{m.corto} · {m.rol}</option>)}
+                <option value={0}>Externo / Call Center</option>
+              </select>}
             {sig && <><span style={{color:"var(--mut2)"}}>→</span>
               <span style={{color:"var(--mut)"}}>Sigue: {sig.etapa} · <b style={{color:"var(--tx)"}}>{sig.responsable||"por asignar"}</b></span></>}
             {ladoALado
