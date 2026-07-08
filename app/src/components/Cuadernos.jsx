@@ -174,60 +174,64 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
     } else toast("No se pudo subir: " + (r && r.error || "sin respuesta"));
   };
 
-  // 🖨 cargo imprimible: bloques por fecha con ENTREGADO/RECIBIDO en blanco (mockup 8.4).
-  // Respeta el PERÍODO elegido en el filtro (mes/fecha) — como los Excel, ahora unificado pero filtrable.
+  // ===== impresión FORMAL y compacta (cargos + padrón): membrete, tabla densa, encabezado
+  //       repetido por página, listo para imprimir y entregar. Estilo compartido. =====
+  const IMP_STYLE = `
+    @page{size:landscape;margin:10mm 8mm}
+    *{box-sizing:border-box}
+    body{font-family:Arial,Helvetica,sans-serif;font-size:8px;color:#000;margin:0}
+    .head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1.5px solid #000;padding-bottom:3px;margin-bottom:6px}
+    .head .emp{font-weight:bold;font-size:11px;line-height:1.05}
+    .head .con{font-size:6.8px;color:#222;margin-top:1px}
+    .head .fol{font-size:6.8px;color:#444;text-align:right;white-space:nowrap}
+    .tit{font-size:8.5px;font-weight:bold;text-transform:uppercase;margin:5px 0 1px}
+    .met{font-size:6.8px;color:#333;margin-bottom:3px}
+    table{border-collapse:collapse;width:100%;table-layout:fixed;margin-bottom:3px}
+    th,td{border:.5px solid #666;padding:1px 3px;text-align:left;vertical-align:top;font-size:7px;line-height:1.12;word-wrap:break-word;overflow-wrap:anywhere}
+    th{background:#e8e8e8;font-weight:bold;font-size:6.4px;text-transform:uppercase}
+    thead{display:table-header-group}
+    tr{page-break-inside:avoid}
+    td.n,th.n{width:18px;text-align:center}
+    .firmas{display:flex;gap:24px;flex-wrap:wrap;margin:7px 0 13px;page-break-inside:avoid}
+    .firmas .c{flex:1 1 40%;min-width:220px}
+    .firmas .lab{font-size:6.8px;font-weight:bold}
+    .firmas .ln{border-bottom:.7px solid #000;height:15px;margin-top:8px}
+    .firmas .sub{font-size:6px;color:#555;margin-top:1px}
+  `;
+  const impHead = fol => `<div class="head">
+    <div><div class="emp">INGENIERIA TELCOM E.I.R.L.</div>
+      <div class="con">RUC 20602277900 · CP-026-2026-ELSE · Atención de Reclamos — Electro Sur Este S.A.A.</div></div>
+    <div class="fol">${fol || ""}</div></div>`;
+  const _thead = `<thead><tr><th class="n">N°</th>${colsVista.map(c => `<th>${c[0]}</th>`).join("")}</tr></thead>`;
+  const _trs = arr => arr.map((f, i) => `<tr><td class="n">${i + 1}</td>${colsVista.map(c => `<td>${fmtCel(valCuaderno(f, c[1]))}</td>`).join("")}</tr>`).join("");
+  const _abrirImprimir = html => { const w = window.open("", "_blank"); w.document.write(html); w.document.close(); w.focus(); w.print(); };
+
+  // 🖨 cargo imprimible: bloques por fecha con ENTREGADO/RECIBIDO/FIRMA para firmar y entregar.
   const imprimirCargo = () => {
     const porFecha = {};
     filtradas.forEach(f => { const k = String(f.fecha_evento || "s/f").slice(0, 10); (porFecha[k] = porFecha[k] || []).push(f); });
-    const bloques = Object.keys(porFecha).sort().map(fecha => {
-      const rows = porFecha[fecha].map((f, i) =>
-        `<tr><td>${i + 1}</td>${colsVista.map(c => `<td>${fmtCel(valCuaderno(f, c[1]))}</td>`).join("")}</tr>`).join("");
-      return `<h3>${sel.titulo}${fecha !== "s/f" ? " — " + fmtF(fecha) : ""}</h3>
-        <table><thead><tr><th>N°</th>${colsVista.map(c => `<th>${c[0]}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>
-        <div class="firmas">
-          <div class="fila"><span class="et">ENTREGADO POR:</span><span class="ln"></span></div>
-          <div class="fila"><span class="et">RECIBIDO POR:</span><span class="ln"></span></div>
-          <div class="fila"><span class="et">DNI:</span><span class="ln corto"></span>
-            <span class="et">FECHA / HORA:</span><span class="ln corto"></span></div>
-          <div class="fila"><span class="et">FIRMA / SELLO:</span><span class="ln"></span></div>
-        </div>`;
-    }).join("");
-    const w = window.open("", "_blank");
-    w.document.write(`<html><head><title>Cargo — ${sel.nombre} — ${periodoLabel()}</title><style>
-      body{font-family:Arial,sans-serif;font-size:11px;margin:24px;color:#111}
-      h2{margin:0 0 2px}h3{margin:18px 0 6px}
-      table{border-collapse:collapse;width:100%}td,th{border:1px solid #333;padding:3px 5px;text-align:left}
-      th{background:#eee}
-      .firmas{margin:20px 0 30px}
-      .firmas .fila{display:flex;align-items:flex-end;gap:10px;margin:16px 0}
-      .firmas .et{font-weight:bold;white-space:nowrap;font-size:12px}
-      .firmas .ln{flex:1;border-bottom:1px solid #333;height:22px}
-      .firmas .ln.corto{flex:0 0 210px}
-      @media print{.firmas{page-break-inside:avoid}}</style></head><body>
-      <h2>INGENIERIA TELCOM E.I.R.L. · CP-026-2026-ELSE</h2>
-      <div>📒 <b>${sel.nombre}</b> — período: <b>${periodoLabel()}</b> · ${filtradas.length} registro(s)
-        · cargo generado por la plataforma ${new Date().toLocaleString("es-PE")}</div>
+    const firmas = `<div class="firmas">
+        <div class="c"><div class="lab">ENTREGADO POR</div><div class="ln"></div><div class="sub">Nombre · DNI · firma</div></div>
+        <div class="c"><div class="lab">RECIBIDO POR</div><div class="ln"></div><div class="sub">Nombre · DNI · firma y sello</div></div>
+        <div class="c"><div class="lab">FECHA / HORA</div><div class="ln"></div></div>
+      </div>`;
+    const bloques = Object.keys(porFecha).sort().map(fecha =>
+      `<div class="tit">${sel.titulo}${fecha !== "s/f" ? " — " + fmtF(fecha) : ""}</div>
+       <div class="met">${porFecha[fecha].length} registro(s)</div>
+       <table>${_thead}<tbody>${_trs(porFecha[fecha])}</tbody></table>${firmas}`).join("");
+    _abrirImprimir(`<html><head><title>Cargo — ${sel.nombre} — ${periodoLabel()}</title><style>${IMP_STYLE}</style></head><body>
+      ${impHead("Período: " + periodoLabel() + " · " + new Date().toLocaleString("es-PE"))}
       ${bloques}</body></html>`);
-    w.document.close(); w.print();
   };
 
-  // 🖨 imprimir / PDF: la vista actual (respeta el filtro) como tabla limpia. El navegador
-  // ofrece «Guardar como PDF». Sirve para el padrón y cualquier cuaderno que no sea cargo.
+  // 🖨 imprimir / PDF: la vista actual (respeta el filtro) como tabla formal densa (padrón y no-cargos).
   const imprimirTabla = () => {
-    const rows = filtradas.map((f, i) =>
-      `<tr><td>${i + 1}</td>${colsVista.map(c => `<td>${fmtCel(valCuaderno(f, c[1]))}</td>`).join("")}</tr>`).join("");
-    const w = window.open("", "_blank");
-    w.document.write(`<html><head><title>${sel.nombre} — ${periodoLabel()}</title><style>
-      body{font-family:Arial,sans-serif;font-size:10px;margin:18px;color:#111}
-      h2{margin:0 0 2px}table{border-collapse:collapse;width:100%}
-      td,th{border:1px solid #333;padding:2px 5px;text-align:left}th{background:#eee}
-      @media print{@page{size:landscape}}</style></head><body>
-      <h2>INGENIERIA TELCOM E.I.R.L. · CP-026-2026-ELSE</h2>
-      <div>📒 <b>${sel.nombre}</b> — período: <b>${periodoLabel()}</b> · ${filtradas.length} registro(s)
-        · ${new Date().toLocaleString("es-PE")}</div><br>
-      <table><thead><tr><th>N°</th>${colsVista.map(c => `<th>${c[0]}</th>`).join("")}</tr></thead>
-        <tbody>${rows}</tbody></table></body></html>`);
-    w.document.close(); w.print();
+    _abrirImprimir(`<html><head><title>${sel.nombre} — ${periodoLabel()}</title><style>${IMP_STYLE}</style></head><body>
+      ${impHead(new Date().toLocaleString("es-PE"))}
+      <div class="tit">${sel.titulo || sel.nombre}</div>
+      <div class="met">Período: <b>${periodoLabel()}</b> · ${filtradas.length} registro(s)</div>
+      <table>${_thead}<tbody>${_trs(filtradas)}</tbody></table>
+      </body></html>`);
   };
 
   // 🧮 exportar a Excel/CSV la vista actual (para trabajarla también en Excel). Sin fugas: solo lo filtrado.
