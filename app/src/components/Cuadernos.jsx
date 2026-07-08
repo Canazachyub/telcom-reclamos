@@ -77,7 +77,7 @@ function semaforoElev(fila) {          // solo APELACION: plazo m√°x de elevaci√
   return <Tag bg="#E8F6EC" color="#14532d">{plazo.slice(5)}</Tag>;
 }
 
-export default function Cuadernos({ data, setSelExp, perfil }) {
+export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto }) {
   const [resumen, setResumen] = useState(null);
   const [sel, setSel] = useState(null);            // def del cuaderno abierto
   const [filas, setFilas] = useState(null);
@@ -95,10 +95,17 @@ export default function Cuadernos({ data, setSelExp, perfil }) {
   useEffect(() => { cargarResumen(); }, []);
 
   const recargar = () => loadCuadernoDatos(sel.fuente).then(setFilas);
-  const abrir = def => {
+  const abrirCuaderno = def => {
     setSel(def); setFilas(null); setFiltro(""); setDia(""); setQ(""); setTope(300);
     loadCuadernoDatos(def.fuente).then(setFilas);
   };
+  // deep-link: abrir un cuaderno concreto (por `fuente` o `key`) al recibir la orden desde la Sala
+  useEffect(() => {
+    if (!abrir) return;
+    const def = CUADERNOS.find(c => c.fuente === abrir || c.key === abrir);
+    if (def) abrirCuaderno(def);
+    onAbierto && onAbierto();
+  }, [abrir]);
 
   // expediente de la plataforma para una fila (cruce por NumeroOsinerg / CodigoReclamo)
   const recDe = fila => {
@@ -268,7 +275,7 @@ export default function Cuadernos({ data, setSelExp, perfil }) {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(215px,1fr))", gap: 10 }}>
             {defs.map(def => {
               const est = estDe(def);
-              return <div key={def.key} className="clk" onClick={() => abrir(def)}
+              return <div key={def.key} className="clk" onClick={() => abrirCuaderno(def)}
                 style={{ cursor: "pointer", background: "var(--card)", border: "1px solid var(--bd)", borderRadius: 10, padding: "11px 13px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
                   <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--tx)", lineHeight: 1.25 }}>{def.nombre}</span>

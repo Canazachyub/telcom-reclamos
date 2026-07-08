@@ -311,7 +311,7 @@ function CalendarioRelojes({ relojes, ladoALado }){
   );
 }
 
-export default function SalaExpediente({ exp, tickets, evidencias, registros, comentarios, perfil, datos, correos, onComentar, onTrabajar, onClose, onEditar, onEstadoTicket, onReasignarTicket, onTomarTarea, onEliminar, ladoALado }){
+export default function SalaExpediente({ exp, tickets, evidencias, registros, comentarios, perfil, datos, correos, onComentar, onTrabajar, onClose, onEditar, onEstadoTicket, onReasignarTicket, onTomarTarea, onAbrirCuaderno, onEliminar, ladoALado }){
   const [texto, setTexto] = useState("");
   const [verFicha, setVerFicha] = useState(false);
   const [etapaSel, setEtapaSel] = useState(null);   // etapa clickeada en la línea de tiempo
@@ -622,20 +622,33 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
             {cuadRegs==null && <div className="muted" style={{fontSize:12}}>Cargando cuadernos…</div>}
             {cuadRegs!=null && cuadRegs.length===0 && <div className="muted" style={{fontSize:12}}>Este expediente aún no figura en ningún cuaderno.</div>}
             {cuadRegs!=null && cuadRegs.length>0 && (()=>{
-              const porTipo={}; cuadRegs.forEach(r=>{ (porTipo[r.tipo]=porTipo[r.tipo]||[]).push(r); });
-              const campo=(r,k)=>{ const v=valCuaderno(r,k); return /^\d{4}-\d{2}-\d{2}/.test(String(v))?fmtFecha(String(v).slice(0,10)):v; };
-              return <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                {Object.keys(porTipo).map(tipo=>{ const def=CUAD_POR_FUENTE[tipo]; return (
-                  <div key={tipo} style={{borderLeft:"3px solid var(--linkTx)",paddingLeft:9}}>
-                    <div style={{fontSize:12.5,fontWeight:700,color:"var(--tx)"}}>{def?def.emoji+" "+def.nombre:tipo} <span className="muted" style={{fontWeight:400}}>· {porTipo[tipo].length}</span></div>
-                    {porTipo[tipo].slice(0,6).map((r,i)=>{
-                      const partes=[campo(r,"fecha_evento"),r.correlativo,r.resolucion,r.estado,campo(r,"f2"),r.observaciones]
-                        .map(x=>String(x==null?"":x).trim()).filter(Boolean);
-                      return <div key={i} className="muted" style={{fontSize:11.5,marginTop:2}}>• {partes.join(" · ")||"(sin datos)"}</div>;
-                    })}
-                    {porTipo[tipo].length>6 && <div className="muted" style={{fontSize:11,marginTop:2}}>… y {porTipo[tipo].length-6} más (ver en 📒 Cuadernos)</div>}
-                  </div>
-                );})}
+              // LÍNEA DE TIEMPO: los pasos registrados en los cuadernos, en orden cronológico.
+              const det=(r)=>{ const p=[r.correlativo,r.resolucion,r.estado,r.observaciones]
+                .map(x=>String(x==null?"":x).trim()).filter(Boolean); return p.join(" · "); };
+              const orden=[...cuadRegs].map(r=>({r,f:String(r.fecha_evento||"").slice(0,10)}))
+                .sort((a,b)=>(a.f||"9999")<(b.f||"9999")?-1:1);
+              return <div>
+                {orden.map(({r,f},i)=>{
+                  const def=CUAD_POR_FUENTE[r.tipo], nombre=def?def.nombre:r.tipo;
+                  const detalle=det(r);
+                  return <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start",position:"relative",paddingBottom:i<orden.length?12:0}}>
+                    <span style={{position:"absolute",left:9,top:19,bottom:0,width:2,background:"var(--bd)"}}/>
+                    <span title="Paso registrado" style={{flexShrink:0,width:20,height:20,borderRadius:"50%",background:"#1E8E5A",color:"#fff",fontSize:12,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",zIndex:1}}>✓</span>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
+                        <span onClick={()=>onAbrirCuaderno&&onAbrirCuaderno(r.tipo)}
+                          title="Abrir este cuaderno" style={{fontSize:12.5,fontWeight:700,color:"var(--linkTx)",cursor:onAbrirCuaderno?"pointer":"default",textDecoration:onAbrirCuaderno?"underline":"none",textUnderlineOffset:2}}>{nombre}</span>
+                        <span className="muted" style={{fontSize:11}}>{f?fmtFecha(f):"sin fecha"}</span>
+                      </div>
+                      {detalle && <div className="muted" style={{fontSize:11,marginTop:1}}>{detalle}</div>}
+                    </div>
+                  </div>;
+                })}
+                {/* estado actual (SIELSE) — dónde está AHORA: lo que sigue por hacer */}
+                <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                  <span title="Etapa actual" style={{flexShrink:0,width:20,height:20,borderRadius:"50%",background:"var(--card)",border:"2px solid var(--linkTx)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1}}/>
+                  <div style={{fontSize:12,color:"var(--tx)"}}><b>Ahora:</b> {cerrado?"Expediente cerrado":etapaActual} <span className="muted">· etapa actual según SIELSE</span></div>
+                </div>
               </div>;
             })()}
           </div>
