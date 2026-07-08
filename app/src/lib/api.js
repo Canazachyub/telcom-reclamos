@@ -346,10 +346,10 @@ export async function registroControl(payload){
 export async function regenerarCuadernos(){
   return postAction("regenerar_cuadernos", {});
 }
-// PEGAR DE EXCEL: sube N filas a un cuaderno (registros_control) — upsert idempotente por
-// llave natural, así pegar el mismo día dos veces actualiza y no duplica. Queda en bitácora.
-export async function cuadernosBulk(tipo, rows){
-  return postAction("cuadernos_bulk", { tipo, rows });
+// PEGAR DE EXCEL: sube N filas a un cuaderno — upsert idempotente por llave natural, así pegar
+// dos veces actualiza y no duplica. payload = {tipo, rows} (temáticos) o {hoja:'cuaderno_mensual', rows}.
+export async function cuadernosBulk(payload){
+  return postAction("cuadernos_bulk", payload);
 }
 
 // Escrituras (delegar / estado / evidencia / reporte). Real si hay sesión válida; simula si token mock.

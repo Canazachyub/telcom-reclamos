@@ -117,6 +117,9 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
 
   // campo de fecha del cuaderno: el padrón filtra por FechaRegistroReclamo; los demás por fecha_evento
   const fechaCampo = sel && sel.fuente === "mensual" ? "fecha_registro" : "fecha_evento";
+  // columnas de la vista: la tabla ya pone su propio N°, así que ocultamos la columna 'item'
+  // (evita el doble «N°» del padrón). Se usa en tabla, export, cargo e impresión.
+  const colsVista = sel ? sel.cols.filter(c => c[1] !== "item") : [];
   const filtradas = useMemo(() => {
     if (!filas) return [];
     let out = filas;
@@ -161,9 +164,10 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
     return op ? op[1] : filtro;
   };
 
-  // subir filas pegadas de Excel (upsert idempotente por sesión)
+  // subir filas pegadas de Excel (upsert idempotente por sesión) — padrón o temático
   const subirPegado = async rows => {
-    const r = await cuadernosBulk(sel.fuente, rows);
+    const payload = sel.fuente === "mensual" ? { hoja: "cuaderno_mensual", rows } : { tipo: sel.fuente, rows };
+    const r = await cuadernosBulk(payload);
     if (r && r.ok) {
       toast(`Subido: ${r.nuevos} nuevo(s) · ${r.actualizados} actualizado(s)`);
       setPegar(false); recargar(); cargarResumen();
@@ -177,9 +181,9 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
     filtradas.forEach(f => { const k = String(f.fecha_evento || "s/f").slice(0, 10); (porFecha[k] = porFecha[k] || []).push(f); });
     const bloques = Object.keys(porFecha).sort().map(fecha => {
       const rows = porFecha[fecha].map((f, i) =>
-        `<tr><td>${i + 1}</td>${sel.cols.map(c => `<td>${fmtCel(valCuaderno(f, c[1]))}</td>`).join("")}</tr>`).join("");
+        `<tr><td>${i + 1}</td>${colsVista.map(c => `<td>${fmtCel(valCuaderno(f, c[1]))}</td>`).join("")}</tr>`).join("");
       return `<h3>${sel.titulo}${fecha !== "s/f" ? " — " + fmtF(fecha) : ""}</h3>
-        <table><thead><tr><th>N°</th>${sel.cols.map(c => `<th>${c[0]}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>
+        <table><thead><tr><th>N°</th>${colsVista.map(c => `<th>${c[0]}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>
         <div class="firmas">
           <div class="fila"><span class="et">ENTREGADO POR:</span><span class="ln"></span></div>
           <div class="fila"><span class="et">RECIBIDO POR:</span><span class="ln"></span></div>
@@ -207,12 +211,31 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
     w.document.close(); w.print();
   };
 
+  // 🖨 imprimir / PDF: la vista actual (respeta el filtro) como tabla limpia. El navegador
+  // ofrece «Guardar como PDF». Sirve para el padrón y cualquier cuaderno que no sea cargo.
+  const imprimirTabla = () => {
+    const rows = filtradas.map((f, i) =>
+      `<tr><td>${i + 1}</td>${colsVista.map(c => `<td>${fmtCel(valCuaderno(f, c[1]))}</td>`).join("")}</tr>`).join("");
+    const w = window.open("", "_blank");
+    w.document.write(`<html><head><title>${sel.nombre} — ${periodoLabel()}</title><style>
+      body{font-family:Arial,sans-serif;font-size:10px;margin:18px;color:#111}
+      h2{margin:0 0 2px}table{border-collapse:collapse;width:100%}
+      td,th{border:1px solid #333;padding:2px 5px;text-align:left}th{background:#eee}
+      @media print{@page{size:landscape}}</style></head><body>
+      <h2>INGENIERIA TELCOM E.I.R.L. · CP-026-2026-ELSE</h2>
+      <div>📒 <b>${sel.nombre}</b> — período: <b>${periodoLabel()}</b> · ${filtradas.length} registro(s)
+        · ${new Date().toLocaleString("es-PE")}</div><br>
+      <table><thead><tr><th>N°</th>${colsVista.map(c => `<th>${c[0]}</th>`).join("")}</tr></thead>
+        <tbody>${rows}</tbody></table></body></html>`);
+    w.document.close(); w.print();
+  };
+
   // 🧮 exportar a Excel/CSV la vista actual (para trabajarla también en Excel). Sin fugas: solo lo filtrado.
   const exportarCSV = () => {
     const esc = v => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
-    const head = ["N°", ...sel.cols.map(c => c[0])];
+    const head = ["N°", ...colsVista.map(c => c[0])];
     const lineas = [head.map(esc).join(";")];
-    filtradas.forEach((f, i) => lineas.push([i + 1, ...sel.cols.map(c => fmtCel(valCuaderno(f, c[1])))].map(esc).join(";")));
+    filtradas.forEach((f, i) => lineas.push([i + 1, ...colsVista.map(c => fmtCel(valCuaderno(f, c[1])))].map(esc).join(";")));
     const blob = new Blob(["﻿" + lineas.join("\r\n")], { type: "text/csv;charset=utf-8;" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -319,11 +342,12 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
             {dia && <button className="btn sm" title="Quitar filtro de día" onClick={() => setDia("")}>✕</button>}
           </label>
           <input placeholder="🔎 buscar…" value={q} onChange={e => setQ(e.target.value)} style={{ minWidth: 130 }} />
-          {sel.fuente !== "mensual" && <>
-            <button className="btn sm" onClick={() => setEdit({ tipo: sel.fuente, fecha_evento: dia || hoyISO() })}>➕ Registrar</button>
-            <button className="btn sm" title="Copia filas de tu Excel y pégalas aquí — se suben al sistema" onClick={() => setPegar(true)}>📋 Pegar de Excel</button>
-          </>}
-          {sel.fuente !== "mensual" && <button className="btn sm" title="Imprimir el cargo del período/día filtrado" onClick={imprimirCargo}>🖨 Cargo</button>}
+          {sel.fuente !== "mensual" &&
+            <button className="btn sm" onClick={() => setEdit({ tipo: sel.fuente, fecha_evento: dia || hoyISO() })}>➕ Registrar</button>}
+          <button className="btn sm" title="Copia filas de tu Excel y pégalas aquí — se suben al sistema (no duplica)" onClick={() => setPegar(true)}>📋 Pegar de Excel</button>
+          {sel.fuente !== "mensual"
+            ? <button className="btn sm" title="Imprimir el cargo del período/día filtrado (ENTREGADO/RECIBIDO)" onClick={imprimirCargo}>🖨 Cargo</button>
+            : <button className="btn sm" title="Imprimir / guardar como PDF la vista actual" onClick={imprimirTabla}>🖨 Imprimir (PDF)</button>}
           <button className="btn sm" title="Descargar la vista actual (respeta el filtro) para abrirla en Excel" onClick={exportarCSV}>🧮 Excel</button>
         </div>
       </div>
@@ -338,7 +362,7 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
           <thead><tr>
             <th>N°</th>
             {sel.semaforoElev && <th>⚠ ELEV</th>}
-            {sel.cols.map(c => <th key={c[0]}>{c[0]}</th>)}
+            {colsVista.map(c => <th key={c[0]}>{c[0]}</th>)}
             {sel.fuente !== "mensual" && <th></th>}
           </tr></thead>
           <tbody>
@@ -349,7 +373,7 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
                 title={rec ? "Abrir la Sala del expediente" : "Caso aún no cargado en la plataforma (2025 / ene-mar 2026)"}>
                 <td>{i + 1}</td>
                 {sel.semaforoElev && <td>{semaforoElev(f)}</td>}
-                {sel.cols.map(c => {
+                {colsVista.map(c => {
                   const v = valCuaderno(f, c[1]);
                   const esFecha = /^(\d{4})-(\d{2})-(\d{2})/.test(v);
                   return <td key={c[0]} style={!v ? { background: "#FFF8E6" } : undefined}>{esFecha ? fmtF(v) : v}</td>;
@@ -360,7 +384,7 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
                   </td>}
               </tr>;
             })}
-            {filas && !filtradas.length && <tr><td colSpan={sel.cols.length + 3} className="muted">Sin filas {filtro ? "para ese período" : "aún"}.</td></tr>}
+            {filas && !filtradas.length && <tr><td colSpan={colsVista.length + 3} className="muted">Sin filas {filtro ? "para ese período" : "aún"}.</td></tr>}
           </tbody>
         </table>
       </div>
@@ -464,7 +488,9 @@ function ComoFunciona() {
  * mapea, EN ORDEN, a las columnas del cuaderno (def.cols). El «día del cargo» se aplica
  * como fecha_evento a las filas que no traigan la suya. Subida = upsert idempotente. */
 function PegarExcel({ def, diaInicial, onCerrar, onSubir }) {
-  const cols = (def.cols || []).filter(c => c[1] && c[1] !== "item");
+  const esMensual = def.fuente === "mensual";
+  // columnas a pegar: sin «N°» (item) ni «Origen» (lo pone el sistema). El resto, en orden.
+  const cols = (def.cols || []).filter(c => c[1] && c[1] !== "item" && c[1] !== "origen");
   const [dia, setDia] = useState(diaInicial);
   const [texto, setTexto] = useState("");
   const [subiendo, setSubiendo] = useState(false);
@@ -479,7 +505,7 @@ function PegarExcel({ def, diaInicial, onCerrar, onSubir }) {
         else if (val) row[path] = val;
       });
       if (Object.keys(extra).length) row.extra = extra;
-      if (!row.fecha_evento && dia) row.fecha_evento = dia;
+      if (!esMensual && !row.fecha_evento && dia) row.fecha_evento = dia;
       return row;
     });
   }, [texto, dia]);
@@ -491,16 +517,20 @@ function PegarExcel({ def, diaInicial, onCerrar, onSubir }) {
     <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, padding: 18, width: "min(900px,96vw)", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 12px 40px rgba(0,0,0,.25)" }}>
       <h3 style={{ marginTop: 0 }}>📋 Pegar desde Excel — {def.nombre}</h3>
       <div className="muted" style={{ fontSize: 11.5, marginBottom: 8 }}>
-        Copia las filas de tu Excel (sin la columna «N°») y pégalas abajo. Las columnas deben ir <b>en este orden</b>:
+        Copia de tu Excel <b>solo estas columnas, en este orden</b> (NO copies la columna «N°», y pega SIN encabezado).
+        Pegar dos veces la misma fila la <b>actualiza</b>, no la duplica.
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 10 }}>
         {cols.map((c, i) => <span key={c[0]} style={{ fontSize: 10.5, background: "var(--card2)", border: "1px solid var(--bd)", borderRadius: 6, padding: "2px 7px" }}>{i + 1}. {c[0]}</span>)}
       </div>
-      <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
-        <span className="muted">📅 Día del cargo (fecha del evento):</span>
-        <input type="date" value={dia} onChange={e => setDia(e.target.value)} />
-        <span className="muted" style={{ fontSize: 10.5 }}>se aplica a las filas sin fecha propia</span>
-      </label>
+      {!esMensual &&
+        <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+          <span className="muted">📅 Día del cargo (fecha del evento):</span>
+          <input type="date" value={dia} onChange={e => setDia(e.target.value)} />
+          <span className="muted" style={{ fontSize: 10.5 }}>se aplica a las filas sin fecha propia</span>
+        </label>}
+      {esMensual &&
+        <div className="muted" style={{ fontSize: 10.5, marginBottom: 8 }}>El mes del padrón se toma solo de la columna «FechaRegistroReclamo».</div>}
       <textarea value={texto} onChange={e => setTexto(e.target.value)} placeholder="Pega aquí (Ctrl+V) las filas copiadas de tu Excel…"
         style={{ width: "100%", minHeight: 120, fontFamily: "ui-monospace,monospace", fontSize: 12, boxSizing: "border-box" }} />
       {filas.length > 0 && <>
