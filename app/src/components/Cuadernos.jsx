@@ -115,11 +115,13 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
     return (data || []).find(x => String(x.osinerg) === caso || String(x.codigo) === caso) || null;
   };
 
+  // campo de fecha del cuaderno: el padrón filtra por FechaRegistroReclamo; los demás por fecha_evento
+  const fechaCampo = sel && sel.fuente === "mensual" ? "fecha_registro" : "fecha_evento";
   const filtradas = useMemo(() => {
     if (!filas) return [];
     let out = filas;
     if (sel && dia) {                                   // FECHA exacta manda sobre el mes
-      out = out.filter(f => String(f.fecha_evento || "").slice(0, 10) === dia);
+      out = out.filter(f => String(f[fechaCampo] || "").slice(0, 10) === dia);
     } else if (sel && filtro) {
       out = sel.fuente === "mensual"
         ? out.filter(f => String(f.mes) === filtro)
@@ -311,12 +313,11 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
               <option value="">— mes —</option>
               {opcionesFiltro.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>}
-          {sel.fuente !== "mensual" &&
-            <label title="Filtrar por FECHA exacta (para emitir el cargo de ese día)" style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11.5 }}>
-              <span className="muted">📅 día</span>
-              <input type="date" value={dia} onChange={e => { setDia(e.target.value); setFiltro(""); }} />
-              {dia && <button className="btn sm" title="Quitar filtro de día" onClick={() => setDia("")}>✕</button>}
-            </label>}
+          <label title={sel.fuente==="mensual" ? "Filtrar por fecha de registro del reclamo" : "Filtrar por FECHA exacta (para emitir el cargo de ese día)"} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11.5 }}>
+            <span className="muted">📅 día</span>
+            <input type="date" value={dia} onChange={e => { setDia(e.target.value); setFiltro(""); }} />
+            {dia && <button className="btn sm" title="Quitar filtro de día" onClick={() => setDia("")}>✕</button>}
+          </label>
           <input placeholder="🔎 buscar…" value={q} onChange={e => setQ(e.target.value)} style={{ minWidth: 130 }} />
           {sel.fuente !== "mensual" && <>
             <button className="btn sm" onClick={() => setEdit({ tipo: sel.fuente, fecha_evento: dia || hoyISO() })}>➕ Registrar</button>
