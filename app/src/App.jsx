@@ -886,7 +886,7 @@ function Operativo({ perfil, data, setSelExp, tickets, activoByCode={}, progreso
   return <>
     <div className="tabs">{tabs.map(t=><button key={t[0]} className={tab===t[0]?"on":""} onClick={()=>setTab(t[0])}>{t[1]}</button>)}</div>
     {tab==="midia" && data.length===0 && <BienvenidaSinCasos onIrBandeja={()=>setTab("bandeja")}/>}
-    {tab==="midia" && <MiDia perfil={perfil} misReclamos={mine} tickets={misTk} recByCode={recByCode} onEstadoTicket={onEstadoTicket} setSelExp={setSelExp}
+    {tab==="midia" && <MiDia perfil={perfil} misReclamos={mine} data={data} tickets={misTk} recByCode={recByCode} onEstadoTicket={onEstadoTicket} setSelExp={setSelExp}
       onCerrarDia={()=>postAction("reporte",{rol:perfil.rol, asignados:mine.length, en_atencion:abiertos(misTk).length, cerrados:misTk.filter(t=>t.hecho).length, vencidos:vencidos(misTk).length})}/>}
     {tab==="equipo" && <TrabajoEquipo perfil={perfil} tickets={tickets} recByCode={recByCode} onTomar={onTomarTarea} onEstado={onEstadoTicket} setSelExp={setSelExp}/>}
     {tab==="cuadernos" && <Cuadernos data={data} setSelExp={setSelExp} perfil={perfil} abrir={abrirCuad} onAbierto={onCuadAbierto} onVolver={onVolverExp}/>}

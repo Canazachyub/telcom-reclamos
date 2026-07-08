@@ -2,8 +2,10 @@ import { useState } from "react";
 import { Card, Kpi, toast } from "./ui.jsx";
 import { TicketCard, SemaforoPlazo, InfoBoton } from "./Ticket.jsx";
 import { abiertos, vencidos, porVencer, tareaPrioritaria, agrupaPorEtapa } from "../lib/tickets.js";
+import RegistrarEvento from "./RegistrarEvento.jsx";
 
-export default function MiDia({ perfil, misReclamos, tickets = [], recByCode = {}, onEstadoTicket, setSelExp, onCerrarDia }) {
+export default function MiDia({ perfil, misReclamos, data = [], tickets = [], recByCode = {}, onEstadoTicket, setSelExp, onCerrarDia }) {
+  const [registrar, setRegistrar] = useState(false);
   const ab = abiertos(tickets);
   const venc = vencidos(tickets);
   const pv = porVencer(tickets, 2);
@@ -14,12 +16,20 @@ export default function MiDia({ perfil, misReclamos, tickets = [], recByCode = {
   const abrir = t => { const r = recDe(t); if (r) setSelExp(r.id, t.etapa); else toast("Este ticket apunta a un expediente que no está en la lista (¿recarga la página?)"); };
 
   return <>
+    {registrar && <RegistrarEvento perfil={perfil} data={data} onClose={()=>setRegistrar(false)} onGuardado={()=>{}} />}
     <Card style={{ marginBottom: 14 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-        <div><h3 style={{ margin: 0 }}>Hola, {perfil.nombre.split(" ")[0]}</h3><div className="muted" style={{ fontSize: 12 }}>Tu jornada · {ab.length} caso(s) en tu etapa · abre uno y trabaja todo ahí: evidencia, datos, documento y «terminé» — al terminar, el caso pasa solo al siguiente</div></div>
+        <div><h3 style={{ margin: 0 }}>Hola, {perfil.nombre.split(" ")[0]}</h3><div className="muted" style={{ fontSize: 12 }}>Tu jornada · {ab.length} caso(s) en tu etapa</div></div>
         <button className="btn" title="Enviar tu reporte de hoy al Coordinador" onClick={() => { onCerrarDia(); toast("Día cerrado. Reporte enviado al Coordinador."); }}>Cerrar mi día</button>
       </div>
     </Card>
+
+    {/* ACCIÓN PRINCIPAL — grande y clara: registrar en un cuaderno (como en sus hojas) */}
+    <button onClick={() => setRegistrar(true)}
+      style={{ width: "100%", marginBottom: 14, padding: "16px", borderRadius: 14, border: 0, background: "var(--navy)", color: "#fff", fontSize: 17, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, boxShadow: "0 4px 14px rgba(31,78,140,.28)" }}>
+      ➕ Registrar en un cuaderno
+      <span style={{ fontSize: 12, fontWeight: 500, opacity: .85 }}>(anota un evento como en tu Excel)</span>
+    </button>
 
     {/* ¿QUÉ HAGO AHORA? — una sola tarea prioritaria */}
     {prio ? (
