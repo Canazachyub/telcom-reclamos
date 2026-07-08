@@ -3,6 +3,7 @@ import { Card, Tag, toast } from "./ui.jsx";
 import { loadCuadernosResumen, loadCuadernoDatos, registroControl, regenerarCuadernos, cuadernosBulk } from "../lib/api.js";
 import { CUADERNOS, MESES_NOMBRE, valCuaderno } from "../lib/cuadernosDef.js";
 import { parseFecha } from "../lib/model.js";
+import { imprimirQRs } from "../lib/qr.js";
 
 // ===================== 📒 CUADERNOS DE CONTROL 2026 =====================
 // Los 22 Excel del sistema anterior, vivos DENTRO de la plataforma (V2_06):
@@ -299,6 +300,12 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
       </body></html>`);
   };
 
+  // 🏷 items para imprimir QRs (por suministro): de la vista actual (agrupada o plana)
+  const qrItems = () => {
+    if (sel.fuente === "todos") return porExpediente.filas.map(g => { const rec = recDe({ reclamo: g.reclamo }); return { suministro: g.suministro || (rec ? rec.suministro : ""), reclamante: rec ? rec.solicitante : "", osinerg: rec ? rec.osinerg : g.reclamo }; });
+    return filtradas.map(f => { const rec = recDe(f); return { suministro: f.suministro || (rec ? rec.suministro : ""), reclamante: f.reclamante || (rec ? rec.solicitante : ""), osinerg: f.numero_osinerg || (rec ? rec.osinerg : "") || f.reclamo }; });
+  };
+
   // 🧮 exportar a Excel/CSV la vista actual (para trabajarla también en Excel). Sin fugas: solo lo filtrado.
   const exportarCSV = () => {
     const esc = v => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
@@ -424,6 +431,7 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
             ? <button className="btn sm" title="Imprimir el cargo del período/día filtrado (ENTREGADO/RECIBIDO)" onClick={imprimirCargo}>🖨 Cargo</button>
             : <button className="btn sm" title="Imprimir / guardar como PDF la vista actual" onClick={imprimirTabla}>🖨 Imprimir (PDF)</button>}
           <button className="btn sm" title="Descargar la vista actual (respeta el filtro) para abrirla en Excel" onClick={exportarCSV}>🧮 Excel</button>
+          <button className="btn sm" title="Imprimir etiquetas QR (por suministro) de lo filtrado — se pegan en el libro físico" onClick={() => imprimirQRs(qrItems(), sel.nombre + " — " + periodoLabel())}>🏷 QRs</button>
         </div>
       </div>
       <div className="muted" style={{ fontSize: 11, marginTop: 6 }}>

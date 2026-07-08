@@ -68,6 +68,8 @@ function Shell({ perfil, onLogout }){
   const [correos, setCorreos] = useState(null);       // null = aún no se sabe si el backend soporta action=correos
   const [correosCargando, setCorreosCargando] = useState(false);
   const [archivar, setArchivar] = useState(null);     // {codigo, rec} → modal de archivar caso (con foliado opcional)
+  const [sumPend, setSumPend] = useState(()=>{ try{ return new URLSearchParams(window.location.search).get("sum")||""; }catch(e){ return ""; } }); // deep-link QR
+  const [sumPicker, setSumPicker] = useState(null);   // {sum, matches} — el suministro tiene >1 reclamo, elegir
   const [abrirCuad, setAbrirCuad] = useState(null);   // deep-link: {fuente, q} para abrir un cuaderno FILTRADO (desde la Sala)
   const [volverExp, setVolverExp] = useState(null);   // id del expediente al que "← Volver" desde el cuaderno
   function irACuaderno(fuente, q, expId){ setSalaExp(null); setSelExpId(null); setSelEtapa(null); setVolverExp(expId); setAbrirCuad({ fuente, q }); }
@@ -182,6 +184,20 @@ function Shell({ perfil, onLogout }){
     if(etapa){ setSelExpId(id); setSelEtapa(etapa); }
     else setSalaExp(id);
   }
+  // DEEP-LINK del QR (?sum=): al cargar los reclamos, resuelve el suministro escaneado.
+  //  1 reclamo → abre su Sala · varios → elegir · ninguno → ofrecer crear el caso con ese suministro.
+  useEffect(()=>{
+    if(!sumPend || !data) return;
+    const s = sumPend.trim();
+    const matches = (data||[]).filter(x=>String(x.suministro||"").trim()===s);
+    if(matches.length===1) abrirExp(matches[0].id);
+    else if(matches.length>1) setSumPicker({ sum:s, matches });
+    else if(confirm("El suministro "+s+" no tiene reclamos registrados.\n\n¿Crear un caso nuevo con este suministro?")){
+      setCorreoOrigen({ prefill:{ CodigoSuministro:s } }); setNuevo(true);
+    }
+    setSumPend("");
+    try{ window.history.replaceState({}, "", window.location.pathname); }catch(e){}
+  }, [sumPend, data]);
   // desde la Sala: "Trabajar esta etapa" abre el Drawer ENCIMA (al cerrarlo vuelves a la Sala)
   function trabajarDesdeSala(id, etapa){ setSelExpId(id); setSelEtapa(etapa || null); }
 
@@ -289,6 +305,18 @@ function Shell({ perfil, onLogout }){
       ) : null; })()}
       {exp && <Drawer exp={exp} etapaInicial={selEtapa} evidencias={evidencias} datos={datos} tickets={tickets} perfil={perfilVista} comentarios={comentarios} registros={registros} onComentar={onComentar} onEstadoTicket={onEstadoTicket} onEditar={(campo,valor)=>onEditarCampo(exp.codigo,campo,valor)} onClose={()=>{ setSelExpId(null); setSelEtapa(null); }} onSaveDatos={saveDatos} onSubido={obj=>setEvi(ev=>[obj,...ev])}/>}
       {archivar && <ArchivarCaso info={archivar} onArchivar={doArchivar} onSubido={obj=>setEvi(ev=>[obj,...ev])} onClose={()=>setArchivar(null)}/>}
+      {sumPicker && <div className="modal-bg" onClick={()=>setSumPicker(null)} style={{position:"fixed",inset:0,background:"rgba(22,41,75,.45)",zIndex:96,display:"flex",alignItems:"center",justifyContent:"center"}}>
+        <div onClick={e=>e.stopPropagation()} style={{background:"var(--card,#fff)",borderRadius:12,padding:18,width:"min(520px,94vw)",maxHeight:"85vh",overflowY:"auto",boxShadow:"0 12px 40px rgba(0,0,0,.25)"}}>
+          <h3 style={{marginTop:0}}>Suministro {sumPicker.sum}</h3>
+          <div className="muted" style={{fontSize:12,marginBottom:10}}>Este suministro tiene {sumPicker.matches.length} reclamos. Elige cuál documentar:</div>
+          <div style={{display:"grid",gap:6}}>
+            {sumPicker.matches.map(m=><button key={m.id} className="btn" style={{textAlign:"left",justifyContent:"flex-start"}}
+              onClick={()=>{ setSumPicker(null); abrirExp(m.id); }}>
+              <span className="mono">{m.osinerg}</span> · {m.solicitante} <span className="muted">· {m.etapa||m.estado}</span></button>)}
+          </div>
+          <div style={{display:"flex",justifyContent:"flex-end",marginTop:12}}><button className="btn sm" onClick={()=>setSumPicker(null)}>Cerrar</button></div>
+        </div>
+      </div>}
       {nuevo && <NuevoCaso perfil={perfilVista} existentes={data||[]} inicial={correoOrigen ? correoOrigen.prefill : null} onClose={()=>{ setNuevo(false); setCorreoOrigen(null); }} onCreado={(codigoNuevo)=>{
         // si el caso nació de un correo de la Bandeja, se vincula solo (adjuntos incluidos)
         if(correoOrigen && correoOrigen.correoId && codigoNuevo){ vincularCorreo(correoOrigen.correoId, codigoNuevo).then(()=>cargarCorreos()).catch(()=>{}); }
