@@ -622,25 +622,38 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
             {cuadRegs==null && <div className="muted" style={{fontSize:12}}>Cargando cuadernos…</div>}
             {cuadRegs!=null && cuadRegs.length===0 && <div className="muted" style={{fontSize:12}}>Este expediente aún no figura en ningún cuaderno.</div>}
             {cuadRegs!=null && cuadRegs.length>0 && (()=>{
-              // LÍNEA DE TIEMPO: los pasos registrados en los cuadernos, en orden cronológico.
-              const det=(r)=>{ const p=[r.correlativo,r.resolucion,r.estado,r.observaciones]
-                .map(x=>String(x==null?"":x).trim()).filter(Boolean); return p.join(" · "); };
+              // LÍNEA DE TIEMPO: pasos registrados en los cuadernos, cronológico, con ETIQUETA de cada dato.
+              const detPares=(def,r)=>{
+                if(!def) return [];
+                const out=[];
+                (def.cols||[]).forEach(([lbl,path])=>{
+                  if(!path || path==="item" || path==="fecha_evento") return;
+                  let v=valCuaderno(r,path); v=String(v==null?"":v).trim();
+                  if(!v) return;
+                  if(/^\d{4}-\d{2}-\d{2}/.test(v)) v=fmtFecha(v.slice(0,10));
+                  out.push({lbl,v});
+                });
+                return out;
+              };
               const orden=[...cuadRegs].map(r=>({r,f:String(r.fecha_evento||"").slice(0,10)}))
                 .sort((a,b)=>(a.f||"9999")<(b.f||"9999")?-1:1);
               return <div>
                 {orden.map(({r,f},i)=>{
                   const def=CUAD_POR_FUENTE[r.tipo], nombre=def?def.nombre:r.tipo;
-                  const detalle=det(r);
+                  const pares=detPares(def,r);
+                  const queryCaso=r.reclamo||r.suministro||exp.codigo;
                   return <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start",position:"relative",paddingBottom:i<orden.length?12:0}}>
                     <span style={{position:"absolute",left:9,top:19,bottom:0,width:2,background:"var(--bd)"}}/>
                     <span title="Paso registrado" style={{flexShrink:0,width:20,height:20,borderRadius:"50%",background:"#1E8E5A",color:"#fff",fontSize:12,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",zIndex:1}}>✓</span>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
-                        <span onClick={()=>onAbrirCuaderno&&onAbrirCuaderno(r.tipo)}
-                          title="Abrir este cuaderno" style={{fontSize:12.5,fontWeight:700,color:"var(--linkTx)",cursor:onAbrirCuaderno?"pointer":"default",textDecoration:onAbrirCuaderno?"underline":"none",textUnderlineOffset:2}}>{nombre}</span>
+                        <span onClick={()=>onAbrirCuaderno&&onAbrirCuaderno(r.tipo, queryCaso)}
+                          title="Abrir este cuaderno filtrado a este caso" style={{fontSize:12.5,fontWeight:700,color:"var(--linkTx)",cursor:onAbrirCuaderno?"pointer":"default",textDecoration:onAbrirCuaderno?"underline":"none",textUnderlineOffset:2}}>{nombre}</span>
                         <span className="muted" style={{fontSize:11}}>{f?fmtFecha(f):"sin fecha"}</span>
                       </div>
-                      {detalle && <div className="muted" style={{fontSize:11,marginTop:1}}>{detalle}</div>}
+                      {pares.length>0 && <div style={{fontSize:11,marginTop:2,display:"flex",flexWrap:"wrap",gap:"1px 12px"}}>
+                        {pares.map((p,j)=><span key={j}><span className="muted">{p.lbl}:</span> <b style={{fontWeight:600,color:"var(--tx)"}}>{p.v}</b></span>)}
+                      </div>}
                     </div>
                   </div>;
                 })}

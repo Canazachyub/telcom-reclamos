@@ -77,7 +77,7 @@ function semaforoElev(fila) {          // solo APELACION: plazo máx de elevaci�
   return <Tag bg="#E8F6EC" color="#14532d">{plazo.slice(5)}</Tag>;
 }
 
-export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto }) {
+export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, onVolver }) {
   const [resumen, setResumen] = useState(null);
   const [sel, setSel] = useState(null);            // def del cuaderno abierto
   const [filas, setFilas] = useState(null);
@@ -94,16 +94,17 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto })
   const cargarResumen = () => loadCuadernosResumen().then(setResumen);
   useEffect(() => { cargarResumen(); }, []);
 
+  const [deepLinked, setDeepLinked] = useState(false); // llegó por deep-link (desde la Sala) → muestra "← Volver"
   const recargar = () => loadCuadernoDatos(sel.fuente).then(setFilas);
-  const abrirCuaderno = def => {
-    setSel(def); setFilas(null); setFiltro(""); setDia(""); setQ(""); setTope(300);
+  const abrirCuaderno = (def, q) => {
+    setSel(def); setFilas(null); setFiltro(""); setDia(""); setQ(q || ""); setTope(300);
     loadCuadernoDatos(def.fuente).then(setFilas);
   };
-  // deep-link: abrir un cuaderno concreto (por `fuente` o `key`) al recibir la orden desde la Sala
+  // deep-link desde la Sala: abrir un cuaderno YA FILTRADO a ese caso (abrir = {fuente, q})
   useEffect(() => {
     if (!abrir) return;
-    const def = CUADERNOS.find(c => c.fuente === abrir || c.key === abrir);
-    if (def) abrirCuaderno(def);
+    const def = CUADERNOS.find(c => c.fuente === abrir.fuente || c.key === abrir.fuente);
+    if (def) { abrirCuaderno(def, abrir.q ? String(abrir.q) : ""); setDeepLinked(true); }
     onAbierto && onAbierto();
   }, [abrir]);
 
@@ -275,7 +276,7 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto })
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(215px,1fr))", gap: 10 }}>
             {defs.map(def => {
               const est = estDe(def);
-              return <div key={def.key} className="clk" onClick={() => abrirCuaderno(def)}
+              return <div key={def.key} className="clk" onClick={() => { setDeepLinked(false); abrirCuaderno(def); }}
                 style={{ cursor: "pointer", background: "var(--card)", border: "1px solid var(--bd)", borderRadius: 10, padding: "11px 13px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
                   <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--tx)", lineHeight: 1.25 }}>{def.nombre}</span>
@@ -297,10 +298,12 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto })
   return <>
     <Card>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <button className="btn sm" onClick={() => { setSel(null); setFilas(null); }}>← Cuadernos</button>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          {onVolver && deepLinked && <button className="btn sm" style={{ fontWeight: 700 }} onClick={onVolver}>← Volver al expediente</button>}
+          <button className="btn sm" onClick={() => { setSel(null); setFilas(null); setDeepLinked(false); }}>← Cuadernos</button>
           <b>{sel.emoji} {sel.nombre}</b>
           <span className="muted" style={{ fontSize: 11.5 }}>{filas ? filtradas.length + " filas" : "cargando…"}</span>
+          {deepLinked && q && <span className="muted" style={{ fontSize: 11 }}>· filtrado a {q}</span>}
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           {opcionesFiltro.length > 0 &&
