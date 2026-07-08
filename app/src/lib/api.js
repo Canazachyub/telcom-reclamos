@@ -22,6 +22,18 @@ function sesionExpirada(j){
   return false;
 }
 
+// Caché en memoria (por sesión de la página) para datos que cambian POCO (catálogos, config…):
+// evita re-descargarlos en cada navegación. No cachea resultados vacíos (para reintentar).
+const _cache = new Map();
+async function cached(key, ttlMs, fn){
+  const hit = _cache.get(key);
+  if(hit && (Date.now() - hit.t) < ttlMs) return hit.v;
+  const v = await fn();
+  const vacio = v==null || (Array.isArray(v)&&!v.length) || (typeof v==="object"&&!Array.isArray(v)&&!Object.keys(v).length);
+  if(!vacio) _cache.set(key, { t: Date.now(), v });
+  return v;
+}
+
 // Lectura de reclamos EN VIVO desde el Sheet (fuente de verdad). El JSON local queda
 // solo como respaldo si la API no responde (sin red / CORS).
 export async function loadReclamos(){
@@ -45,47 +57,71 @@ const NN_TO_ETAPA = {
   "08_Apelacion":"Apelación (JARU)","09_Foliado":"Foliado","10_Cierre":"Cierre",
 };
 
-// Lee las evidencias reales desde la hoja `registros` (tipo=evidencia).
-export async function loadEvidencias(){
+// ===== BITÁCORA (`registros`) — UNA sola descarga, tres derivados =====
+// El arranque necesita evidencias + datos_etapa + comentarios + la bitácora cruda; TODOS salen de
+// la MISMA hoja `registros`. Antes se descargaba 4 veces (lenta y crece sin límite). Ahora se baja
+// UNA vez (_fetchRegistros) y se derivan en el navegador. loadRegistrosBundle() hace justo eso.
+async function _fetchRegistros(){
   if(!APPS_SCRIPT_URL) return [];
   try{
     const res = await fetch(GET_URL("registros"));
     const rows = await res.json();
-    if(!Array.isArray(rows)) return [];
-    const mapped = rows.filter(r => r.tipo === "evidencia").map(r => {
-      let d = {}; try { d = typeof r.detalle === "string" ? JSON.parse(r.detalle) : (r.detalle||{}); } catch(e){}
-      return {
-        exp: String(r.reclamo),
-        etapa: NN_TO_ETAPA[d.etapa] || d.etapa,
-        nombre: d.nombre || "documento",
-        tipo: d.tipo || "PDF",
-        url: d.url || "",
-        fecha: String(r.fecha||"").slice(0,10),
-        usuario: r.usuario || "",
-        resp: 0,
-      };
-    });
-    // deduplica por expediente + etapa + nombre + url (deja la última versión)
-    const seen = new Set(), pass1 = [];
-    for(let i = mapped.length-1; i>=0; i--){
-      const e = mapped[i], k = e.exp+"|"+e.etapa+"|"+e.nombre+"|"+(e.url||"");
-      if(seen.has(k)) continue; seen.add(k); pass1.unshift(e);
-    }
-    // segunda pasada: la URL identifica al archivo físico en Drive — si dos registros del
-    // mismo expediente comparten la misma url no vacía, son el mismo documento (colapsa a 1,
-    // deja la última versión aunque difiera nombre/etapa por corridas de simulación repetidas).
-    const seenUrl = new Set(), out = [];
-    for(let i = pass1.length-1; i>=0; i--){
-      const e = pass1[i];
-      if(e.url){
-        const ku = e.exp+"|"+e.url;
-        if(seenUrl.has(ku)) continue; seenUrl.add(ku);
-      }
-      out.unshift(e);
-    }
-    return out;
+    return Array.isArray(rows) ? rows : [];
   }catch(e){ return []; }
 }
+function _derivEvidencias(rows){
+  const mapped = (rows||[]).filter(r => r.tipo === "evidencia").map(r => {
+    let d = {}; try { d = typeof r.detalle === "string" ? JSON.parse(r.detalle) : (r.detalle||{}); } catch(e){}
+    return {
+      exp: String(r.reclamo),
+      etapa: NN_TO_ETAPA[d.etapa] || d.etapa,
+      nombre: d.nombre || "documento",
+      tipo: d.tipo || "PDF",
+      url: d.url || "",
+      fecha: String(r.fecha||"").slice(0,10),
+      usuario: r.usuario || "",
+      resp: 0,
+    };
+  });
+  // deduplica por expediente + etapa + nombre + url (deja la última versión)
+  const seen = new Set(), pass1 = [];
+  for(let i = mapped.length-1; i>=0; i--){
+    const e = mapped[i], k = e.exp+"|"+e.etapa+"|"+e.nombre+"|"+(e.url||"");
+    if(seen.has(k)) continue; seen.add(k); pass1.unshift(e);
+  }
+  // segunda pasada: la URL identifica al archivo físico en Drive — si dos registros del
+  // mismo expediente comparten la misma url no vacía, son el mismo documento (colapsa a 1).
+  const seenUrl = new Set(), out = [];
+  for(let i = pass1.length-1; i>=0; i--){
+    const e = pass1[i];
+    if(e.url){ const ku = e.exp+"|"+e.url; if(seenUrl.has(ku)) continue; seenUrl.add(ku); }
+    out.unshift(e);
+  }
+  return out;
+}
+function _derivDatos(rows){
+  const map = {};
+  (rows||[]).filter(r => r.tipo === "datos").forEach(r => {
+    let d = {}; try { d = typeof r.detalle === "string" ? JSON.parse(r.detalle) : (r.detalle||{}); } catch(e){}
+    if(!d.etapa) return;
+    const k = String(r.reclamo) + "|" + d.etapa;
+    map[k] = { ...(map[k]||{}), ...(d.campos||{}) };   // última versión gana
+  });
+  return map;
+}
+function _derivComentarios(rows){
+  return (rows||[]).filter(r => r.tipo === "comentario").map(r => {
+    let d = {}; try { d = typeof r.detalle === "string" ? JSON.parse(r.detalle) : (r.detalle||{}); } catch(e){}
+    return { reclamo:String(r.reclamo), etapa:d.etapa||"", texto:d.texto||"", rol:d.rol||"", nombre:d.nombre||r.usuario, usuario:r.usuario, fecha:String(r.fecha||"").slice(0,16).replace("T"," ") };
+  });
+}
+// Descarga la bitácora UNA vez y devuelve los 4 conjuntos que necesita el arranque.
+export async function loadRegistrosBundle(){
+  const rows = await _fetchRegistros();
+  return { registros: rows, evidencias: _derivEvidencias(rows), datos: _derivDatos(rows), comentarios: _derivComentarios(rows) };
+}
+// Compat: cada loader individual sigue existiendo (1 fetch propio) para refrescos puntuales.
+export async function loadEvidencias(){ return _derivEvidencias(await _fetchRegistros()); }
 
 // ===== TICKETS (esquema v2) =====
 // Lee los tickets reales del backend (hoja tickets). Devuelve [] si no hay backend/CORS.
@@ -137,14 +173,7 @@ export async function extraerCamposIA({ file, fileId, url, etapa, campos, reclam
 }
 
 // Lee el log completo (registros) — para el resumen diario del Gerente.
-export async function loadRegistros(){
-  if(!APPS_SCRIPT_URL) return [];
-  try{
-    const res = await fetch(GET_URL("registros"));
-    const rows = await res.json();
-    return Array.isArray(rows) ? rows : [];
-  }catch(e){ return []; }
-}
+export async function loadRegistros(){ return _fetchRegistros(); }
 
 // Inicia un expediente nuevo (Recepción). Devuelve {ok, codigo}.
 export async function nuevoReclamo(datos){
@@ -219,22 +248,7 @@ export async function subirArchivo(reclamo, etapaNN, file){
 }
 
 // Lee los datos de etapa registrados (registros tipo=datos) -> mapa "exp|etapa" -> {campos}
-export async function loadDatos(){
-  if(!APPS_SCRIPT_URL) return {};
-  try{
-    const res = await fetch(GET_URL("registros"));
-    const rows = await res.json();
-    if(!Array.isArray(rows)) return {};
-    const map = {};
-    rows.filter(r => r.tipo === "datos").forEach(r => {
-      let d = {}; try { d = typeof r.detalle === "string" ? JSON.parse(r.detalle) : (r.detalle||{}); } catch(e){}
-      if(!d.etapa) return;
-      const k = String(r.reclamo) + "|" + d.etapa;
-      map[k] = { ...(map[k]||{}), ...(d.campos||{}) };   // última versión gana
-    });
-    return map;
-  }catch(e){ return {}; }
-}
+export async function loadDatos(){ return _derivDatos(await _fetchRegistros()); }
 
 // Guarda los datos de una etapa (van a registros, tipo=datos) y prellenan los Word después.
 export async function guardarDatos({ exp, etapa, rol, campos }){
@@ -242,18 +256,7 @@ export async function guardarDatos({ exp, etapa, rol, campos }){
 }
 
 // Observaciones/comentarios del expediente (registros tipo=comentario). Cualquier rol puede añadir.
-export async function loadComentarios(){
-  if(!APPS_SCRIPT_URL) return [];
-  try{
-    const res = await fetch(GET_URL("registros"));
-    const rows = await res.json();
-    if(!Array.isArray(rows)) return [];
-    return rows.filter(r => r.tipo === "comentario").map(r => {
-      let d = {}; try { d = typeof r.detalle === "string" ? JSON.parse(r.detalle) : (r.detalle||{}); } catch(e){}
-      return { reclamo:String(r.reclamo), etapa:d.etapa||"", texto:d.texto||"", rol:d.rol||"", nombre:d.nombre||r.usuario, usuario:r.usuario, fecha:String(r.fecha||"").slice(0,16).replace("T"," ") };
-    });
-  }catch(e){ return []; }
-}
+export async function loadComentarios(){ return _derivComentarios(await _fetchRegistros()); }
 export async function comentar({ reclamo, etapa, texto, nombre }){
   return postAction("comentar", { reclamo, etapa, texto, nombre });
 }
@@ -268,12 +271,14 @@ export async function editarReclamo(codigo, campo, valor){
 // (precios unitarios reales de la oferta económica). Si el backend aún no la implementa,
 // devuelve {} y el caller usa sus valores por defecto (placeholder).
 export async function loadConfig(){
-  try{
-    const r = await fetch(GET_URL("config"));
-    const j = await r.json();
-    if(j && typeof j==="object" && !Array.isArray(j)) return j;
-  }catch(e){ /* respaldo: {} */ }
-  return {};
+  return cached("config", 600000, async () => {   // cambia poco → caché 10 min (evita el doble fetch Admin+Reportes)
+    try{
+      const r = await fetch(GET_URL("config"));
+      const j = await r.json();
+      if(j && typeof j==="object" && !Array.isArray(j)) return j;
+    }catch(e){ /* respaldo: {} */ }
+    return {};
+  });
 }
 
 // Eliminar expediente (SOLO Gerencia, motivo obligatorio). El backend borra reclamo+tickets+
@@ -285,12 +290,14 @@ export async function eliminarReclamo(codigo, motivo){
 // Catálogos SIELSE (v4): hoja `catalogos` del Sheet (grupo|valor|extra); si aún no existe
 // (falta ejecutarSetupCatalogos o el redeploy), devuelve null y el wizard usa CATALOGOS_LOCAL.
 export async function loadCatalogos(){
-  try{
-    const res = await fetch(GET_URL("catalogos"));
-    const raw = await res.json();
-    if(Array.isArray(raw) && raw.length) return raw;   // [{grupo, valor, extra}]
-  }catch(e){ /* respaldo local */ }
-  return null;
+  return cached("catalogos", 600000, async () => {   // catálogos = referencia estable → caché 10 min
+    try{
+      const res = await fetch(GET_URL("catalogos"));
+      const raw = await res.json();
+      if(Array.isArray(raw) && raw.length) return raw;   // [{grupo, valor, extra}]
+    }catch(e){ /* respaldo local */ }
+    return null;
+  });
 }
 
 // ===== 📒 CUADERNOS 2026 (V2_06) =====

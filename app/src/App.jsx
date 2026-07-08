@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { loadReclamos, loadEvidencias, loadDatos, guardarDatos, loadTickets, updTicket, tomarTarea, loadComentarios, comentar, loadRegistros, loadCorreos, postAction, editarReclamo, eliminarReclamo, vincularCorreo, loadConfig, USE_MOCK } from "./lib/api.js";
+import { loadReclamos, loadRegistrosBundle, guardarDatos, loadTickets, updTicket, tomarTarea, comentar, loadRegistros, loadCorreos, postAction, editarReclamo, eliminarReclamo, vincularCorreo, loadConfig, USE_MOCK } from "./lib/api.js";
 import { mapTickets, misTickets, activos, abiertos, vencidos, porVencer, exposicionTotal, verMontos, urgColorTicket } from "./lib/tickets.js";
 import { getSesionValida, logout, ROL_LABEL, puedeDelegar, puedeVerTodo, esOperativo, USERS } from "./lib/auth.js";
 import {
@@ -80,11 +80,14 @@ function Shell({ perfil, onLogout }){
   const perfilVista = verComo ? { ...perfil, nombre:verComo.nombre, rol:verComo.rol, resp_id:verComo.resp_id } : perfil;
   useEffect(()=>{
     loadReclamos().then(setData).catch(e=>setErr(String(e)));
-    loadEvidencias().then(ev=>{ if(ev && ev.length) setEvi(prev=>[...ev, ...prev]); }).catch(()=>{});
-    loadDatos().then(d=>{ if(d) setDatos(d); }).catch(()=>{});
     loadTickets().then(rows=>{ if(rows && rows.length) setTickets(mapTickets(rows)); }).catch(()=>{});
-    loadComentarios().then(c=>{ if(c && c.length) setComentarios(c); }).catch(()=>{});
-    loadRegistros().then(r=>{ if(r && r.length) setRegistros(r); }).catch(()=>{});
+    // bitácora UNA sola descarga → evidencias + datos_etapa + comentarios + registros (antes eran 4 fetches)
+    loadRegistrosBundle().then(b=>{
+      if(b.evidencias && b.evidencias.length) setEvi(prev=>[...b.evidencias, ...prev]);
+      if(b.datos) setDatos(b.datos);
+      if(b.comentarios && b.comentarios.length) setComentarios(b.comentarios);
+      if(b.registros && b.registros.length) setRegistros(b.registros);
+    }).catch(()=>{});
     cargarCorreos();
   }, []);
   // correos === null  -> el backend todavía no implementa action=correos (aviso de "próximo redeploy")
