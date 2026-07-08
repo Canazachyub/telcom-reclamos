@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { loadReclamos, loadRegistrosBundle, guardarDatos, loadTickets, updTicket, tomarTarea, comentar, loadRegistros, loadCorreos, postAction, editarReclamo, eliminarReclamo, vincularCorreo, loadConfig, USE_MOCK } from "./lib/api.js";
+import { loadReclamos, loadRegistrosBundle, guardarDatos, loadTickets, updTicket, tomarTarea, archivarCaso, subirArchivo, comentar, loadRegistros, loadCorreos, postAction, editarReclamo, eliminarReclamo, vincularCorreo, loadConfig, USE_MOCK } from "./lib/api.js";
 import { mapTickets, misTickets, activos, abiertos, vencidos, porVencer, exposicionTotal, verMontos, urgColorTicket } from "./lib/tickets.js";
 import { getSesionValida, logout, ROL_LABEL, puedeDelegar, puedeVerTodo, esOperativo, USERS } from "./lib/auth.js";
 import {
@@ -67,6 +67,7 @@ function Shell({ perfil, onLogout }){
   const [registros, setRegistros] = useState([]);
   const [correos, setCorreos] = useState(null);       // null = aún no se sabe si el backend soporta action=correos
   const [correosCargando, setCorreosCargando] = useState(false);
+  const [archivar, setArchivar] = useState(null);     // {codigo, rec} → modal de archivar caso (con foliado opcional)
   const [abrirCuad, setAbrirCuad] = useState(null);   // deep-link: {fuente, q} para abrir un cuaderno FILTRADO (desde la Sala)
   const [volverExp, setVolverExp] = useState(null);   // id del expediente al que "← Volver" desde el cuaderno
   function irACuaderno(fuente, q, expId){ setSalaExp(null); setSelExpId(null); setSelEtapa(null); setVolverExp(expId); setAbrirCuad({ fuente, q }); }
@@ -128,6 +129,20 @@ function Shell({ perfil, onLogout }){
     setTickets(ts=>ts.map(x=>x.id===t.id?{...x,respId:+respId,responsable:respNombre}:x));
     updTicket(t.id, undefined, t.reclamo, respId, respNombre)
       .then(r=>{ if(r && r.ok===false) toast("⚠ No se guardó la reasignación: "+(r.error||"error")); });
+  }
+  // ARCHIVAR un caso — abre el modal (2 formas: archivar directo, o adjuntando el foliado/cierre en PDF).
+  function onArchivarCaso(t){
+    const rec = (data||[]).find(r=>String(r.codigo)===String(t.reclamo));
+    setArchivar({ codigo:t.reclamo, rec });
+  }
+  // ejecuta el archivado: marca CERRADO + etapas hechas (optimista) y firma en bitácora.
+  function doArchivar(codigo, motivo){
+    setTickets(ts=>ts.map(x=> String(x.reclamo)===String(codigo) ? {...x, estado:"hecho", abierto:false, hecho:true, vencido:false, riesgo:false} : x));
+    return archivarCaso(codigo, motivo).then(r=>{
+      if(r && r.ok===false){ toast("⚠ No se archivó: "+(r.error||"error")); refrescar(); }
+      else { toast("🗄 Caso archivado — fuera de las alarmas"); refrescar(); loadRegistros().then(setRegistros).catch(()=>{}); }
+      return r;
+    });
   }
   // TOMAR (auto-asignarse) una tarea del pozo del equipo — el nuevo responsable es SIEMPRE
   // quien tiene la sesión activa (perfilVista). Optimista; si el backend rechaza, avisa y refresca.
@@ -247,7 +262,7 @@ function Shell({ perfil, onLogout }){
       {!data ? <div className="card">Cargando reclamos…</div>
         : esOperativo(perfilVista.rol)
           ? <Operativo key={"op-"+perfilVista.resp_id} perfil={perfilVista} data={data} setSelExp={abrirExp} tickets={activos(tickets)} activoByCode={activoByCode} progresoDe={progresoDe} recByCode={recByCode} onEstadoTicket={onEstadoTicket} onTomarTarea={onTomarTarea} abrirCuad={abrirCuad} onCuadAbierto={()=>setAbrirCuad(null)} onVolverExp={volverExp!=null?volverAlExp:null} correos={correos} correosCargando={correosCargando} onRecargarCorreos={cargarCorreos} onConvertirCorreo={convertirCorreoEnCaso} verExpediente={(codigo)=>{ const r=(data||[]).find(x=>String(x.codigo)===String(codigo)); if(r) abrirExp(r.id); }}/>
-          : <Admin key={"ad-"+perfilVista.resp_id} perfil={perfilVista} data={data} evidencias={evidencias} setSelExp={abrirExp} delegar={delegar} updEstado={updEstado} tickets={activos(tickets)} todosTickets={tickets} datos={datos} activoByCode={activoByCode} progresoDe={progresoDe} recByCode={recByCode} onEstadoTicket={onEstadoTicket} onReasignarTicket={onReasignarTicket} abrirCuad={abrirCuad} onCuadAbierto={()=>setAbrirCuad(null)} onVolverExp={volverExp!=null?volverAlExp:null} registros={registros} comentarios={comentarios} correos={correos} correosCargando={correosCargando} onRecargarCorreos={cargarCorreos} onConvertirCorreo={convertirCorreoEnCaso} verExpediente={(codigo)=>{ const r=(data||[]).find(x=>String(x.codigo)===String(codigo)); if(r) abrirExp(r.id); }}/>}
+          : <Admin key={"ad-"+perfilVista.resp_id} perfil={perfilVista} data={data} evidencias={evidencias} setSelExp={abrirExp} delegar={delegar} updEstado={updEstado} tickets={activos(tickets)} todosTickets={tickets} datos={datos} activoByCode={activoByCode} progresoDe={progresoDe} recByCode={recByCode} onEstadoTicket={onEstadoTicket} onReasignarTicket={onReasignarTicket} onArchivarCaso={onArchivarCaso} abrirCuad={abrirCuad} onCuadAbierto={()=>setAbrirCuad(null)} onVolverExp={volverExp!=null?volverAlExp:null} registros={registros} comentarios={comentarios} correos={correos} correosCargando={correosCargando} onRecargarCorreos={cargarCorreos} onConvertirCorreo={convertirCorreoEnCaso} verExpediente={(codigo)=>{ const r=(data||[]).find(x=>String(x.codigo)===String(codigo)); if(r) abrirExp(r.id); }}/>}
 
       {salaExp!=null && data && (()=>{ const sx=data.find(x=>x.id===salaExp); return sx ? (
         <SalaExpediente exp={sx} tickets={tickets} evidencias={evidencias} registros={registros} comentarios={comentarios} datos={datos} correos={correos}
@@ -256,6 +271,7 @@ function Shell({ perfil, onLogout }){
           onEditar={(campo,valor)=>onEditarCampo(sx.codigo,campo,valor)} onEliminar={onEliminarExp} ladoALado={exp!=null} onClose={()=>setSalaExp(null)}/>
       ) : null; })()}
       {exp && <Drawer exp={exp} etapaInicial={selEtapa} evidencias={evidencias} datos={datos} tickets={tickets} perfil={perfilVista} comentarios={comentarios} registros={registros} onComentar={onComentar} onEstadoTicket={onEstadoTicket} onEditar={(campo,valor)=>onEditarCampo(exp.codigo,campo,valor)} onClose={()=>{ setSelExpId(null); setSelEtapa(null); }} onSaveDatos={saveDatos} onSubido={obj=>setEvi(ev=>[obj,...ev])}/>}
+      {archivar && <ArchivarCaso info={archivar} onArchivar={doArchivar} onSubido={obj=>setEvi(ev=>[obj,...ev])} onClose={()=>setArchivar(null)}/>}
       {nuevo && <NuevoCaso perfil={perfilVista} existentes={data||[]} inicial={correoOrigen ? correoOrigen.prefill : null} onClose={()=>{ setNuevo(false); setCorreoOrigen(null); }} onCreado={(codigoNuevo)=>{
         // si el caso nació de un correo de la Bandeja, se vincula solo (adjuntos incluidos)
         if(correoOrigen && correoOrigen.correoId && codigoNuevo){ vincularCorreo(correoOrigen.correoId, codigoNuevo).then(()=>cargarCorreos()).catch(()=>{}); }
@@ -271,7 +287,7 @@ function Shell({ perfil, onLogout }){
 /* ===================== GERENTE / COORDINADOR ===================== */
 // 6 pestañas (7 el Gerente). Todo lo operativo de un expediente se hace DENTRO del
 // expediente (Drawer): evidencia, datos de etapa, generar documento, marcar hecho.
-function Admin({ perfil, data, evidencias, setSelExp, delegar, updEstado, tickets, todosTickets, datos, activoByCode, progresoDe, recByCode, onEstadoTicket, onReasignarTicket, abrirCuad, onCuadAbierto, onVolverExp, registros, comentarios, correos, correosCargando, onRecargarCorreos, onConvertirCorreo, verExpediente }){
+function Admin({ perfil, data, evidencias, setSelExp, delegar, updEstado, tickets, todosTickets, datos, activoByCode, progresoDe, recByCode, onEstadoTicket, onReasignarTicket, onArchivarCaso, abrirCuad, onCuadAbierto, onVolverExp, registros, comentarios, correos, correosCargando, onRecargarCorreos, onConvertirCorreo, verExpediente }){
   const [tab, setTab] = useState("hoy");
   const canDelegate = puedeDelegar(perfil.rol);
   const esGer = perfil.rol==="GERENTE";
@@ -287,7 +303,7 @@ function Admin({ perfil, data, evidencias, setSelExp, delegar, updEstado, ticket
     .filter(t=>t[0]!=="_");
   return <>
     <div className="tabs">{tabs.map(t=><button key={t[0]} className={tab===t[0]?"on":""} onClick={()=>setTab(t[0])}>{t[1]}</button>)}</div>
-    {tab==="hoy"         && <Hoy perfil={perfil} data={data} datos={datos} tickets={tickets} recByCode={recByCode} onEstadoTicket={onEstadoTicket} onReasignarTicket={onReasignarTicket} setSelExp={setSelExp} sinCasos={data.length===0} setTab={setTab}/>}
+    {tab==="hoy"         && <Hoy perfil={perfil} data={data} datos={datos} tickets={tickets} recByCode={recByCode} onEstadoTicket={onEstadoTicket} onReasignarTicket={onReasignarTicket} onArchivarCaso={onArchivarCaso} setSelExp={setSelExp} sinCasos={data.length===0} setTab={setTab}/>}
     {tab==="equipo"      && <><ResumenEquipo tickets={tickets} perfil={perfil}/><div style={{marginTop:14}}><ResumenDiario registros={registros} tickets={tickets}/></div><div style={{marginTop:14}}><VerificacionDiaria tickets={tickets} registros={registros} perfil={perfil}/></div><MejorasSugeridas comentarios={comentarios}/><div style={{marginTop:14}}><PenalidadesTope registros={registros} config={configEquipo} perfil={perfil}/></div></>}
     {tab==="expedientes" && <ExpedientesTab data={data} setSelExp={setSelExp} delegar={delegar} updEstado={updEstado} canDelegate={canDelegate} evidencias={evidencias} activoByCode={activoByCode} progresoDe={progresoDe} registros={registros} comentarios={comentarios}/>}
     {tab==="bandeja"     && <Bandeja perfil={perfil} correos={correos} cargando={correosCargando} noDisponible={correos===null && !correosCargando} onRecargar={onRecargarCorreos} existentes={data} onConvertir={onConvertirCorreo} verExpediente={verExpediente}/>}
@@ -337,7 +353,7 @@ function BienvenidaSinCasos({ onIrBandeja }){
 }
 
 // "Hoy": lo urgente del equipo en una sola vista — KPIs + cola priorizada (+ dinero en riesgo, solo Gerente).
-function Hoy({ perfil, data, datos, tickets, recByCode, onEstadoTicket, onReasignarTicket, setSelExp, sinCasos, setTab }){
+function Hoy({ perfil, data, datos, tickets, recByCode, onEstadoTicket, onReasignarTicket, onArchivarCaso, setSelExp, sinCasos, setTab }){
   const ab=abiertos(tickets), v=vencidos(tickets), pv=porVencer(tickets,2);
   const ger=verMontos(perfil.rol);
   const expo=exposicionTotal(tickets);
@@ -357,10 +373,63 @@ function Hoy({ perfil, data, datos, tickets, recByCode, onEstadoTicket, onReasig
       <Kpi label="Riesgo SAP" value={riesgoSAP.total} sub="relojes SAP vencidos — silencio positivo (pen. 5.5)" s={riesgoSAP.total>0?"rojo":"verde"}/>
     </div>
     <div style={{marginTop:14}}>
-      <AtenderPrimero tickets={tickets} perfil={perfil} recByCode={recByCode} onEstado={onEstadoTicket} onReasignar={onReasignarTicket} setSelExp={setSelExp}/>
+      <AtenderPrimero tickets={tickets} perfil={perfil} recByCode={recByCode} onEstado={onEstadoTicket} onReasignar={onReasignarTicket} onArchivar={onArchivarCaso} setSelExp={setSelExp}/>
     </div>
     {ger && <div style={{marginTop:14}}><DineroRiesgo tickets={tickets} perfil={perfil} recByCode={recByCode} setSelExp={setSelExp}/></div>}
   </>;
+}
+
+// Modal ARCHIVAR CASO — 2 formas: (1) archivar directo; (2) archivar adjuntando el foliado y/o la
+// constancia de cierre en PDF (se guardan en el Drive del caso y quedan previsualizables en la Sala).
+function ArchivarCaso({ info, onArchivar, onSubido, onClose }){
+  const rec = info.rec, codigo = info.codigo;
+  const [motivo, setMotivo] = useState("");
+  const [foliado, setFoliado] = useState(null);
+  const [cierre, setCierre] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const subeUno = async (file, etapaNN, etapa) => {
+    const r = await subirArchivo(codigo, etapaNN, file);
+    if(r && r.url) onSubido && onSubido({ exp:String(codigo), etapa, nombre:r.nombre||file.name, tipo:"PDF", url:r.url, fecha:new Date().toISOString().slice(0,10), usuario:"", resp:0 });
+    return r;
+  };
+  const archivar = async () => {
+    setBusy(true);
+    try{
+      if(foliado) await subeUno(foliado, "09_Foliado", "Foliado");
+      if(cierre)  await subeUno(cierre,  "10_Cierre",  "Cierre");
+      await onArchivar(codigo, motivo || ((foliado||cierre) ? "archivado con foliado/cierre" : "archivado por coordinación"));
+      onClose();
+    }catch(e){ toast("Error al archivar: "+e); setBusy(false); }
+  };
+  const inpFile = (label, file, setFile, hint) => (
+    <label style={{fontSize:12,display:"flex",flexDirection:"column",gap:3,background:"var(--card2)",border:"1px solid var(--bd)",borderRadius:8,padding:"8px 10px"}}>
+      <span style={{fontWeight:600}}>{label} {file && <span style={{color:"#15803D"}}>· {file.name}</span>}</span>
+      <span className="muted" style={{fontSize:10.5}}>{hint}</span>
+      <input type="file" accept=".pdf,application/pdf" onChange={e=>setFile(e.target.files && e.target.files[0] || null)} style={{fontSize:11,marginTop:2}}/>
+    </label>
+  );
+  return <div className="modal-bg" onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(22,41,75,.45)",zIndex:95,display:"flex",alignItems:"center",justifyContent:"center"}}>
+    <div onClick={e=>e.stopPropagation()} style={{background:"var(--card,#fff)",borderRadius:12,padding:18,width:"min(560px,94vw)",maxHeight:"90vh",overflowY:"auto",boxShadow:"0 12px 40px rgba(0,0,0,.25)"}}>
+      <h3 style={{marginTop:0}}>🗄 Archivar caso</h3>
+      <div className="muted" style={{fontSize:12,marginBottom:10}}>
+        <b>{rec?.osinerg || codigo}</b>{rec?.solicitante ? " · "+rec.solicitante : ""}. Se marca <b>CERRADO</b> y todas sus
+        etapas como hechas → sale de la cola, de vencidos y del riesgo SAP. Úsalo para casos que YA están cerrados.
+      </div>
+      <label style={{fontSize:12,display:"flex",flexDirection:"column",gap:3,marginBottom:10}}>
+        <span className="muted">Motivo / observación (opcional)</span>
+        <input value={motivo} onChange={e=>setMotivo(e.target.value)} placeholder="p. ej. cerrado en SIELSE / entregado a ELSE"/>
+      </label>
+      <div className="muted" style={{fontSize:11,margin:"4px 0 6px",fontWeight:600}}>Regularizar el archivo (opcional) — se guarda en el Drive del caso y se previsualiza en la Sala:</div>
+      <div style={{display:"grid",gap:8}}>
+        {inpFile("📎 Expediente foliado (PDF)", foliado, setFoliado, "Va a la carpeta 09_Foliado del caso")}
+        {inpFile("📎 Constancia de cierre (PDF)", cierre, setCierre, "Va a la carpeta 10_Cierre del caso")}
+      </div>
+      <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:14}}>
+        <button className="btn sm" onClick={onClose} disabled={busy}>Cancelar</button>
+        <button className="btn sm primary" onClick={archivar} disabled={busy}>{busy ? "Archivando…" : ((foliado||cierre) ? "Subir y archivar" : "Archivar")}</button>
+      </div>
+    </div>
+  </div>;
 }
 
 function ExpedientesTab({ data, setSelExp, delegar, updEstado, canDelegate, evidencias, activoByCode, progresoDe, registros, comentarios }){

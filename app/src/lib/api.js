@@ -155,6 +155,16 @@ export async function tomarTarea(ticket_id, reclamo){
   return postAction("tomar_tarea", { ticket_id, reclamo });
 }
 
+// ARCHIVAR un caso (Coordinador/Gerente): lo cierra y marca todas sus etapas como hechas → sale
+// de la cola, de vencidos y del riesgo SAP. Para los que ya están cerrados en la vida real.
+export async function archivarCaso(codigo, motivo){
+  return postAction("archivar_caso", { codigo, motivo });
+}
+// DES-archivar: reabre un caso archivado por error.
+export async function desarchivarCaso(codigo){
+  return postAction("desarchivar_caso", { codigo });
+}
+
 // Resume un documento del expediente con IA (Gemini lee escaneos/PDF). Devuelve {ok,resumen}.
 export async function resumirIA({ fileId, url, texto, prompt, reclamo, etapa }){
   return postAction("resumir_ia", { fileId, url, texto, prompt, reclamo, etapa });

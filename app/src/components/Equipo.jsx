@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, Kpi } from "./ui.jsx";
 import { TicketCard } from "./Ticket.jsx";
 import { TEAM, teamById } from "../lib/model.js";
@@ -8,30 +9,55 @@ const soles = n => "S/ " + Number(n || 0).toLocaleString("es-PE", { minimumFract
 const TOPE = 0.10 * 1250000; // 10% del contrato (referencia)
 
 // ===== Coordinador/Gerente: cola priorizada + asignación de tareas =====
-export function AtenderPrimero({ tickets, perfil, recByCode, onEstado, onReasignar, setSelExp }) {
+export function AtenderPrimero({ tickets, perfil, recByCode, onEstado, onReasignar, onArchivar, setSelExp }) {
+  const [filtro, setFiltro] = useState("todos");   // todos | vencidos | porvencer | enplazo
   const ab = abiertos(tickets);
-  const orden = ordenUrgencia(ab).slice(0, 50);
+  const venc = ab.filter(t => t.vencido);
+  const porVen = ab.filter(t => !t.vencido && t.diasRestantes != null && t.diasRestantes <= 2);
+  const enPlazo = ab.filter(t => !t.vencido && !(t.diasRestantes != null && t.diasRestantes <= 2));
+  const grupo = filtro === "vencidos" ? venc : filtro === "porvencer" ? porVen : filtro === "enplazo" ? enPlazo : ab;
+  const orden = ordenUrgencia(grupo).slice(0, 60);
   const abrir = t => { const r = recByCode[t.reclamo]; if (r) setSelExp(r.id, t.etapa); };
   const puedeAsignar = perfil.rol === "COORDINADOR" || perfil.rol === "GERENTE";
   const reasignar = (t, id) => { const m = TEAM.find(x => x.id === +id); onReasignar?.(t, +id, m ? m.nombre : "Externo / Call Center"); };
+  const chip = (k, txt, n, color) => (
+    <button onClick={() => setFiltro(k)} style={{
+      border: `1px solid ${filtro === k ? color : "var(--bd)"}`, background: filtro === k ? color : "transparent",
+      color: filtro === k ? "#fff" : "var(--tx)", borderRadius: 999, padding: "4px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer",
+    }}>{txt} <b>{n}</b></button>
+  );
   return (
     <Card>
-      <h3>{puedeAsignar ? "Asignar tareas — " : ""}Cola del equipo ({ab.length} caso(s) en curso, {vencidos(tickets).length} vencido(s))</h3>
-      <div className="muted" style={{ fontSize: 12, marginBottom: 10 }}>Un caso = un ticket en su etapa actual; al marcarse hecho pasa solo a la siguiente. Ordenado por urgencia de plazo (días hábiles) y exposición. {puedeAsignar && "Cambia el responsable en el selector de la derecha para reasignar."}</div>
+      <h3 style={{ marginBottom: 4 }}>{puedeAsignar ? "Asignar tareas — " : ""}Cola del equipo</h3>
+      <div className="muted" style={{ fontSize: 12, marginBottom: 10 }}>
+        Un caso = un ticket en su etapa actual. Ordenado por urgencia. {puedeAsignar && "Reasigna en el selector de la derecha; "}
+        {puedeAsignar && <>🗄 <b>archiva</b> los que ya están cerrados en la vida real (salen de la cola y de las alarmas).</>}
+      </div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+        {chip("todos", "Todos", ab.length, "#1F4E8C")}
+        {chip("vencidos", "🔴 Vencidos", venc.length, "#C0392B")}
+        {chip("porvencer", "🟡 Por vencer", porVen.length, "#C9821B")}
+        {chip("enplazo", "🟢 En plazo", enPlazo.length, "#1E8E5A")}
+      </div>
       <div style={{ display: "grid", gap: 8 }}>
         {orden.map(t => (
           <div key={t.id} style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <div style={{ flex: 1, minWidth: 0 }}><TicketCard t={t} rec={recByCode[t.reclamo]} perfil={perfil} onEstado={onEstado} onAbrir={abrir} /></div>
             {puedeAsignar && (
               <select value={t.respId} onChange={e => reasignar(t, e.target.value)} title="Reasignar responsable"
-                style={{ background: "var(--card2)", color: "var(--tx)", border: `1px solid ${TEAM.find(x => x.id === t.respId)?.color || "var(--bd)"}`, borderRadius: 8, padding: "6px 8px", fontSize: 12, minWidth: 190 }}>
+                style={{ background: "var(--card2)", color: "var(--tx)", border: `1px solid ${TEAM.find(x => x.id === t.respId)?.color || "var(--bd)"}`, borderRadius: 8, padding: "6px 8px", fontSize: 12, minWidth: 175 }}>
                 {TEAM.map(m => <option key={m.id} value={m.id}>{m.corto} · {m.rol}</option>)}
                 <option value={0}>Externo / Call Center</option>
               </select>
             )}
+            {puedeAsignar && onArchivar && (
+              <button title="Archivar: cerrar el caso y sacarlo de la cola/alarmas (ya está cerrado en la vida real)"
+                onClick={() => onArchivar(t)}
+                style={{ border: "1px solid var(--bd)", background: "transparent", color: "var(--mut)", borderRadius: 8, padding: "6px 9px", fontSize: 13, cursor: "pointer", flexShrink: 0 }}>🗄</button>
+            )}
           </div>
         ))}
-        {!orden.length && <div className="muted">Sin tickets abiertos en el equipo. 🎉</div>}
+        {!orden.length && <div className="muted">Sin casos en «{filtro === "todos" ? "la cola" : filtro}». 🎉</div>}
       </div>
     </Card>
   );
