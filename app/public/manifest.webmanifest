@@ -1,0 +1,14 @@
+{
+  "name": "TELCOM Reclamos · CP-026-2026-ELSE",
+  "short_name": "Reclamos",
+  "description": "Plataforma de atención de reclamos — INGENIERIA TELCOM E.I.R.L. / Electro Sur Este",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0E1422",
+  "theme_color": "#1F4E8C",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

@@ -79,7 +79,17 @@ footer{text-align:center;color:var(--mut2);font-size:11px;margin-top:26px}
   .wrap{padding:12px}
   h1{font-size:18px}
   .drawer{padding:12px}
+  /* toque cómodo en celular + evitar el zoom de iOS al enfocar (font >=16px) */
+  .btn,.btn-ghost{padding:10px 14px;font-size:14px;min-height:42px}
+  .btn.sm{padding:8px 11px;font-size:13px;min-height:36px}
+  .tabs button{padding:9px 13px;font-size:14px;min-height:40px}
+  input,select,textarea{font-size:16px !important}
+  .tbl,.tbl input,.tbl select{font-size:13px !important}
+  /* la barra de acciones de un cuaderno se apila y no desborda */
+  .drawer{width:100vw;max-width:100vw}
 }
+/* toques limpios (sin flash gris) en toda la app táctil */
+button,a,.clk{-webkit-tap-highlight-color:transparent}
 
 /* ===== login ===== */
 .loginbg{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(1200px 600px at 50% -10%, #DDF0FA 0%, #F4F7FB 55%)}

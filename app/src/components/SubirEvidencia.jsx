@@ -24,6 +24,7 @@ export default function SubirEvidencia({ reclamo, etapa, etapaNN, perfil, previo
   const [iaBusy, setIaBusy] = useState(false);
   const [sugeridos, setSugeridos] = useState(new Set());
   const inputRef = useRef();
+  const camRef = useRef();   // input dedicado a la cámara del celular (capture)
 
   const addFiles = fl => setFiles(prev => [...prev, ...[...fl]]);
 
@@ -81,10 +82,16 @@ export default function SubirEvidencia({ reclamo, etapa, etapaNN, perfil, previo
         onDragOver={e => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)}
         onDrop={e => { e.preventDefault(); setOver(false); addFiles(e.dataTransfer.files); }}
         style={{ border: `1px dashed ${over ? "var(--linkTx)" : "var(--bd)"}`, borderRadius: 8, padding: "14px 10px", textAlign: "center", cursor: "pointer", background: over ? "var(--hoverBg)" : "transparent" }}>
-        <div style={{ fontSize: 12.5, color: "var(--tx)" }}>Arrastra el PDF (o imágenes) aquí, o haz clic</div>
+        <div style={{ fontSize: 12.5, color: "var(--tx)" }}>Arrastra el PDF (o imágenes) aquí, o toca para elegir</div>
         <div style={{ fontSize: 11, color: "var(--mut)", marginTop: 2 }}>Ej.: un solo PDF con las firmas / el cargo / las fotos de la etapa</div>
-        <input ref={inputRef} type="file" multiple hidden onChange={e => addFiles(e.target.files)} />
+        <input ref={inputRef} type="file" multiple accept="image/*,application/pdf" hidden onChange={e => addFiles(e.target.files)} />
       </div>
+      {/* En el celular: abre la CÁMARA directo para fotografiar el documento/medidor/cargo */}
+      <button onClick={() => camRef.current?.click()}
+        style={{ width: "100%", marginTop: 8, padding: "11px", borderRadius: 8, border: "1px solid var(--linkTx)", background: "transparent", color: "var(--linkTx)", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+        📷 Tomar foto con la cámara
+      </button>
+      <input ref={camRef} type="file" accept="image/*" capture="environment" hidden onChange={e => addFiles(e.target.files)} />
       {files.length > 0 && (
         <div style={{ marginTop: 8, display: "grid", gap: 4 }}>
           {files.map((f, i) => (
