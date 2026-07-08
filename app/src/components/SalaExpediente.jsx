@@ -618,7 +618,7 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
           {/* ===== 2ª fuente: los CUADERNOS (Excel) que cruzan este mismo expediente ===== */}
           <div style={{marginTop:14, background:"var(--card2)", border:"1px solid var(--bd)", borderRadius:12, padding:"11px 13px"}}>
             <div style={{fontSize:13.5, fontWeight:700, color:"var(--titulo)"}}>📒 En los cuadernos {cuadRegs!=null && cuadRegs.length>0 ? "("+cuadRegs.length+")" : ""}</div>
-            <div className="muted" style={{fontSize:11, margin:"2px 0 8px"}}>Segunda fuente: lo que registran los cuadernos de este caso (la fuente SIELSE es todo lo de arriba).</div>
+            <div className="muted" style={{fontSize:11, margin:"2px 0 8px"}}>Dónde aparece ESTE expediente en los cuadernos de control: cada línea es un paso que se le registró (inspección, resolución, notificación, apelación…). Es su historial en los libros; arriba está la fuente SIELSE.</div>
             {cuadRegs==null && <div className="muted" style={{fontSize:12}}>Cargando cuadernos…</div>}
             {cuadRegs!=null && cuadRegs.length===0 && <div className="muted" style={{fontSize:12}}>Este expediente aún no figura en ningún cuaderno.</div>}
             {cuadRegs!=null && cuadRegs.length>0 && (()=>{

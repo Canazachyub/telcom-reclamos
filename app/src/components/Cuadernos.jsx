@@ -46,6 +46,27 @@ const extraDe = fila => {
   catch (e) { return {}; }
 };
 
+// Número con separador de miles (es-PE); "" si es nulo.
+const nMil = v => (v == null || v === "") ? "" : Number(v).toLocaleString("es-PE");
+
+// Agrupación de los cuadernos por FASE del trabajo (organiza el hub, en vez de 19 tarjetas sueltas).
+const GRUPOS = [
+  { titulo: "Padrón mensual", keys: ["mensual"] },
+  { titulo: "Campo e inspección", keys: ["1ra_inspeccion", "contrastes", "contraste_resultado", "cambios_medidor"] },
+  { titulo: "Resoluciones y envíos", keys: ["resol_oficina", "correlativos", "cartas_cvr", "cargo_consorcio", "notaria", "notaria_retorno", "oposiciones"] },
+  { titulo: "Apelaciones (JARU)", keys: ["apelaciones", "cargos_apelacion"] },
+  { titulo: "Cierre y control", keys: ["cerrados", "espera_cedula", "suspendidos", "reintegros", "sectores"] },
+];
+const DEF_POR_KEY = {}; CUADERNOS.forEach(d => { DEF_POR_KEY[d.key] = d; });
+
+// métrica compacta del resumen del hub (etiqueta pequeña + número grande tabular)
+const Metric = ({ label, value }) => (
+  <div>
+    <div style={{ fontSize: 19, fontWeight: 800, color: "var(--titulo,#16294B)", fontVariantNumeric: "tabular-nums", lineHeight: 1.1 }}>{value}</div>
+    <div className="muted" style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: .4, marginTop: 2 }}>{label}</div>
+  </div>
+);
+
 function semaforoElev(fila) {          // solo APELACION: plazo máx de elevación (5 d.h. — pen. 5.10)
   const plazo = String(fila.f2 || "").slice(0, 10);
   const elevada = valCuaderno(fila, "extra.siged");
@@ -204,14 +225,17 @@ export default function Cuadernos({ data, setSelExp, perfil }) {
   if (!sel) {
     const porTipo = (resumen && resumen.registros && resumen.registros.porTipo) || {};
     const men = (resumen && resumen.mensual) || { total: 0, porMes: {}, huecos: 0 };
+    const estDe = def => def.fuente === "mensual"
+      ? { total: men.total, huecos: men.huecos, cruzan: null }
+      : (porTipo[def.fuente] || { total: 0, huecos: 0, cruzan: 0 });
+    const totalReg = Object.values(porTipo).reduce((s, o) => s + (o.total || 0), 0);
     return <>
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
           <div>
-            <h3 style={{ margin: 0 }}>📒 Cuadernos de Control 2026</h3>
-            <div className="muted" style={{ fontSize: 12 }}>
-              Los mismos formatos de siempre, llenados por el sistema. Clic en una tarjeta = ver/imprimir.
-              {resumen && resumen.generado ? " · Sheet actualizado: " + resumen.generado : ""}
+            <h3 style={{ margin: 0 }}>Cuadernos de Control 2026</h3>
+            <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>
+              Los cuadernos de siempre, dentro de la plataforma. Clic en un cuaderno para verlo, editar o imprimir su cargo.
             </div>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
@@ -221,32 +245,44 @@ export default function Cuadernos({ data, setSelExp, perfil }) {
             {esJefe && <button className="btn sm" disabled={regen} onClick={regenerar}>{regen ? "Regenerando…" : "🔄 Regenerar"}</button>}
           </div>
         </div>
+        {/* resumen general */}
+        {resumen && <div style={{ display: "flex", flexWrap: "wrap", gap: 22, marginTop: 12, paddingTop: 11, borderTop: "1px solid var(--bd)" }}>
+          <Metric label="Padrón (reclamos)" value={nMil(men.total)} />
+          <Metric label="Registros de control" value={nMil(totalReg)} />
+          <Metric label="Cuadernos" value={CUADERNOS.length} />
+          {resumen.generado && <Metric label="Actualizado" value={fmtF(resumen.generado)} />}
+        </div>}
         {verFlujo && <ComoFunciona />}
-        {!resumen && <div className="note" style={{ marginTop: 10 }}>
-          Cargando contadores… (si no aparecen, el backend V2 aún no tiene el módulo Cuadernos desplegado)</div>}
+        {!resumen && <div className="muted" style={{ marginTop: 12, fontSize: 12 }}>Cargando contadores… (tarda unos segundos)</div>}
       </Card>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 12, marginTop: 12 }}>
-        {CUADERNOS.map(def => {
-          const est = def.fuente === "mensual"
-            ? { total: men.total, huecos: men.huecos, ultimo: "" }
-            : porTipo[def.fuente] || { total: 0, huecos: 0, cruzan: 0, ultimo: "" };
-          return <Card key={def.key} className="clk">
-            <div style={{ cursor: "pointer" }} onClick={() => abrir(def)}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <b>{def.emoji} {def.nombre}</b>
-                {def.fase2 && <Tag bg="#FDEDEE" color="#7f1d1d">➕ etapas</Tag>}
-              </div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: "var(--titulo,#16294B)", margin: "6px 0 2px" }}>{est.total}</div>
-              <div className="muted" style={{ fontSize: 11.5 }}>
-                {def.fuente === "mensual"
-                  ? Object.keys(men.porMes || {}).sort((a, b) => a - b).map(m => (MESES_NOMBRE[+m] || m).slice(0, 3) + " " + men.porMes[m]).join(" · ")
-                  : <>último: {est.ultimo ? fmtF(est.ultimo) : "—"}{"cruzan" in est ? ` · cruzan ${est.cruzan}` : ""}</>}
-              </div>
-              {est.huecos > 0 && <div style={{ fontSize: 11.5, color: "#B45309", marginTop: 4 }}>⚠ {est.huecos} filas con huecos</div>}
-            </div>
-          </Card>;
-        })}
-      </div>
+
+      {/* cuadernos AGRUPADOS por fase del trabajo */}
+      {GRUPOS.map(g => {
+        const defs = g.keys.map(k => DEF_POR_KEY[k]).filter(Boolean);
+        const sub = defs.reduce((s, d) => s + (estDe(d).total || 0), 0);
+        return <div key={g.titulo} style={{ marginTop: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", borderBottom: "1px solid var(--bd)", paddingBottom: 5, marginBottom: 9 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: .6, textTransform: "uppercase", color: "var(--mut)" }}>{g.titulo}</span>
+            {resumen && <span className="muted" style={{ fontSize: 11 }}>{nMil(sub)} registros</span>}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(215px,1fr))", gap: 10 }}>
+            {defs.map(def => {
+              const est = estDe(def);
+              return <div key={def.key} className="clk" onClick={() => abrir(def)}
+                style={{ cursor: "pointer", background: "var(--card)", border: "1px solid var(--bd)", borderRadius: 10, padding: "11px 13px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--tx)", lineHeight: 1.25 }}>{def.nombre}</span>
+                  <span style={{ fontSize: 20, fontWeight: 800, color: "var(--titulo,#16294B)", fontVariantNumeric: "tabular-nums" }}>{resumen ? nMil(est.total) : "—"}</span>
+                </div>
+                <div style={{ fontSize: 11, marginTop: 4, minHeight: 15 }}>
+                  {est.cruzan != null && est.cruzan > 0 && <span className="muted">{nMil(est.cruzan)} con expediente</span>}
+                  {est.huecos > 0 && <span style={{ color: "#B45309" }}>{est.cruzan ? " · " : ""}{nMil(est.huecos)} por llenar</span>}
+                </div>
+              </div>;
+            })}
+          </div>
+        </div>;
+      })}
     </>;
   }
 

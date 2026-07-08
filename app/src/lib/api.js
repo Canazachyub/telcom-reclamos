@@ -296,12 +296,17 @@ export async function loadCatalogos(){
 // ===== 📒 CUADERNOS 2026 (V2_06) =====
 // Contadores para el hub (total/huecos/cruces por tipo + por mes + url del Sheet generado).
 export async function loadCuadernosResumen(){
-  try{
-    const r = await fetch(GET_URL("cuadernos_resumen"));
-    const j = await r.json();
-    if(j && j.ok) return j;
-    sesionExpirada(j);
-  }catch(e){ /* sin backend */ }
+  // el resumen es pesado (~25s) y Apps Script a veces devuelve un 404 transitorio en el
+  // redirect → reintentar unas veces antes de rendirse (así el hub no queda en 0/"cargando").
+  for(let i=0;i<3;i++){
+    try{
+      const r = await fetch(GET_URL("cuadernos_resumen"));
+      const j = await r.json();
+      if(j && j.ok) return j;
+      if(sesionExpirada(j)) return null;
+    }catch(e){ /* transitorio: reintenta */ }
+    await new Promise(res=>setTimeout(res, 1500));
+  }
   return null;
 }
 // Registros de cuadernos de UN expediente (cruce por código / N° OSINERG) — conecta SIELSE ⇄ cuadernos.
