@@ -160,6 +160,10 @@ export async function tomarTarea(ticket_id, reclamo){
 export async function archivarCaso(codigo, motivo){
   return postAction("archivar_caso", { codigo, motivo });
 }
+// ARCHIVAR EN MASA los que figuran como cerrados en el cuaderno «20 Reclamos Cerrados».
+export async function archivarCerrados(){
+  return postAction("archivar_cerrados", {});
+}
 // DES-archivar: reabre un caso archivado por error.
 export async function desarchivarCaso(codigo){
   return postAction("desarchivar_caso", { codigo });
