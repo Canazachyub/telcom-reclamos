@@ -154,6 +154,25 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
     return out;
   }, [filas, filtro, dia, q, sel, tipoTodos]);
 
+  // VISTA UNIFICADA agrupada: UNA fila por EXPEDIENTE (reclamo), con los cuadernos por los que pasó.
+  // (Antes eran 9,974 filas planas repitiendo suministros — inútil. Ahora se consolida por caso.)
+  const porExpediente = useMemo(() => {
+    if (!sel || sel.fuente !== "todos" || !filas) return { filas: [], sinReclamo: 0 };
+    const m = {}; let sinReclamo = 0;
+    filtradas.forEach(r => {
+      const k = String(r.reclamo || "").trim();
+      if (!k) { sinReclamo++; return; }
+      const g = m[k] || (m[k] = { reclamo: k, suministro: "", cuadernos: {}, ultima: "", n: 0 });
+      g.n++;
+      if (!g.suministro && r.suministro) g.suministro = String(r.suministro);
+      g.cuadernos[r.tipo] = (g.cuadernos[r.tipo] || 0) + 1;
+      const f = String(r.fecha_evento || "").slice(0, 10);
+      if (f > g.ultima) g.ultima = f;
+    });
+    const arr = Object.values(m).sort((a, b) => (b.ultima || "").localeCompare(a.ultima || ""));
+    return { filas: arr, sinReclamo };
+  }, [filtradas, filas, sel]);
+
   // opciones del filtro: meses (mensual) o meses de fecha_evento (registros)
   const opcionesFiltro = useMemo(() => {
     if (!filas || !sel) return [];
@@ -241,26 +260,44 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
       ${bloques}</body></html>`);
   };
 
-  // 🖨 imprimir / PDF: la vista actual (respeta el filtro) como tabla formal densa (padrón y no-cargos).
+  // filas para export/impresión: agrupadas por EXPEDIENTE en «todos», planas en el resto.
+  const filasVistaExport = () => {
+    if (sel.fuente === "todos") {
+      const head = ["N°", "Reclamo", "Suministro", "Reclamante", "Cuadernos", "Últ. fecha"];
+      const rows = porExpediente.filas.map((g, i) => {
+        const rec = recDe({ reclamo: g.reclamo });
+        return [i + 1, rec ? rec.osinerg : g.reclamo, g.suministro || (rec ? rec.suministro : ""), rec ? rec.solicitante : "",
+          Object.keys(g.cuadernos).map(nombreCuaderno).join(" · "), g.ultima ? fmtF(g.ultima) : ""];
+      });
+      return { head, rows };
+    }
+    const head = ["N°", ...colsVista.map(c => c[0])];
+    const rows = filtradas.map((f, i) => [i + 1, ...colsVista.map(c => fmtCel(celdaValor(f, c[1])))]);
+    return { head, rows };
+  };
+
+  // 🖨 imprimir / PDF: la vista actual (respeta el filtro) como tabla formal densa.
   const imprimirTabla = () => {
+    const { head, rows } = filasVistaExport();
+    const thead = `<thead><tr>${head.map(h => `<th>${h}</th>`).join("")}</tr></thead>`;
+    const trs = rows.map(r => `<tr>${r.map(c => `<td>${c == null ? "" : c}</td>`).join("")}</tr>`).join("");
     _abrirImprimir(`<html><head><title>${sel.nombre} — ${periodoLabel()}</title><style>${IMP_STYLE}</style></head><body>
       ${impHead(new Date().toLocaleString("es-PE"))}
       <div class="tit">${sel.titulo || sel.nombre}</div>
-      <div class="met">Período: <b>${periodoLabel()}</b> · ${filtradas.length} registro(s)</div>
-      <table>${_thead}<tbody>${_trs(filtradas)}</tbody></table>
+      <div class="met">Período: <b>${periodoLabel()}</b> · ${rows.length} ${sel.fuente === "todos" ? "expediente(s)" : "registro(s)"}</div>
+      <table>${thead}<tbody>${trs}</tbody></table>
       </body></html>`);
   };
 
   // 🧮 exportar a Excel/CSV la vista actual (para trabajarla también en Excel). Sin fugas: solo lo filtrado.
   const exportarCSV = () => {
     const esc = v => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
-    const head = ["N°", ...colsVista.map(c => c[0])];
-    const lineas = [head.map(esc).join(";")];
-    filtradas.forEach((f, i) => lineas.push([i + 1, ...colsVista.map(c => fmtCel(celdaValor(f, c[1])))].map(esc).join(";")));
+    const { head, rows } = filasVistaExport();
+    const lineas = [head.map(esc).join(";"), ...rows.map(r => r.map(esc).join(";"))];
     const blob = new Blob(["﻿" + lineas.join("\r\n")], { type: "text/csv;charset=utf-8;" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `${sel.key}_${(filtro || "todo").replace(/\W+/g, "-")}.csv`;
+    a.download = `${sel.key}_${(filtro || tipoTodos || "todo").replace(/\W+/g, "-")}.csv`;
     a.click(); URL.revokeObjectURL(a.href);
     toast("Exportado — ábrelo en Excel");
   };
@@ -386,46 +423,81 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
           : sel.fuente === "mensual" ? "" : " ✏ edita el registro (queda en bitácora). Para un cargo de un día: elige 📅 día y pulsa 🖨 Cargo."}
       </div>
     </Card>
-    <Card>
-      <div style={{ overflowX: "auto" }}>
-        <table className="tbl">
-          <thead><tr>
-            <th>N°</th>
-            {sel.semaforoElev && <th>⚠ ELEV</th>}
-            {colsVista.map(c => <th key={c[0]}>{c[0]}</th>)}
-            {sel.fuente !== "mensual" && sel.fuente !== "todos" && <th></th>}
-          </tr></thead>
-          <tbody>
-            {filas && filtradas.slice(0, tope).map((f, i) => {
-              const rec = recDe(f);
-              return <tr key={f.id || i} className={rec ? "clk" : ""}
-                onClick={() => rec && setSelExp(rec.id)}
-                title={rec ? "Abrir la Sala del expediente" : "Caso aún no cargado en la plataforma (2025 / ene-mar 2026)"}>
-                <td>{i + 1}</td>
-                {sel.semaforoElev && <td>{semaforoElev(f)}</td>}
-                {colsVista.map(c => {
-                  const v = celdaValor(f, c[1]);
-                  const esFecha = /^(\d{4})-(\d{2})-(\d{2})/.test(v);
-                  const esCuad = c[1] === "__cuaderno";
-                  return <td key={c[0]} style={esCuad ? { fontWeight: 600, color: "var(--linkTx)", whiteSpace: "nowrap" } : (!v ? { background: "#FFF8E6" } : undefined)}>{esFecha ? fmtF(v) : v}</td>;
-                })}
-                {sel.fuente !== "mensual" && sel.fuente !== "todos" &&
-                  <td onClick={e => e.stopPropagation()}>
-                    <button className="btn sm" title="Editar registro" onClick={() => setEdit({ ...f })}>✏</button>
-                  </td>}
-              </tr>;
-            })}
-            {filas && !filtradas.length && <tr><td colSpan={colsVista.length + 3} className="muted">Sin filas {filtro ? "para ese período" : "aún"}.</td></tr>}
-          </tbody>
-        </table>
-      </div>
-      {filas && filtradas.length > tope &&
-        <button className="btn sm" style={{ marginTop: 8 }} onClick={() => setTope(tope + 500)}>Mostrar 500 más ({filtradas.length - tope} restantes)</button>}
-      <div className="muted" style={{ fontSize: 10.5, marginTop: 6 }}>
-        Celda ámbar = hueco (esa etapa aún no registró el dato — §9.4). Si un dato existe también en la etapa
-        (datos_etapa), la vista generada del Google Sheet prefiere el de la etapa (primera fuente, firmada).
-      </div>
-    </Card>
+    {sel.fuente === "todos" ? (
+      /* ===== VISTA UNIFICADA: 1 fila por EXPEDIENTE, con los cuadernos por los que pasó ===== */
+      <Card>
+        <div className="muted" style={{ fontSize: 11.5, marginBottom: 8 }}>
+          <b>{porExpediente.filas.length}</b> expediente(s){tipoTodos ? " en «" + nombreCuaderno(tipoTodos) + "»" : ""} · cada fila es UN caso; la columna «Cuadernos» muestra por dónde pasó.
+          {porExpediente.sinReclamo > 0 && <> · {porExpediente.sinReclamo} registro(s) sin reclamo asociado no se listan aquí (ver el cuaderno directo).</>}
+        </div>
+        <div style={{ overflowX: "auto" }}>
+          <table className="tbl">
+            <thead><tr><th>N°</th><th>Reclamo</th><th>Suministro</th><th>Reclamante</th><th>Cuadernos por los que pasó</th><th>Últ. fecha</th></tr></thead>
+            <tbody>
+              {porExpediente.filas.slice(0, tope).map((g, i) => {
+                const rec = recDe({ reclamo: g.reclamo });
+                return <tr key={g.reclamo} className={rec ? "clk" : ""} onClick={() => rec && setSelExp(rec.id)}
+                  title={rec ? "Abrir la Sala del expediente" : "Caso aún no cargado en la plataforma (2025 / ene-mar 2026)"}>
+                  <td>{i + 1}</td>
+                  <td className="mono" style={{ whiteSpace: "nowrap" }}>{rec?.osinerg || g.reclamo}</td>
+                  <td className="mono">{g.suministro || (rec?.suministro || "—")}</td>
+                  <td>{rec?.solicitante || "—"}</td>
+                  <td><div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                    {Object.keys(g.cuadernos).map(tp => <span key={tp} title={nombreCuaderno(tp)}
+                      style={{ fontSize: 10, background: "var(--card2)", border: "1px solid var(--bd)", borderRadius: 6, padding: "1px 6px", whiteSpace: "nowrap" }}>
+                      {nombreCuaderno(tp)}{g.cuadernos[tp] > 1 ? " ×" + g.cuadernos[tp] : ""}</span>)}
+                  </div></td>
+                  <td style={{ whiteSpace: "nowrap" }}>{g.ultima ? fmtF(g.ultima) : "—"}</td>
+                </tr>;
+              })}
+              {!porExpediente.filas.length && <tr><td colSpan={6} className="muted">Sin expedientes para ese filtro.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+        {porExpediente.filas.length > tope &&
+          <button className="btn sm" style={{ marginTop: 8 }} onClick={() => setTope(tope + 500)}>Mostrar 500 más ({porExpediente.filas.length - tope} restantes)</button>}
+      </Card>
+    ) : (
+      <Card>
+        <div style={{ overflowX: "auto" }}>
+          <table className="tbl">
+            <thead><tr>
+              <th>N°</th>
+              {sel.semaforoElev && <th>⚠ ELEV</th>}
+              {colsVista.map(c => <th key={c[0]}>{c[0]}</th>)}
+              {sel.fuente !== "mensual" && <th></th>}
+            </tr></thead>
+            <tbody>
+              {filas && filtradas.slice(0, tope).map((f, i) => {
+                const rec = recDe(f);
+                return <tr key={f.id || i} className={rec ? "clk" : ""}
+                  onClick={() => rec && setSelExp(rec.id)}
+                  title={rec ? "Abrir la Sala del expediente" : "Caso aún no cargado en la plataforma (2025 / ene-mar 2026)"}>
+                  <td>{i + 1}</td>
+                  {sel.semaforoElev && <td>{semaforoElev(f)}</td>}
+                  {colsVista.map(c => {
+                    const v = celdaValor(f, c[1]);
+                    const esFecha = /^(\d{4})-(\d{2})-(\d{2})/.test(v);
+                    return <td key={c[0]} style={!v ? { background: "#FFF8E6" } : undefined}>{esFecha ? fmtF(v) : v}</td>;
+                  })}
+                  {sel.fuente !== "mensual" &&
+                    <td onClick={e => e.stopPropagation()}>
+                      <button className="btn sm" title="Editar registro" onClick={() => setEdit({ ...f })}>✏</button>
+                    </td>}
+                </tr>;
+              })}
+              {filas && !filtradas.length && <tr><td colSpan={colsVista.length + 3} className="muted">Sin filas {filtro ? "para ese período" : "aún"}.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+        {filas && filtradas.length > tope &&
+          <button className="btn sm" style={{ marginTop: 8 }} onClick={() => setTope(tope + 500)}>Mostrar 500 más ({filtradas.length - tope} restantes)</button>}
+        <div className="muted" style={{ fontSize: 10.5, marginTop: 6 }}>
+          Celda ámbar = hueco (esa etapa aún no registró el dato — §9.4). Si un dato existe también en la etapa
+          (datos_etapa), la vista generada del Google Sheet prefiere el de la etapa (primera fuente, firmada).
+        </div>
+      </Card>
+    )}
     {edit && <EditorRegistro fila={edit} def={sel} onCerrar={() => setEdit(null)} onGuardar={guardarEdicion} />}
     {pegar && <PegarExcel def={sel} diaInicial={dia || hoyISO()} onCerrar={() => setPegar(false)} onSubir={subirPegado} />}
   </>;
