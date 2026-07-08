@@ -58,6 +58,19 @@ const GRUPOS = [
   { titulo: "Cierre y control", keys: ["cerrados", "espera_cedula", "suspendidos", "reintegros", "sectores"] },
 ];
 const DEF_POR_KEY = {}; CUADERNOS.forEach(d => { DEF_POR_KEY[d.key] = d; });
+const DEF_POR_FUENTE = {}; CUADERNOS.forEach(d => { DEF_POR_FUENTE[d.fuente] = d; });
+const nombreCuaderno = tipo => (DEF_POR_FUENTE[tipo] ? DEF_POR_FUENTE[tipo].nombre : tipo);
+// Cuadernos temáticos (todos menos el padrón) — para el filtro de la vista unificada.
+const TIPOS_TEMATICOS = CUADERNOS.filter(d => d.fuente !== "mensual");
+
+// 🗂 VISTA UNIFICADA: todas las hojas de control en UNA sola tabla, con su Cuaderno/etapa visible.
+const DEF_TODOS = {
+  key: "todos", fuente: "todos", nombre: "Todos los cuadernos (vista unificada)",
+  titulo: "VISTA UNIFICADA — todos los registros de control, con su cuaderno y etapa",
+  cols: [["Cuaderno", "__cuaderno"], ["Fecha", "fecha_evento"], ["Reclamo", "reclamo"],
+    ["Suministro", "suministro"], ["Estado", "estado"], ["Correlativo", "correlativo"],
+    ["Resolución", "resolucion"], ["Observaciones", "observaciones"]],
+};
 
 // métrica compacta del resumen del hub (etiqueta pequeña + número grande tabular)
 const Metric = ({ label, value }) => (
@@ -83,6 +96,7 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
   const [filas, setFilas] = useState(null);
   const [filtro, setFiltro] = useState("");        // mes (mensual) o mes de fecha_evento
   const [dia, setDia] = useState("");              // FECHA exacta (YYYY-MM-DD) — filtro fino por día
+  const [tipoTodos, setTipoTodos] = useState("");  // filtro por cuaderno en la vista unificada ('todos')
   const [q, setQ] = useState("");
   const [tope, setTope] = useState(300);
   const [edit, setEdit] = useState(null);          // fila en edición | {} alta
@@ -97,7 +111,7 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
   const [deepLinked, setDeepLinked] = useState(false); // llegó por deep-link (desde la Sala) → muestra "← Volver"
   const recargar = () => loadCuadernoDatos(sel.fuente).then(setFilas);
   const abrirCuaderno = (def, q) => {
-    setSel(def); setFilas(null); setFiltro(""); setDia(""); setQ(q || ""); setTope(300);
+    setSel(def); setFilas(null); setFiltro(""); setDia(""); setTipoTodos(""); setQ(q || ""); setTope(300);
     loadCuadernoDatos(def.fuente).then(setFilas);
   };
   // deep-link desde la Sala: abrir un cuaderno YA FILTRADO a ese caso (abrir = {fuente, q})
@@ -120,9 +134,12 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
   // columnas de la vista: la tabla ya pone su propio N°, así que ocultamos la columna 'item'
   // (evita el doble «N°» del padrón). Se usa en tabla, export, cargo e impresión.
   const colsVista = sel ? sel.cols.filter(c => c[1] !== "item") : [];
+  // valor de celda; la vista unificada tiene una columna virtual "__cuaderno" = nombre del cuaderno
+  const celdaValor = (f, path) => path === "__cuaderno" ? nombreCuaderno(f.tipo) : valCuaderno(f, path);
   const filtradas = useMemo(() => {
     if (!filas) return [];
     let out = filas;
+    if (sel && sel.fuente === "todos" && tipoTodos) out = out.filter(f => String(f.tipo) === tipoTodos);  // filtro por cuaderno
     if (sel && dia) {                                   // FECHA exacta manda sobre el mes
       out = out.filter(f => String(f[fechaCampo] || "").slice(0, 10) === dia);
     } else if (sel && filtro) {
@@ -135,7 +152,7 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
       out = out.filter(f => JSON.stringify(f).toUpperCase().includes(t));
     }
     return out;
-  }, [filas, filtro, dia, q, sel]);
+  }, [filas, filtro, dia, q, sel, tipoTodos]);
 
   // opciones del filtro: meses (mensual) o meses de fecha_evento (registros)
   const opcionesFiltro = useMemo(() => {
@@ -203,7 +220,7 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
       <div class="con">RUC 20602277900 · CP-026-2026-ELSE · Atención de Reclamos — Electro Sur Este S.A.A.</div></div>
     <div class="fol">${fol || ""}</div></div>`;
   const _thead = `<thead><tr><th class="n">N°</th>${colsVista.map(c => `<th>${c[0]}</th>`).join("")}</tr></thead>`;
-  const _trs = arr => arr.map((f, i) => `<tr><td class="n">${i + 1}</td>${colsVista.map(c => `<td>${fmtCel(valCuaderno(f, c[1]))}</td>`).join("")}</tr>`).join("");
+  const _trs = arr => arr.map((f, i) => `<tr><td class="n">${i + 1}</td>${colsVista.map(c => `<td>${fmtCel(celdaValor(f, c[1]))}</td>`).join("")}</tr>`).join("");
   const _abrirImprimir = html => { const w = window.open("", "_blank"); w.document.write(html); w.document.close(); w.focus(); w.print(); };
 
   // 🖨 cargo imprimible: bloques por fecha con ENTREGADO/RECIBIDO/FIRMA para firmar y entregar.
@@ -239,7 +256,7 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
     const esc = v => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
     const head = ["N°", ...colsVista.map(c => c[0])];
     const lineas = [head.map(esc).join(";")];
-    filtradas.forEach((f, i) => lineas.push([i + 1, ...colsVista.map(c => fmtCel(valCuaderno(f, c[1])))].map(esc).join(";")));
+    filtradas.forEach((f, i) => lineas.push([i + 1, ...colsVista.map(c => fmtCel(celdaValor(f, c[1])))].map(esc).join(";")));
     const blob = new Blob(["﻿" + lineas.join("\r\n")], { type: "text/csv;charset=utf-8;" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -275,7 +292,8 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
               Los cuadernos de siempre, dentro de la plataforma. Clic en un cuaderno para verlo, editar o imprimir su cargo.
             </div>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button className="btn sm primary" title="Ver TODOS los cuadernos en una sola tabla, con buscador y filtros" onClick={() => abrirCuaderno(DEF_TODOS)}>🗂 Vista unificada</button>
             <button className="btn sm" onClick={() => setVerFlujo(v => !v)}>{verFlujo ? "▲ Ocultar" : "ⓘ ¿Cómo funciona?"}</button>
             {resumen && resumen.sheetUrl &&
               <a className="btn sm" href={resumen.sheetUrl} target="_blank" rel="noreferrer">🔗 Google Sheet</a>}
@@ -335,29 +353,37 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
           {deepLinked && q && <span className="muted" style={{ fontSize: 11 }}>· filtrado a {q}</span>}
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          {sel.fuente === "todos" &&
+            <select value={tipoTodos} onChange={e => setTipoTodos(e.target.value)} title="Filtrar por cuaderno">
+              <option value="">— todos los cuadernos —</option>
+              {TIPOS_TEMATICOS.map(d => <option key={d.fuente} value={d.fuente}>{d.nombre}</option>)}
+            </select>}
           {opcionesFiltro.length > 0 &&
             <select value={filtro} onChange={e => { setFiltro(e.target.value); setDia(""); }} title="Filtrar por mes">
               <option value="">— mes —</option>
               {opcionesFiltro.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>}
-          <label title={sel.fuente==="mensual" ? "Filtrar por fecha de registro del reclamo" : "Filtrar por FECHA exacta (para emitir el cargo de ese día)"} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11.5 }}>
+          <label title={sel.fuente==="mensual" ? "Filtrar por fecha de registro del reclamo" : "Filtrar por FECHA exacta"} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11.5 }}>
             <span className="muted">📅 día</span>
             <input type="date" value={dia} onChange={e => { setDia(e.target.value); setFiltro(""); }} />
             {dia && <button className="btn sm" title="Quitar filtro de día" onClick={() => setDia("")}>✕</button>}
           </label>
           <input placeholder="🔎 buscar…" value={q} onChange={e => setQ(e.target.value)} style={{ minWidth: 130 }} />
-          {sel.fuente !== "mensual" &&
+          {sel.fuente !== "mensual" && sel.fuente !== "todos" &&
             <button className="btn sm" onClick={() => setEdit({ tipo: sel.fuente, fecha_evento: dia || hoyISO() })}>➕ Registrar</button>}
-          <button className="btn sm" title="Copia filas de tu Excel y pégalas aquí — se suben al sistema (no duplica)" onClick={() => setPegar(true)}>📋 Pegar de Excel</button>
-          {sel.fuente !== "mensual"
+          {sel.fuente !== "todos" &&
+            <button className="btn sm" title="Copia filas de tu Excel y pégalas aquí — se suben al sistema (no duplica)" onClick={() => setPegar(true)}>📋 Pegar de Excel</button>}
+          {(sel.fuente !== "mensual" && sel.fuente !== "todos")
             ? <button className="btn sm" title="Imprimir el cargo del período/día filtrado (ENTREGADO/RECIBIDO)" onClick={imprimirCargo}>🖨 Cargo</button>
             : <button className="btn sm" title="Imprimir / guardar como PDF la vista actual" onClick={imprimirTabla}>🖨 Imprimir (PDF)</button>}
           <button className="btn sm" title="Descargar la vista actual (respeta el filtro) para abrirla en Excel" onClick={exportarCSV}>🧮 Excel</button>
         </div>
       </div>
       <div className="muted" style={{ fontSize: 11, marginTop: 6 }}>
-        {sel.titulo} — clic en una fila abre la Sala del expediente; ✏ edita el registro (queda en bitácora).
-        {" "}Para emitir un cargo de un día: elige 📅 <b>día</b> y pulsa 🖨 Cargo.
+        {sel.titulo} — clic en una fila abre la Sala del expediente.
+        {sel.fuente === "todos"
+          ? " Filtra por Cuaderno, mes/día o busca (código, suministro, nombre…). Para editar, entra al cuaderno específico."
+          : sel.fuente === "mensual" ? "" : " ✏ edita el registro (queda en bitácora). Para un cargo de un día: elige 📅 día y pulsa 🖨 Cargo."}
       </div>
     </Card>
     <Card>
@@ -367,7 +393,7 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
             <th>N°</th>
             {sel.semaforoElev && <th>⚠ ELEV</th>}
             {colsVista.map(c => <th key={c[0]}>{c[0]}</th>)}
-            {sel.fuente !== "mensual" && <th></th>}
+            {sel.fuente !== "mensual" && sel.fuente !== "todos" && <th></th>}
           </tr></thead>
           <tbody>
             {filas && filtradas.slice(0, tope).map((f, i) => {
@@ -378,11 +404,12 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
                 <td>{i + 1}</td>
                 {sel.semaforoElev && <td>{semaforoElev(f)}</td>}
                 {colsVista.map(c => {
-                  const v = valCuaderno(f, c[1]);
+                  const v = celdaValor(f, c[1]);
                   const esFecha = /^(\d{4})-(\d{2})-(\d{2})/.test(v);
-                  return <td key={c[0]} style={!v ? { background: "#FFF8E6" } : undefined}>{esFecha ? fmtF(v) : v}</td>;
+                  const esCuad = c[1] === "__cuaderno";
+                  return <td key={c[0]} style={esCuad ? { fontWeight: 600, color: "var(--linkTx)", whiteSpace: "nowrap" } : (!v ? { background: "#FFF8E6" } : undefined)}>{esFecha ? fmtF(v) : v}</td>;
                 })}
-                {sel.fuente !== "mensual" &&
+                {sel.fuente !== "mensual" && sel.fuente !== "todos" &&
                   <td onClick={e => e.stopPropagation()}>
                     <button className="btn sm" title="Editar registro" onClick={() => setEdit({ ...f })}>✏</button>
                   </td>}

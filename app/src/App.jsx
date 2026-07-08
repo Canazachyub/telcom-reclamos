@@ -370,7 +370,7 @@ function Hoy({ perfil, data, datos, tickets, recByCode, onEstadoTicket, onReasig
       {ger && <Kpi label="Dinero en riesgo" value={"S/ "+expo.toLocaleString("es-PE")} sub="de las etapas actuales" s={expo?"rojo":"verde"}/>}
     </div>
     <div className={"grid "+(ger?"g4":"g3")} style={{marginTop:10}}>
-      <Kpi label="Riesgo SAP" value={riesgoSAP.total} sub="relojes SAP vencidos — silencio positivo (pen. 5.5)" s={riesgoSAP.total>0?"rojo":"verde"}/>
+      <Kpi label="Riesgo de silencio +" value={riesgoSAP.total} sub="casos que OSINERGMIN puede dar por GANADOS al usuario (silencio positivo · pen. 5.5)" s={riesgoSAP.total>0?"rojo":"verde"}/>
     </div>
     <div style={{marginTop:14}}>
       <AtenderPrimero tickets={tickets} perfil={perfil} recByCode={recByCode} onEstado={onEstadoTicket} onReasignar={onReasignarTicket} onArchivar={onArchivarCaso} setSelExp={setSelExp}/>

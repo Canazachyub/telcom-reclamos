@@ -46,7 +46,7 @@ export default function MiDia({ perfil, misReclamos, tickets = [], recByCode = {
       <Card style={{ marginBottom: 14 }}>
         {tickets.length
           ? <div className="muted">Sin tareas abiertas. Todo al día. 🎉</div>
-          : <div className="muted">Aún no tienes tickets asignados. No hace falta que busques nada: el trabajo te llegará solo cuando un expediente entre a la etapa del flujo que te corresponde.</div>}
+          : <div className="muted">Aún no tienes tareas asignadas. No hace falta que busques nada: el trabajo te llegará solo cuando un caso entre a la etapa que te corresponde.</div>}
       </Card>
     )}
 
@@ -61,7 +61,7 @@ export default function MiDia({ perfil, misReclamos, tickets = [], recByCode = {
     {/* tickets por etapa, colapsables — solo la etapa urgente abierta por defecto */}
     <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
       {grupos.map(g => <GrupoEtapa key={g.etapa} g={g} perfil={perfil} recByCode={recByCode} onEstado={onEstadoTicket} onAbrir={abrir} defAbierto={g.urgente} />)}
-      {!grupos.length && <Card><div className="muted">No tienes tickets abiertos.</div></Card>}
+      {!grupos.length && <Card><div className="muted">No tienes tareas abiertas.</div></Card>}
     </div>
   </>;
 }

@@ -30,7 +30,7 @@ export function AtenderPrimero({ tickets, perfil, recByCode, onEstado, onReasign
     <Card>
       <h3 style={{ marginBottom: 4 }}>{puedeAsignar ? "Asignar tareas — " : ""}Cola del equipo</h3>
       <div className="muted" style={{ fontSize: 12, marginBottom: 10 }}>
-        Un caso = un ticket en su etapa actual. Ordenado por urgencia. {puedeAsignar && "Reasigna en el selector de la derecha; "}
+        Un caso = una tarea en su etapa actual. Ordenado por urgencia. {puedeAsignar && "Reasigna en el selector de la derecha; "}
         {puedeAsignar && <>🗄 <b>archiva</b> los que ya están cerrados en la vida real (salen de la cola y de las alarmas).</>}
       </div>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>

@@ -110,7 +110,7 @@ export function TicketCard({ t, rec, perfil, onEstado, onAbrir }) {
       </div>
       <SemaforoPlazo t={t} />
       {puedeEditar ? (
-        <select value={t.estado} onChange={e => onEstado?.(t, e.target.value)} title="Cambiar estado del ticket" style={{
+        <select value={t.estado} onChange={e => onEstado?.(t, e.target.value)} title="Cambiar estado de la tarea" style={{
           background: "#fff", color: "var(--tx)", border: "1px solid var(--bd)", borderRadius: 8,
           padding: "5px 7px", fontSize: 12,
         }}>
