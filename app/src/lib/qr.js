@@ -8,6 +8,18 @@ import QRCode from "qrcode";
 const baseURL = () => window.location.origin + window.location.pathname;
 export const urlSuministro = sum => baseURL() + "?sum=" + encodeURIComponent(String(sum || "").trim());
 
+// PNG (data-URL) del QR de UN suministro — para mostrarlo o descargarlo.
+export async function qrDataURL(sum, size = 240) {
+  return QRCode.toDataURL(urlSuministro(sum), { margin: 1, width: size, errorCorrectionLevel: "M" });
+}
+// Descarga el QR de un suministro como archivo PNG.
+export async function descargarQR(sum, nombre) {
+  const url = await qrDataURL(sum, 512);
+  const a = document.createElement("a");
+  a.href = url; a.download = (nombre || ("QR_" + String(sum || "").trim())) + ".png";
+  a.click();
+}
+
 // items: [{ suministro, reclamante, osinerg, reclamo }]. Deduplica por suministro (1 etiqueta por medidor).
 export async function imprimirQRs(items, titulo = "Etiquetas QR") {
   const seen = new Set(), lista = [];
