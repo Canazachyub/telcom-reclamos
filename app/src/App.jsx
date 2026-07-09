@@ -366,8 +366,10 @@ function Admin({ perfil, data, evidencias, setSelExp, delegar, updEstado, ticket
   // para la valorización — aquí es una carga propia, más simple que subir el estado más arriba).
   const [configEquipo, setConfigEquipo] = useState({});
   useEffect(()=>{ loadConfig().then(c=>{ if(c) setConfigEquipo(c); }).catch(()=>{}); }, []);
+  // El Coordinador ve Cartera + Cuadernos (su operación); las valorizaciones/informes/muestra/Mejoras TR
+  // los consolida Gerencia → para el Coordinador la pestaña se llama «Cuadernos», para el Gerente «Reportes».
   const tabs = [["hoy","🏠 Hoy"],["equipo","👥 Equipo"],["expedientes","📁 Expedientes"],["bandeja","📧 Bandeja"],["calendario","📅 Calendario"],
-    ["reportes","📊 Reportes"],["guia","📖 Guía del flujo"],[esGer?"admin":"_","⚙ Administración"]]
+    ["reportes",esGer?"📊 Reportes":"📒 Cuadernos"],["guia","📖 Guía del flujo"],[esGer?"admin":"_","⚙ Administración"]]
     .filter(t=>t[0]!=="_");
   return <>
     <div className="tabs">{tabs.map(t=><button key={t[0]} className={tab===t[0]?"on":""} onClick={()=>setTab(t[0])}>{t[1]}</button>)}</div>
@@ -788,17 +790,27 @@ function Reportes({ data, setSelExp, tickets, registros, datos, evidencias, perf
   ];
   let tot=0;
 
+  // Gerencia ve todo; el Coordinador solo Cartera + Cuadernos (lo demás lo consolida Gerencia).
+  const esGer = perfil?.rol==="GERENTE";
+  const subTabs = esGer
+    ? [["cartera","Cartera"],["diario","Diario"],["semanal","Semanal"],["mensual","Valorización (estimada)"],["mensualoficial","Valorización oficial"],["muestra","Muestra ACT-04"],["mejoras","Mejoras TR"],["cuadernos","📒 Cuadernos"]]
+    : [["cartera","Cartera"],["cuadernos","📒 Cuadernos"]];
+  // si el rol actual no puede ver la sub-pestaña seleccionada, cae a Cartera
+  const rtabOk = subTabs.some(x=>x[0]===rtab) ? rtab : "cartera";
   return <>
-    <div className="tabs">{[["cartera","Cartera"],["diario","Diario"],["semanal","Semanal"],["mensual","Valorización (estimada)"],["mensualoficial","Valorización oficial"],["muestra","Muestra ACT-04"],["mejoras","Mejoras TR"],["cuadernos","📒 Cuadernos"]].map(x=><button key={x[0]} className={rtab===x[0]?"on":""} onClick={()=>setR(x[0])}>{x[1]}</button>)}</div>
-    {rtab==="cartera" && <Cartera data={data} setSelExp={setSelExp}/>}
-    {rtab==="diario" && <Card><h3>Reporte diario por trabajador</h3><div style={{overflowX:"auto"}}><table className="tbl"><thead><tr><th>Trabajador</th><th>Asignados</th><th>En atención</th><th>Cerrados</th><th>Vencidos</th></tr></thead><tbody>
+    <div className="tabs">{subTabs.map(x=><button key={x[0]} className={rtabOk===x[0]?"on":""} onClick={()=>setR(x[0])}>{x[1]}</button>)}</div>
+    {!esGer && <div className="note" style={{background:"var(--hoverBg)",border:"1px solid #1F4E8C",color:"var(--tx)",fontSize:12,marginBottom:12}}>
+      📊 Las valorizaciones, informes diario/semanal, Muestra ACT-04 y Mejoras TR los consolida y revisa <b>Gerencia</b>. Aquí trabajas tu <b>Cartera</b> y los <b>Cuadernos</b> del equipo.
+    </div>}
+    {rtabOk==="cartera" && <Cartera data={data} setSelExp={setSelExp}/>}
+    {rtabOk==="diario" && <Card><h3>Reporte diario por trabajador</h3><div style={{overflowX:"auto"}}><table className="tbl"><thead><tr><th>Trabajador</th><th>Asignados</th><th>En atención</th><th>Cerrados</th><th>Vencidos</th></tr></thead><tbody>
       {porResp.map(o=><tr key={o.t.id}><td><span className="dot" style={{background:o.t.color}}/>{o.t.nombre}</td><td>{o.list.length}</td><td>{o.list.filter(x=>x.estadoCom==="EN ATENCION").length}</td><td>{o.list.filter(x=>x.estado==="Cerrado").length}</td><td style={{color:"#C9821B"}}>{o.list.filter(x=>x.vencido).length||0}</td></tr>)}
     </tbody></table></div></Card>}
-    {rtab==="semanal" && <Card><h3>Reporte semanal (cartera)</h3>
+    {rtabOk==="semanal" && <Card><h3>Reporte semanal (cartera)</h3>
       <div className="kv"><b>Total</b><span>{data.length}</span></div><div className="kv"><b>Cerrados</b><span>{cerr}</span></div>
       <div className="kv"><b>En atención</b><span>{data.filter(x=>x.estadoCom==="EN ATENCION").length}</span></div><div className="kv"><b>Vencidos</b><span>{data.filter(x=>x.vencido).length}</span></div>
       {Object.entries(clases).map(([k,v])=><div className="kv" key={k}><b>{k}</b><span>{v}</span></div>)}</Card>}
-    {rtab==="mensual" && <>
+    {rtabOk==="mensual" && <>
       <div className="note" style={{background:"#FEF3DF",border:"1px solid #F0C36D",color:"#B45309",marginBottom:12}}>
         ⚠ Estimación referencial para seguimiento interno — la valorización oficial exige las 7 relaciones mensuales + acta de capacitación (se genera en la Ola 7).
       </div>
@@ -827,10 +839,10 @@ function Reportes({ data, setSelExp, tickets, registros, datos, evidencias, perf
         </div>
       </Card>
     </>}
-    {rtab==="mensualoficial" && <ValorizacionMensual data={data} tickets={tickets} evidencias={evidencias} registros={registros} datos={datos} config={config} perfil={perfil}/>}
-    {rtab==="muestra" && <MuestraTrimestral data={data} tickets={tickets} evidencias={evidencias} registros={registros} perfil={perfil} setSelExp={setSelExp}/>}
-    {rtab==="mejoras" && <MejorasTR data={data} tickets={tickets} datos={datos} registros={registros} perfil={perfil}/>}
-    {rtab==="cuadernos" && <Cuadernos data={data} setSelExp={setSelExp} perfil={perfil} abrir={abrirCuad} onAbierto={onCuadAbierto} onVolver={onVolverExp}/>}
+    {rtabOk==="mensualoficial" && <ValorizacionMensual data={data} tickets={tickets} evidencias={evidencias} registros={registros} datos={datos} config={config} perfil={perfil}/>}
+    {rtabOk==="muestra" && <MuestraTrimestral data={data} tickets={tickets} evidencias={evidencias} registros={registros} perfil={perfil} setSelExp={setSelExp}/>}
+    {rtabOk==="mejoras" && <MejorasTR data={data} tickets={tickets} datos={datos} registros={registros} perfil={perfil}/>}
+    {rtabOk==="cuadernos" && <Cuadernos data={data} setSelExp={setSelExp} perfil={perfil} abrir={abrirCuad} onAbierto={onCuadAbierto} onVolver={onVolverExp}/>}
   </>;
 }
 

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, Kpi } from "./ui.jsx";
 import { TicketCard } from "./Ticket.jsx";
-import { TEAM, teamById } from "../lib/model.js";
+import { TEAM, teamById, ETAPAS } from "../lib/model.js";
 import { abiertos, vencidos, ordenUrgencia, exposicionTotal, verMontos } from "../lib/tickets.js";
 import { USERS } from "../lib/auth.js";
 
@@ -10,22 +10,43 @@ const TOPE = 0.10 * 1250000; // 10% del contrato (referencia)
 
 // ===== Coordinador/Gerente: cola priorizada + asignación de tareas =====
 export function AtenderPrimero({ tickets, perfil, recByCode, onEstado, onReasignar, onArchivar, setSelExp }) {
-  const [filtro, setFiltro] = useState("todos");   // todos | vencidos | porvencer | enplazo
+  const [filtro, setFiltro] = useState("todos");   // urgencia: todos | vencidos | porvencer | enplazo
+  const [resp, setResp] = useState("todos");       // por trabajador (respId) — clave para Gerencia
+  const [etapaF, setEtapaF] = useState("todas");   // por etapa del flujo
+  const [q, setQ] = useState("");                  // búsqueda libre
   const ab = abiertos(tickets);
-  const venc = ab.filter(t => t.vencido);
-  const porVen = ab.filter(t => !t.vencido && t.diasRestantes != null && t.diasRestantes <= 2);
-  const enPlazo = ab.filter(t => !t.vencido && !(t.diasRestantes != null && t.diasRestantes <= 2));
-  const grupo = filtro === "vencidos" ? venc : filtro === "porvencer" ? porVen : filtro === "enplazo" ? enPlazo : ab;
+
+  // Filtros TRANSVERSALES (trabajador · etapa · búsqueda): definen la POBLACIÓN antes de los chips
+  // de urgencia, para que los conteos 🔴🟡🟢 reflejen al trabajador/etapa elegidos.
+  const norm = s => String(s || "").toUpperCase();
+  let base = ab;
+  if (resp !== "todos") base = base.filter(t => String(t.respId) === String(resp));
+  if (etapaF !== "todas") base = base.filter(t => t.etapa === etapaF);
+  if (q.trim()) { const Q = norm(q); base = base.filter(t => { const r = recByCode[t.reclamo] || {}; return norm((r.osinerg || "") + " " + (r.suministro || "") + " " + (r.solicitante || "") + " " + t.reclamo + " " + t.etapa).includes(Q); }); }
+
+  const venc = base.filter(t => t.vencido);
+  const porVen = base.filter(t => !t.vencido && t.diasRestantes != null && t.diasRestantes <= 2);
+  const enPlazo = base.filter(t => !t.vencido && !(t.diasRestantes != null && t.diasRestantes <= 2));
+  const grupo = filtro === "vencidos" ? venc : filtro === "porvencer" ? porVen : filtro === "enplazo" ? enPlazo : base;
   const orden = ordenUrgencia(grupo).slice(0, 60);
   const abrir = t => { const r = recByCode[t.reclamo]; if (r) setSelExp(r.id, t.etapa); };
   const puedeAsignar = perfil.rol === "COORDINADOR" || perfil.rol === "GERENTE";
   const reasignar = (t, id) => { const m = TEAM.find(x => x.id === +id); onReasignar?.(t, +id, m ? m.nombre : "Externo / Call Center"); };
+
+  // opciones de los selectores, solo con lo que existe en la cola (con conteo)
+  const respIds = [...new Set(ab.map(t => t.respId))];
+  const respOpts = TEAM.filter(m => respIds.includes(m.id)).map(m => ({ id: m.id, txt: m.corto + " · " + m.rol, n: ab.filter(t => t.respId === m.id).length }));
+  const hayExterno = respIds.includes(0);
+  const etapasPresentes = ETAPAS.filter(e => ab.some(t => t.etapa === e)).map(e => ({ e, n: ab.filter(t => t.etapa === e).length }));
+  const hayFiltroTransversal = resp !== "todos" || etapaF !== "todas" || q.trim();
+
   const chip = (k, txt, n, color) => (
     <button onClick={() => setFiltro(k)} style={{
       border: `1px solid ${filtro === k ? color : "var(--bd)"}`, background: filtro === k ? color : "transparent",
       color: filtro === k ? "#fff" : "var(--tx)", borderRadius: 999, padding: "4px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer",
     }}>{txt} <b>{n}</b></button>
   );
+  const selSty = { background: "var(--card2)", color: "var(--tx)", border: "1px solid var(--bd)", borderRadius: 8, padding: "6px 9px", fontSize: 12.5 };
   return (
     <Card>
       <h3 style={{ marginBottom: 4 }}>{puedeAsignar ? "Asignar tareas — " : ""}Cola del equipo</h3>
@@ -33,8 +54,25 @@ export function AtenderPrimero({ tickets, perfil, recByCode, onEstado, onReasign
         Un caso = una tarea en su etapa actual. Ordenado por urgencia. {puedeAsignar && "Reasigna en el selector de la derecha; "}
         {puedeAsignar && <>🗄 <b>archiva</b> los que ya están cerrados en la vida real (salen de la cola y de las alarmas).</>}
       </div>
+      {/* Filtros del jefe: por TRABAJADOR · por ETAPA · búsqueda. Los chips de urgencia se recalculan al subconjunto. */}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 10 }}>
+        <select value={resp} onChange={e => setResp(e.target.value)} style={selSty} title="Filtrar la cola por trabajador">
+          <option value="todos">👥 Todo el equipo</option>
+          {respOpts.map(o => <option key={o.id} value={o.id}>{o.txt} ({o.n})</option>)}
+          {hayExterno && <option value="0">Externo / Call Center ({ab.filter(t => t.respId === 0).length})</option>}
+        </select>
+        <select value={etapaF} onChange={e => setEtapaF(e.target.value)} style={selSty} title="Filtrar la cola por etapa del flujo">
+          <option value="todas">📑 Todas las etapas</option>
+          {etapasPresentes.map(o => <option key={o.e} value={o.e}>{o.e} ({o.n})</option>)}
+        </select>
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder="🔎 OSINERG · suministro · nombre" style={{ ...selSty, minWidth: 210, flex: "1 1 210px" }} />
+        {hayFiltroTransversal && <button onClick={() => { setResp("todos"); setEtapaF("todas"); setQ(""); }} style={{ ...selSty, cursor: "pointer", fontWeight: 600 }}>✕ Limpiar</button>}
+      </div>
+      {hayFiltroTransversal && <div className="muted" style={{ fontSize: 11.5, marginBottom: 8 }}>
+        Mostrando <b>{base.length}</b> caso(s){resp !== "todos" ? " de " + (TEAM.find(m => String(m.id) === String(resp))?.nombre || (resp === "0" ? "Externo" : "")) : ""}{etapaF !== "todas" ? " en «" + etapaF + "»" : ""}{q.trim() ? " que coinciden con «" + q.trim() + "»" : ""}.
+      </div>}
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
-        {chip("todos", "Todos", ab.length, "#1F4E8C")}
+        {chip("todos", "Todos", base.length, "#1F4E8C")}
         {chip("vencidos", "🔴 Vencidos", venc.length, "#C0392B")}
         {chip("porvencer", "🟡 Por vencer", porVen.length, "#C9821B")}
         {chip("enplazo", "🟢 En plazo", enPlazo.length, "#1E8E5A")}
