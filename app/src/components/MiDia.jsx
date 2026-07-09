@@ -4,7 +4,7 @@ import { TicketCard, SemaforoPlazo, InfoBoton } from "./Ticket.jsx";
 import { abiertos, vencidos, porVencer, tareaPrioritaria, agrupaPorEtapa } from "../lib/tickets.js";
 import RegistrarEvento from "./RegistrarEvento.jsx";
 
-export default function MiDia({ perfil, misReclamos, data = [], tickets = [], recByCode = {}, onEstadoTicket, setSelExp, onCerrarDia }) {
+export default function MiDia({ perfil, misReclamos, data = [], tickets = [], recByCode = {}, onEstadoTicket, setSelExp, onCerrarDia, onEscanear }) {
   const [registrar, setRegistrar] = useState(false);
   const ab = abiertos(tickets);
   const venc = vencidos(tickets);
@@ -24,12 +24,18 @@ export default function MiDia({ perfil, misReclamos, data = [], tickets = [], re
       </div>
     </Card>
 
-    {/* ACCIÓN PRINCIPAL — grande y clara: registrar en un cuaderno (como en sus hojas) */}
-    <button onClick={() => setRegistrar(true)}
-      style={{ width: "100%", marginBottom: 14, padding: "16px", borderRadius: 14, border: 0, background: "var(--navy)", color: "#fff", fontSize: 17, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, boxShadow: "0 4px 14px rgba(31,78,140,.28)" }}>
-      ➕ Registrar en un cuaderno
-      <span style={{ fontSize: 12, fontWeight: 500, opacity: .85 }}>(anota un evento como en tu Excel)</span>
-    </button>
+    {/* ACCIONES PRINCIPALES — grandes y claras: registrar (como en sus hojas) y escanear el QR del libro */}
+    <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
+      <button onClick={() => setRegistrar(true)}
+        style={{ flex: "2 1 240px", padding: "16px", borderRadius: 14, border: 0, background: "var(--navy)", color: "#fff", fontSize: 17, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, boxShadow: "0 4px 14px rgba(31,78,140,.28)" }}>
+        ➕ Registrar en un cuaderno
+        <span style={{ fontSize: 12, fontWeight: 500, opacity: .85 }}>(anota un evento como en tu Excel)</span>
+      </button>
+      {onEscanear && <button onClick={onEscanear} title="Escanea el QR pegado en el libro para abrir el caso"
+        style={{ flex: "1 1 160px", padding: "16px", borderRadius: 14, border: "2px solid var(--navy)", background: "var(--card,#fff)", color: "var(--navy)", fontSize: 16, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+        📷 Escanear QR
+      </button>}
+    </div>
 
     {/* ¿QUÉ HAGO AHORA? — una sola tarea prioritaria */}
     {prio ? (

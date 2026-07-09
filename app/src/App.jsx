@@ -23,6 +23,7 @@ import MejorasTR from "./components/MejorasTR.jsx";
 import Cuadernos from "./components/Cuadernos.jsx";
 import TrabajoEquipo from "./components/TrabajoEquipo.jsx";
 import BuscadorGlobal from "./components/BuscadorGlobal.jsx";
+import EscanearQR from "./components/EscanearQR.jsx";
 import PenalidadesTope from "./components/PenalidadesTope.jsx";
 import { riesgoSAPGlobal } from "./lib/plazosNormativos.js";
 
@@ -72,6 +73,7 @@ function Shell({ perfil, onLogout }){
   const [sumPend, setSumPend] = useState(()=>{ try{ return new URLSearchParams(window.location.search).get("sum")||""; }catch(e){ return ""; } }); // deep-link QR
   const [sumPicker, setSumPicker] = useState(null);   // {sum, matches} — el suministro tiene >1 reclamo, elegir
   const [buscarOpen, setBuscarOpen] = useState(false); // 🔎 buscador global (Ctrl+K)
+  const [escanearOpen, setEscanearOpen] = useState(false); // 📷 escáner de QR (cámara)
   const [abrirCuad, setAbrirCuad] = useState(null);   // deep-link: {fuente, q} para abrir un cuaderno FILTRADO (desde la Sala)
   const [volverExp, setVolverExp] = useState(null);   // id del expediente al que "← Volver" desde el cuaderno
   function irACuaderno(fuente, q, expId){ setSalaExp(null); setSelExpId(null); setSelEtapa(null); setVolverExp(expId); setAbrirCuad({ fuente, q }); }
@@ -206,6 +208,15 @@ function Shell({ perfil, onLogout }){
     setSumPend("");
     try{ window.history.replaceState({}, "", window.location.pathname); }catch(e){}
   }, [sumPend, data]);
+  // 📷 QR escaneado con la cámara: el texto es la URL del suministro (…?sum=NNN). Extrae el
+  // suministro y lo manda al MISMO resolver del deep-link (setSumPend → abre Sala / picker / crear).
+  function onEscaneado(text){
+    setEscanearOpen(false);
+    let sum = "";
+    try{ sum = new URL(text).searchParams.get("sum") || ""; }catch(e){}
+    if(!sum){ const m = String(text||"").match(/(\d{5,})/); sum = m ? m[1] : String(text||"").trim(); }
+    if(sum) setSumPend(sum); else toast("QR no reconocido — no contiene un suministro.");
+  }
   // desde la Sala: "Trabajar esta etapa" abre el Drawer ENCIMA (al cerrarlo vuelves a la Sala)
   function trabajarDesdeSala(id, etapa){ setSelExpId(id); setSelEtapa(etapa || null); }
 
@@ -283,6 +294,7 @@ function Shell({ perfil, onLogout }){
             </select>
           )}
           <button className="btn-ghost" onClick={()=>setBuscarOpen(true)} title="Buscar un caso (Ctrl+K)" style={{fontWeight:600}}>🔎 Buscar</button>
+          <button className="btn-ghost" onClick={()=>setEscanearOpen(true)} title="Escanear el QR de un reclamo con la cámara" style={{fontWeight:600}}>📷 Escanear</button>
           <button className="btn" onClick={()=>setNuevo(true)} title="Registrar un nuevo expediente" style={{fontWeight:600}}>➕ Nuevo caso</button>
           {puedeVerTodo(perfilVista.rol) && <a className="btn-ghost" href={STREAMLIT_URL} target="_blank" rel="noreferrer" title="Abrir herramientas de análisis (Streamlit) en pestaña nueva">🔧 Herramientas</a>}
           {data && <Notificaciones perfil={perfilVista} activosTk={activos(tickets)} recByCode={recByCode} setSelExp={abrirExp}/>}
@@ -303,7 +315,7 @@ function Shell({ perfil, onLogout }){
           El Drawer recibe todos (muestra el historial completo de etapas del expediente). */}
       {!data ? <div className="card">Cargando reclamos…</div>
         : esOperativo(perfilVista.rol)
-          ? <Operativo key={"op-"+perfilVista.resp_id} perfil={perfilVista} data={data} setSelExp={abrirExp} tickets={activos(tickets)} activoByCode={activoByCode} progresoDe={progresoDe} recByCode={recByCode} onEstadoTicket={onEstadoTicket} onTomarTarea={onTomarTarea} abrirCuad={abrirCuad} onCuadAbierto={()=>setAbrirCuad(null)} onVolverExp={volverExp!=null?volverAlExp:null} correos={correos} correosCargando={correosCargando} onRecargarCorreos={cargarCorreos} onConvertirCorreo={convertirCorreoEnCaso} verExpediente={(codigo)=>{ const r=(data||[]).find(x=>String(x.codigo)===String(codigo)); if(r) abrirExp(r.id); }}/>
+          ? <Operativo key={"op-"+perfilVista.resp_id} perfil={perfilVista} data={data} setSelExp={abrirExp} tickets={activos(tickets)} activoByCode={activoByCode} progresoDe={progresoDe} recByCode={recByCode} onEstadoTicket={onEstadoTicket} onTomarTarea={onTomarTarea} onEscanear={()=>setEscanearOpen(true)} abrirCuad={abrirCuad} onCuadAbierto={()=>setAbrirCuad(null)} onVolverExp={volverExp!=null?volverAlExp:null} correos={correos} correosCargando={correosCargando} onRecargarCorreos={cargarCorreos} onConvertirCorreo={convertirCorreoEnCaso} verExpediente={(codigo)=>{ const r=(data||[]).find(x=>String(x.codigo)===String(codigo)); if(r) abrirExp(r.id); }}/>
           : <Admin key={"ad-"+perfilVista.resp_id} perfil={perfilVista} data={data} evidencias={evidencias} setSelExp={abrirExp} delegar={delegar} updEstado={updEstado} tickets={activos(tickets)} todosTickets={tickets} datos={datos} activoByCode={activoByCode} progresoDe={progresoDe} recByCode={recByCode} onEstadoTicket={onEstadoTicket} onReasignarTicket={onReasignarTicket} onArchivarCaso={onArchivarCaso} onDesarchivar={onDesarchivar} onArchivarCerrados={onArchivarCerrados} abrirCuad={abrirCuad} onCuadAbierto={()=>setAbrirCuad(null)} onVolverExp={volverExp!=null?volverAlExp:null} registros={registros} comentarios={comentarios} correos={correos} correosCargando={correosCargando} onRecargarCorreos={cargarCorreos} onConvertirCorreo={convertirCorreoEnCaso} verExpediente={(codigo)=>{ const r=(data||[]).find(x=>String(x.codigo)===String(codigo)); if(r) abrirExp(r.id); }}/>}
 
       {salaExp!=null && data && (()=>{ const sx=data.find(x=>x.id===salaExp); return sx ? (
@@ -314,6 +326,7 @@ function Shell({ perfil, onLogout }){
       ) : null; })()}
       {exp && <Drawer exp={exp} etapaInicial={selEtapa} evidencias={evidencias} datos={datos} tickets={tickets} perfil={perfilVista} comentarios={comentarios} registros={registros} onComentar={onComentar} onEstadoTicket={onEstadoTicket} onEditar={(campo,valor)=>onEditarCampo(exp.codigo,campo,valor)} onClose={()=>{ setSelExpId(null); setSelEtapa(null); }} onSaveDatos={saveDatos} onSubido={obj=>setEvi(ev=>[obj,...ev])}/>}
       {buscarOpen && data && <BuscadorGlobal data={data} onAbrir={abrirExp} onClose={()=>setBuscarOpen(false)}/>}
+      {escanearOpen && <EscanearQR onDetect={onEscaneado} onClose={()=>setEscanearOpen(false)}/>}
       {archivar && <ArchivarCaso info={archivar} onArchivar={doArchivar} onSubido={obj=>setEvi(ev=>[obj,...ev])} onClose={()=>setArchivar(null)}/>}
       {sumPicker && <div className="modal-bg" onClick={()=>setSumPicker(null)} style={{position:"fixed",inset:0,background:"rgba(22,41,75,.45)",zIndex:96,display:"flex",alignItems:"center",justifyContent:"center"}}>
         <div onClick={e=>e.stopPropagation()} style={{background:"var(--card,#fff)",borderRadius:12,padding:18,width:"min(520px,94vw)",maxHeight:"85vh",overflowY:"auto",boxShadow:"0 12px 40px rgba(0,0,0,.25)"}}>
@@ -882,7 +895,7 @@ function Conexion(){
 /* ===================== OPERATIVO ===================== */
 // 4 pestañas. El trabajo real (evidencia + datos + documento + marcar hecho) se hace
 // dentro del expediente: Mi día → "Abrir y trabajar" → Drawer en la etapa del ticket.
-function Operativo({ perfil, data, setSelExp, tickets, activoByCode={}, progresoDe, recByCode, onEstadoTicket, onTomarTarea, abrirCuad, onCuadAbierto, onVolverExp, correos, correosCargando, onRecargarCorreos, onConvertirCorreo, verExpediente }){
+function Operativo({ perfil, data, setSelExp, tickets, activoByCode={}, progresoDe, recByCode, onEstadoTicket, onTomarTarea, onEscanear, abrirCuad, onCuadAbierto, onVolverExp, correos, correosCargando, onRecargarCorreos, onConvertirCorreo, verExpediente }){
   const [tab,setTab]=useState("midia");
   // deep-link desde la Sala: abrir un cuaderno → salta a la pestaña Cuadernos
   useEffect(()=>{ if(abrirCuad) setTab("cuadernos"); }, [abrirCuad]);
@@ -896,7 +909,7 @@ function Operativo({ perfil, data, setSelExp, tickets, activoByCode={}, progreso
   return <>
     <div className="tabs">{tabs.map(t=><button key={t[0]} className={tab===t[0]?"on":""} onClick={()=>setTab(t[0])}>{t[1]}</button>)}</div>
     {tab==="midia" && data.length===0 && <BienvenidaSinCasos onIrBandeja={()=>setTab("bandeja")}/>}
-    {tab==="midia" && <MiDia perfil={perfil} misReclamos={mine} data={data} tickets={misTk} recByCode={recByCode} onEstadoTicket={onEstadoTicket} setSelExp={setSelExp}
+    {tab==="midia" && <MiDia perfil={perfil} misReclamos={mine} data={data} tickets={misTk} recByCode={recByCode} onEstadoTicket={onEstadoTicket} setSelExp={setSelExp} onEscanear={onEscanear}
       onCerrarDia={()=>postAction("reporte",{rol:perfil.rol, asignados:mine.length, en_atencion:abiertos(misTk).length, cerrados:misTk.filter(t=>t.hecho).length, vencidos:vencidos(misTk).length})}/>}
     {tab==="equipo" && <TrabajoEquipo perfil={perfil} tickets={tickets} recByCode={recByCode} onTomar={onTomarTarea} onEstado={onEstadoTicket} setSelExp={setSelExp}/>}
     {tab==="cuadernos" && <Cuadernos data={data} setSelExp={setSelExp} perfil={perfil} abrir={abrirCuad} onAbierto={onCuadAbierto} onVolver={onVolverExp}/>}
