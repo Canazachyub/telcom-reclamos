@@ -21,7 +21,7 @@ export default function Calendario({ tickets = [], recByCode = {}, perfil, setSe
   const ev = {};
   abiertos(tickets).filter(t => t.fechaLimite).forEach(t => {
     (ev[t.fechaLimite] = ev[t.fechaLimite] || []).push({
-      titulo: t.etapa, sub: (recByCode[t.reclamo]?.osinerg || "…" + t.reclamo.slice(-6)) + (equipo ? ` · ${t.responsable}` : ""),
+      titulo: t.etapa, sub: (recByCode[t.reclamo]?.osinerg || t.reclamo) + (recByCode[t.reclamo]?.suministro ? ` · ⚡${recByCode[t.reclamo].suministro}` : "") + (equipo ? ` · ${t.responsable}` : ""),
       reclamo: t.reclamo, vencido: t.vencido, d: t.diasRestantes, etapa: t.etapa, responsable: t.responsable, t,
     });
   });
@@ -151,7 +151,8 @@ export default function Calendario({ tickets = [], recByCode = {}, perfil, setSe
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 8, flexWrap: "wrap" }}>
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
-                        <span className="mono" style={{ fontSize: 12.5, fontWeight: 700, color: "var(--titulo)" }}>{r?.osinerg || "…" + String(e.reclamo).slice(-6)}</span>
+                        <span className="mono" style={{ fontSize: 12.5, fontWeight: 700, color: "var(--titulo)" }}>{r?.osinerg || String(e.reclamo)}</span>
+                        {r?.suministro && <span className="mono muted" style={{ fontSize: 11 }}>⚡{r.suministro}</span>}
                         <span className="muted" style={{ fontSize: 11.5 }} title={r?.solicitante || ""}>{r?.solicitante || ""}</span>
                       </div>
                       <div style={{ fontSize: 11.5, color: "var(--mut)", marginTop: 2 }}>

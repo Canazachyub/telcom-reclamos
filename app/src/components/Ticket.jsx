@@ -97,7 +97,8 @@ export function TicketCard({ t, rec, perfil, onEstado, onAbrir }) {
           {onAbrir && <a onClick={() => onAbrir(t)} title="Abrir el expediente en esta etapa" style={{ color: "var(--linkTx)", fontSize: 11, cursor: "pointer" }}>abrir y trabajar ↗</a>}
         </div>
         <div style={{ color: "var(--mut)", fontSize: 11.5, marginTop: 2 }}>
-          <span style={{ fontFamily: "ui-monospace,monospace" }}>{rec?.osinerg || "…" + t.reclamo.slice(-6)}</span>
+          <span style={{ fontFamily: "ui-monospace,monospace" }} title={"Código: " + (rec?.osinerg || t.reclamo)}>{rec?.osinerg || t.reclamo}</span>
+          {rec?.suministro && <span title="Suministro — con esto te guías (es la clave del QR y de los cuadernos)"> · ⚡ <b style={{ fontWeight: 600, color: "var(--tx)" }}>{rec.suministro}</b></span>}
           {rec?.solicitante ? <span title={rec.solicitante}> · {rec.solicitante.length > 26 ? rec.solicitante.slice(0, 26) + "…" : rec.solicitante}</span> : ""}
           {verResp && <> · 👤 {t.responsable}</>}
         </div>

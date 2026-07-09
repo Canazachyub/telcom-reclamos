@@ -182,11 +182,12 @@ export function DineroRiesgo({ tickets, perfil, recByCode, setSelExp }) {
       <h3>Exposición por ticket (mayor a menor)</h3>
       <div style={{ overflowX: "auto" }}>
         <table className="tbl">
-          <thead><tr><th>Reclamo</th><th>Etapa</th><th>Responsable</th><th>Penalidad</th><th>Vence</th><th>Exposición</th><th></th></tr></thead>
+          <thead><tr><th>Reclamo</th><th>Suministro</th><th>Etapa</th><th>Responsable</th><th>Penalidad</th><th>Vence</th><th>Exposición</th><th></th></tr></thead>
           <tbody>
             {ries.map(t => (
               <tr key={t.id}>
-                <td className="mono">{recByCode[t.reclamo]?.osinerg || "…" + t.reclamo.slice(-6)}</td>
+                <td className="mono">{recByCode[t.reclamo]?.osinerg || t.reclamo}</td>
+                <td className="mono">{recByCode[t.reclamo]?.suministro || "—"}</td>
                 <td>{t.etapa}</td><td>{t.responsable}</td>
                 <td>{t.penalidadItem}</td>
                 <td style={{ color: "#C0392B" }}>{t.fechaLimite}</td>
@@ -272,11 +273,12 @@ export function VerificacionDiaria({ tickets = [], registros = [], perfil }) {
           </div>
           <div style={{ overflowX: "auto" }}>
             <table className="tbl">
-              <thead><tr><th>Código</th><th>Etapa</th><th>Responsable</th><th>Días vencido</th></tr></thead>
+              <thead><tr><th>Código</th><th>Suministro</th><th>Etapa</th><th>Responsable</th><th>Días vencido</th></tr></thead>
               <tbody>
                 {ordenSAP.map(t => (
                   <tr key={t.id}>
-                    <td className="mono">…{String(t.reclamo).slice(-6)}</td>
+                    <td className="mono">{recByCode[t.reclamo]?.osinerg || t.reclamo}</td>
+                    <td className="mono">{recByCode[t.reclamo]?.suministro || "—"}</td>
                     <td>{t.etapa}</td>
                     <td>{t.responsable || teamById(t.respId).nombre}</td>
                     <td style={{ color: "#DC2626", fontWeight: 700 }}>{Math.abs(t.diasRestantes ?? 0)}d</td>

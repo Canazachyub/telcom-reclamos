@@ -66,7 +66,8 @@ export default function MiDia({ perfil, misReclamos, data = [], tickets = [], re
           <InfoBoton etapa={prio.etapa} rol={perfil.rol} t={prio} />
         </div>
         <div className="muted" style={{ fontSize: 12.5, margin: "6px 0 10px" }}>
-          <span className="mono">{recDe(prio)?.osinerg || "…" + prio.reclamo.slice(-6)}</span>
+          <span className="mono">{recDe(prio)?.osinerg || prio.reclamo}</span>
+          {recDe(prio)?.suministro && <> · ⚡ <b className="mono" style={{ fontWeight: 600, color: "var(--tx)" }}>{recDe(prio).suministro}</b></>}
           {recDe(prio)?.solicitante ? " · " + recDe(prio).solicitante : ""}
           {prio.penalidadItem && prio.penalidadItem !== "—" && <> · ⚠ penalidad {prio.penalidadItem} (plazo {prio.plazoHabiles} días háb.)</>}
         </div>

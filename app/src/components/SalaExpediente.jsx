@@ -5,13 +5,9 @@ import { GuiaSielseBox } from "../lib/guiaSielse.jsx";
 import { CAMPOS_ETAPA, CAMPOS_POR_FALLO } from "../lib/camposEtapa.js";
 import FichaSielse from "./FichaSielse.jsx";
 import { relojesDelCaso } from "../lib/plazosNormativos.js";
-import { CUADERNOS, valCuaderno } from "../lib/cuadernosDef.js";
 import { loadCuadernosPorCaso } from "../lib/api.js";
 import { qrDataURL, descargarQR, imprimirQRs } from "../lib/qr.js";
 import CuadernosCaso from "./CuadernosCaso.jsx";
-
-// def de cuaderno por su `fuente` (tipo de registros_control) — para nombres/columnas
-const CUAD_POR_FUENTE = {}; CUADERNOS.forEach(c => { CUAD_POR_FUENTE[c.fuente] = c; });
 
 // ===================== Sala del expediente (v4, patrón courier) =====================
 // Vista de SEGUIMIENTO y colaboración de un caso: dónde está, quién lo tiene, cuánto plazo
@@ -320,6 +316,10 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
   const [verTodaAct, setVerTodaAct] = useState(false); // feed comprimido (5) vs completo
   const [cuadRegs, setCuadRegs] = useState(null);   // registros de CUADERNOS de este caso (2ª fuente)
   const [qrImg, setQrImg] = useState("");           // PNG (data-URL) del QR del caso (por suministro)
+  const [vw, setVw] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
+  useEffect(() => { const f = () => setVw(window.innerWidth); window.addEventListener("resize", f); return () => window.removeEventListener("resize", f); }, []);
+  const mobile = vw < 640;                            // teléfono: la Sala pasa a hoja a pantalla completa
+  const lado = ladoALado && !mobile;                  // sin lado-a-lado en móvil
   const puedeCorregir = ["GERENTE","COORDINADOR"].includes(perfil?.rol);
 
   // QR del caso (codifica ?sum=<suministro>) — para verlo/descargar/pegar en el libro físico
@@ -390,8 +390,8 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
   }
 
   const S = {
-    overlay:{ position:"fixed", inset:0, background:"rgba(22,41,75,.45)", zIndex:95, display:"flex", justifyContent: ladoALado ? "flex-start" : "center", alignItems:"flex-start", padding:"3vh 12px", overflowY:"auto" },
-    panel:{ width: ladoALado ? "clamp(380px, calc(100vw - 760px), 640px)" : "min(1080px,100%)", background:"var(--bg)", border:"1px solid var(--bd)", borderRadius:16, padding:18, maxHeight:"94vh", overflowY:"auto", boxShadow:"0 24px 70px rgba(22,41,75,.28)" },
+    overlay:{ position:"fixed", inset:0, background:"rgba(22,41,75,.45)", zIndex:95, display:"flex", justifyContent: lado ? "flex-start" : "center", alignItems:"flex-start", padding: mobile ? 0 : "3vh 12px", overflowY:"auto" },
+    panel:{ width: lado ? "clamp(380px, calc(100vw - 760px), 640px)" : (mobile ? "100%" : "min(1080px,100%)"), background:"var(--bg)", border: mobile ? "none" : "1px solid var(--bd)", borderRadius: mobile ? 0 : 16, padding: mobile ? "12px 12px 28px" : 18, maxHeight: mobile ? "none" : "94vh", minHeight: mobile ? "100vh" : "auto", overflowY:"auto", boxShadow: mobile ? "none" : "0 24px 70px rgba(22,41,75,.28)" },
     head:{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:10, marginBottom:12 },
     hero:{ background:"var(--card)", border:"1px solid var(--bd)", borderRadius:16, padding:"18px 20px" },
     icono:{ width:52, height:52, borderRadius:13, background:"linear-gradient(135deg,#E3001B,#FF5A63)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, flexShrink:0 },
@@ -430,7 +430,7 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
   };
 
   return (
-    <div style={S.overlay} onClick={e=>{ if(ladoALado) return; if(e.target===e.currentTarget) onClose(); }}>
+    <div style={S.overlay} onClick={e=>{ if(lado) return; if(e.target===e.currentTarget) onClose(); }}>
       <div style={S.panel}>
         <div style={S.head}>
           <div>
@@ -598,7 +598,7 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
                 onClick={()=>onTomarTarea(act)} style={{fontWeight:700}}>✋ Tomar</button>}
             {sig && <><span style={{color:"var(--mut2)"}}>→</span>
               <span style={{color:"var(--mut)"}}>Sigue: {sig.etapa} · <b style={{color:"var(--tx)"}}>{sig.responsable||"por asignar"}</b></span></>}
-            {ladoALado
+            {lado
               ? <span className="muted" style={{marginLeft:"auto",fontSize:12}}>El área de trabajo está abierta a la derecha →</span>
               : <button className="btn" style={{marginLeft:"auto"}} onClick={()=>onTrabajar(exp.id, act?act.etapa:null)}>Trabajar esta etapa</button>}
           </div>
@@ -614,7 +614,7 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
               </div>
             )}
             {relojes.length>0
-              ? <CalendarioRelojes relojes={relojes} ladoALado={ladoALado}/>
+              ? <CalendarioRelojes relojes={relojes} ladoALado={lado || mobile}/>
               : <div className="muted" style={{fontSize:12}}>Sin relojes normativos aplicables a este caso.</div>}
           </div>
 

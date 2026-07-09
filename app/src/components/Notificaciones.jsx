@@ -31,7 +31,7 @@ export default function Notificaciones({ perfil, activosTk = [], recByCode = {},
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-              <span className="mono" style={{ fontSize: 12, fontWeight: 700, color: "var(--titulo)" }}>{rec?.osinerg || "…" + String(t.reclamo).slice(-6)}</span>
+              <span className="mono" style={{ fontSize: 12, fontWeight: 700, color: "var(--titulo)" }}>{rec?.osinerg || String(t.reclamo)}</span>
               <span className="muted" style={{ fontSize: 11.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={rec?.solicitante || ""}>
                 {rec?.solicitante || ""}
               </span>

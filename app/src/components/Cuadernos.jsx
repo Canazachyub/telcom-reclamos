@@ -99,6 +99,7 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
   const [dia, setDia] = useState("");              // FECHA exacta (YYYY-MM-DD) — filtro fino por día
   const [tipoTodos, setTipoTodos] = useState("");  // filtro por cuaderno en la vista unificada ('todos')
   const [expUnif, setExpUnif] = useState("");      // reclamo expandido en la vista unificada (detalle por hoja)
+  const [usr, setUsr] = useState("");              // filtro por TRABAJADOR (quién registró) — para jefes
   const [q, setQ] = useState("");
   const [tope, setTope] = useState(300);
   const [edit, setEdit] = useState(null);          // fila en edición | {} alta
@@ -113,7 +114,7 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
   const [deepLinked, setDeepLinked] = useState(false); // llegó por deep-link (desde la Sala) → muestra "← Volver"
   const recargar = () => loadCuadernoDatos(sel.fuente).then(setFilas);
   const abrirCuaderno = (def, q) => {
-    setSel(def); setFilas(null); setFiltro(""); setDia(""); setTipoTodos(""); setExpUnif(""); setQ(q || ""); setTope(300);
+    setSel(def); setFilas(null); setFiltro(""); setDia(""); setTipoTodos(""); setExpUnif(""); setUsr(""); setQ(q || ""); setTope(300);
     loadCuadernoDatos(def.fuente).then(setFilas);
   };
   // deep-link desde la Sala: abrir un cuaderno YA FILTRADO a ese caso (abrir = {fuente, q})
@@ -158,12 +159,21 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
         ? out.filter(f => String(f.mes) === filtro)
         : out.filter(f => String(f.fecha_evento || "").slice(0, 7) === filtro);
     }
+    if (usr) out = out.filter(f => String(f.usuario || "") === usr);   // por trabajador (quién registró)
     if (q.trim()) {
       const t = q.trim().toUpperCase();
       out = out.filter(f => JSON.stringify(f).toUpperCase().includes(t));
     }
     return out;
-  }, [filas, filtro, dia, q, sel, tipoTodos]);
+  }, [filas, filtro, dia, q, sel, tipoTodos, usr]);
+
+  // trabajadores presentes en este cuaderno (para el selector de jefes)
+  const usuarios = useMemo(() => {
+    if (!filas) return [];
+    const m = {};
+    filas.forEach(f => { const u = String(f.usuario || "").trim(); if (u) m[u] = (m[u] || 0) + 1; });
+    return Object.entries(m).sort((a, b) => b[1] - a[1]);
+  }, [filas]);
 
   // VISTA UNIFICADA agrupada: UNA fila por EXPEDIENTE (reclamo), con los cuadernos por los que pasó.
   // (Antes eran 9,974 filas planas repitiendo suministros — inútil. Ahora se consolida por caso.)
@@ -401,7 +411,7 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           {onVolver && deepLinked && <button className="btn sm" style={{ fontWeight: 700 }} onClick={onVolver}>← Volver al expediente</button>}
-          <button className="btn sm" onClick={() => { setSel(null); setFilas(null); setDeepLinked(false); }}>← Cuadernos</button>
+          <button className="btn sm" onClick={() => { setSel(null); setFilas(null); setDeepLinked(false); setUsr(""); }}>← Cuadernos</button>
           <b>{sel.emoji} {sel.nombre}</b>
           <span className="muted" style={{ fontSize: 11.5 }}>{filas ? filtradas.length + " filas" : "cargando…"}</span>
           {deepLinked && q && <span className="muted" style={{ fontSize: 11 }}>· filtrado a {q}</span>}
@@ -422,6 +432,11 @@ export default function Cuadernos({ data, setSelExp, perfil, abrir, onAbierto, o
             <input type="date" value={dia} onChange={e => { setDia(e.target.value); setFiltro(""); }} />
             {dia && <button className="btn sm" title="Quitar filtro de día" onClick={() => setDia("")}>✕</button>}
           </label>
+          {usuarios.length > 1 &&
+            <select value={usr} onChange={e => setUsr(e.target.value)} title="Filtrar por quién registró (trabajador)">
+              <option value="">👤 trabajador</option>
+              {usuarios.map(([u, n]) => <option key={u} value={u}>{u} ({n})</option>)}
+            </select>}
           <input placeholder="🔎 buscar…" value={q} onChange={e => setQ(e.target.value)} style={{ minWidth: 130 }} />
           {sel.fuente !== "mensual" && sel.fuente !== "todos" &&
             <button className="btn sm" onClick={() => setEdit({ tipo: sel.fuente, fecha_evento: dia || hoyISO() })}>➕ Registrar</button>}
