@@ -903,11 +903,15 @@ function Operativo({ perfil, data, setSelExp, tickets, activoByCode={}, progreso
   const misTk=misTickets(tickets||[], perfil);
   // nº de tareas de MIS PARES por tomar (mismo rol, no mías) → badge en la pestaña colaborativa
   const nPozo = abiertos(tickets||[]).filter(t=>ETAPA_ROL[t.etapa]===perfil.rol && t.respId!==perfil.resp_id).length;
-  const tabs=[["midia","🏠 Mi día"],["expedientes","📁 Mis expedientes"],
-    ["equipo","🌐 Trabajo del equipo"+(nPozo?" ("+nPozo+")":"")],["cuadernos","📒 Cuadernos"],
-    ["bandeja","📧 Bandeja"],["calendario","📅 Mi calendario"],["guia","📖 Mi guía"]];
+  // A4: 4 secciones de primer nivel. «Mi día» es un HUB con sub-vistas (Hoy · Mis expedientes · Equipo · Calendario),
+  // para que el trabajador no se pierda entre 7 pestañas. Los bloques de render siguen filtrando por `tab`.
+  const MIDIA_GROUP=["midia","expedientes","equipo","calendario"];
+  const tabs=[["midia","🏠 Mi día"],["cuadernos","📒 Cuadernos"],["bandeja","📧 Bandeja"],["guia","📖 Mi guía"]];
+  const subtabs=[["midia","Hoy"],["expedientes","📁 Mis expedientes"+(mine.length?" ("+mine.length+")":"")],
+    ["equipo","🌐 Equipo"+(nPozo?" ("+nPozo+")":"")],["calendario","📅 Calendario"]];
   return <>
-    <div className="tabs">{tabs.map(t=><button key={t[0]} className={tab===t[0]?"on":""} onClick={()=>setTab(t[0])}>{t[1]}</button>)}</div>
+    <div className="tabs">{tabs.map(t=><button key={t[0]} className={(t[0]==="midia"?MIDIA_GROUP.includes(tab):tab===t[0])?"on":""} onClick={()=>setTab(t[0])}>{t[1]}{t[0]==="midia"&&nPozo?" ("+nPozo+")":""}</button>)}</div>
+    {MIDIA_GROUP.includes(tab) && <div className="tabs" style={{marginTop:-6,marginBottom:10,opacity:.95}}>{subtabs.map(t=><button key={t[0]} className={tab===t[0]?"on":""} onClick={()=>setTab(t[0])} style={{fontSize:12.5,padding:"5px 11px"}}>{t[1]}</button>)}</div>}
     {tab==="midia" && data.length===0 && <BienvenidaSinCasos onIrBandeja={()=>setTab("bandeja")}/>}
     {tab==="midia" && <MiDia perfil={perfil} misReclamos={mine} data={data} tickets={misTk} recByCode={recByCode} onEstadoTicket={onEstadoTicket} setSelExp={setSelExp} onEscanear={onEscanear}
       onCerrarDia={()=>postAction("reporte",{rol:perfil.rol, asignados:mine.length, en_atencion:abiertos(misTk).length, cerrados:misTk.filter(t=>t.hecho).length, vencidos:vencidos(misTk).length})}/>}
