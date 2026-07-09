@@ -324,7 +324,7 @@ function Shell({ perfil, onLogout }){
           onAbrirCuaderno={(fuente,q)=>irACuaderno(fuente,q,sx.id)}
           onEditar={(campo,valor)=>onEditarCampo(sx.codigo,campo,valor)} onEliminar={onEliminarExp} ladoALado={exp!=null} onClose={()=>setSalaExp(null)}/>
       ) : null; })()}
-      {exp && <Drawer exp={exp} etapaInicial={selEtapa} evidencias={evidencias} datos={datos} tickets={tickets} perfil={perfilVista} comentarios={comentarios} registros={registros} onComentar={onComentar} onEstadoTicket={onEstadoTicket} onEditar={(campo,valor)=>onEditarCampo(exp.codigo,campo,valor)} onClose={()=>{ setSelExpId(null); setSelEtapa(null); }} onSaveDatos={saveDatos} onSubido={obj=>setEvi(ev=>[obj,...ev])}/>}
+      {exp && <Drawer exp={exp} etapaInicial={selEtapa} evidencias={evidencias} datos={datos} tickets={tickets} perfil={perfilVista} comentarios={comentarios} registros={registros} onComentar={onComentar} onEstadoTicket={onEstadoTicket} onEditar={(campo,valor)=>onEditarCampo(exp.codigo,campo,valor)} onAbrirCuaderno={(fuente,q)=>irACuaderno(fuente,q,exp.id)} onClose={()=>{ setSelExpId(null); setSelEtapa(null); }} onSaveDatos={saveDatos} onSubido={obj=>setEvi(ev=>[obj,...ev])}/>}
       {buscarOpen && data && <BuscadorGlobal data={data} onAbrir={abrirExp} onClose={()=>setBuscarOpen(false)}/>}
       {escanearOpen && <EscanearQR onDetect={onEscaneado} onClose={()=>setEscanearOpen(false)}/>}
       {archivar && <ArchivarCaso info={archivar} onArchivar={doArchivar} onSubido={obj=>setEvi(ev=>[obj,...ev])} onClose={()=>setArchivar(null)}/>}

@@ -8,7 +8,7 @@ import { relojesDelCaso } from "../lib/plazosNormativos.js";
 import { CUADERNOS, valCuaderno } from "../lib/cuadernosDef.js";
 import { loadCuadernosPorCaso } from "../lib/api.js";
 import { qrDataURL, descargarQR, imprimirQRs } from "../lib/qr.js";
-import RegistrarEvento from "./RegistrarEvento.jsx";
+import CuadernosCaso from "./CuadernosCaso.jsx";
 
 // def de cuaderno por su `fuente` (tipo de registros_control) — para nombres/columnas
 const CUAD_POR_FUENTE = {}; CUADERNOS.forEach(c => { CUAD_POR_FUENTE[c.fuente] = c; });
@@ -320,7 +320,6 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
   const [verTodaAct, setVerTodaAct] = useState(false); // feed comprimido (5) vs completo
   const [cuadRegs, setCuadRegs] = useState(null);   // registros de CUADERNOS de este caso (2ª fuente)
   const [qrImg, setQrImg] = useState("");           // PNG (data-URL) del QR del caso (por suministro)
-  const [regCuad, setRegCuad] = useState(false);    // asistente «Registrar en un cuaderno» (precargado)
   const puedeCorregir = ["GERENTE","COORDINADOR"].includes(perfil?.rol);
 
   // QR del caso (codifica ?sum=<suministro>) — para verlo/descargar/pegar en el libro físico
@@ -628,58 +627,9 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
           </div>
 
           {/* ===== 2ª fuente: los CUADERNOS (Excel) que cruzan este mismo expediente ===== */}
-          <div style={{marginTop:14, background:"var(--card2)", border:"1px solid var(--bd)", borderRadius:12, padding:"11px 13px"}}>
-            <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-              <div style={{fontSize:13.5, fontWeight:700, color:"var(--titulo)"}}>📒 En los cuadernos {cuadRegs!=null && cuadRegs.length>0 ? "("+cuadRegs.length+")" : ""}</div>
-              <button className="btn sm" onClick={()=>setRegCuad(true)} title="Anota un paso de ESTE caso en un cuaderno (precargado con su suministro)"
-                style={{marginLeft:"auto",background:"var(--navy)",color:"#fff",border:0,fontWeight:700}}>➕ Registrar en cuaderno</button>
-            </div>
-            <div className="muted" style={{fontSize:11, margin:"2px 0 8px"}}>Dónde aparece ESTE expediente en los cuadernos de control: cada línea es un paso que se le registró (inspección, resolución, notificación, apelación…). Es su historial en los libros; arriba está la fuente SIELSE.</div>
-            {cuadRegs==null && <div className="muted" style={{fontSize:12}}>Cargando cuadernos…</div>}
-            {cuadRegs!=null && cuadRegs.length===0 && <div className="muted" style={{fontSize:12}}>Este expediente aún no figura en ningún cuaderno.</div>}
-            {cuadRegs!=null && cuadRegs.length>0 && (()=>{
-              // LÍNEA DE TIEMPO: pasos registrados en los cuadernos, cronológico, con ETIQUETA de cada dato.
-              const detPares=(def,r)=>{
-                if(!def) return [];
-                const out=[];
-                (def.cols||[]).forEach(([lbl,path])=>{
-                  if(!path || path==="item" || path==="fecha_evento") return;
-                  let v=valCuaderno(r,path); v=String(v==null?"":v).trim();
-                  if(!v) return;
-                  if(/^\d{4}-\d{2}-\d{2}/.test(v)) v=fmtFecha(v.slice(0,10));
-                  out.push({lbl,v});
-                });
-                return out;
-              };
-              const orden=[...cuadRegs].map(r=>({r,f:String(r.fecha_evento||"").slice(0,10)}))
-                .sort((a,b)=>(a.f||"9999")<(b.f||"9999")?-1:1);
-              return <div>
-                {orden.map(({r,f},i)=>{
-                  const def=CUAD_POR_FUENTE[r.tipo], nombre=def?def.nombre:r.tipo;
-                  const pares=detPares(def,r);
-                  const queryCaso=r.reclamo||r.suministro||exp.codigo;
-                  return <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start",position:"relative",paddingBottom:i<orden.length?12:0}}>
-                    <span style={{position:"absolute",left:9,top:19,bottom:0,width:2,background:"var(--bd)"}}/>
-                    <span title="Paso registrado" style={{flexShrink:0,width:20,height:20,borderRadius:"50%",background:"#1E8E5A",color:"#fff",fontSize:12,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",zIndex:1}}>✓</span>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"wrap"}}>
-                        <span onClick={()=>onAbrirCuaderno&&onAbrirCuaderno(r.tipo, queryCaso)}
-                          title="Abrir este cuaderno filtrado a este caso" style={{fontSize:12.5,fontWeight:700,color:"var(--linkTx)",cursor:onAbrirCuaderno?"pointer":"default",textDecoration:onAbrirCuaderno?"underline":"none",textUnderlineOffset:2}}>{nombre}</span>
-                        <span className="muted" style={{fontSize:11}}>{f?fmtFecha(f):"sin fecha"}</span>
-                      </div>
-                      {pares.length>0 && <div style={{fontSize:11,marginTop:2,display:"flex",flexWrap:"wrap",gap:"1px 12px"}}>
-                        {pares.map((p,j)=><span key={j}><span className="muted">{p.lbl}:</span> <b style={{fontWeight:600,color:"var(--tx)"}}>{p.v}</b></span>)}
-                      </div>}
-                    </div>
-                  </div>;
-                })}
-                {/* estado actual (SIELSE) — dónde está AHORA: lo que sigue por hacer */}
-                <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                  <span title="Etapa actual" style={{flexShrink:0,width:20,height:20,borderRadius:"50%",background:"var(--card)",border:"2px solid var(--linkTx)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1}}/>
-                  <div style={{fontSize:12,color:"var(--tx)"}}><b>Ahora:</b> {cerrado?"Expediente cerrado":etapaActual} <span className="muted">· etapa actual según SIELSE</span></div>
-                </div>
-              </div>;
-            })()}
+          <div style={{marginTop:14}}>
+            <CuadernosCaso exp={exp} registros={cuadRegs} onAbrirCuaderno={onAbrirCuaderno} onRegistrado={recargarCuad}
+              perfil={perfil} etapaActual={etapaActual} cerrado={cerrado} />
           </div>
         </div>
 
@@ -783,11 +733,6 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
       {/* ===== Modal: Ficha SIELSE (registro del caso + trabajado por fase + documentos) ===== */}
       {verFicha && (
         <FichaSielse exp={exp} datos={datos} evidencias={evidencias} onClose={()=>setVerFicha(false)} onEditar={onEditar} />
-      )}
-      {/* ===== Modal: Registrar en un cuaderno — MISMO asistente que Mi día, precargado con este caso ===== */}
-      {regCuad && (
-        <RegistrarEvento perfil={perfil} data={[exp]} sumInicial={exp.suministro||""}
-          onClose={()=>setRegCuad(false)} onGuardado={recargarCuad} />
       )}
     </div>
   );

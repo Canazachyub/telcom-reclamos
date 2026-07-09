@@ -9,6 +9,7 @@ import { INFO_ETAPA, CAMPOS_ETAPA, CAMPOS_POR_FALLO } from "../lib/camposEtapa.j
 import { resumirIA } from "../lib/api.js";
 import { GuiaSielseBox, GUIA_SIELSE } from "../lib/guiaSielse.jsx";
 import { fmtCuando, humanizarRegistro } from "./SalaExpediente.jsx";
+import CuadernosCaso from "./CuadernosCaso.jsx";
 
 const humaniza = k => String(k).replace(/_/g, " ").toLowerCase().replace(/^\w/, c => c.toUpperCase());
 // URL de previsualización embebible de un archivo de Drive.
@@ -42,7 +43,7 @@ function fmtValor(v) {
 
 // Workspace del expediente a pantalla completa: timeline arriba · VISOR · datos del formulario · datos del reclamo + etapas.
 // AQUÍ se hace TODO el trabajo de una etapa: subir evidencia + datos, generar documento y marcar la etapa hecha.
-export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, perfil, comentarios = [], registros = [], onComentar, onClose, onSaveDatos, onSubido, onEstadoTicket, onEditar }) {
+export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, perfil, comentarios = [], registros = [], onComentar, onClose, onSaveDatos, onSubido, onEstadoTicket, onEditar, onAbrirCuaderno }) {
   const ci = stageIdx(exp.etapa);
   const ii = etapaInicial ? stageIdx(etapaInicial) : -1;
   // EL TICKET ACTIVO ES LA FUENTE DE VERDAD: si no viene una etapa explícita (etapaInicial),
@@ -54,7 +55,11 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
     ? [...ticketsCaso].sort((a, b) => String(a.etapaNN).localeCompare(String(b.etapaNN))).find(t => !t.hecho)
     : null;
   const ai = ticketsCaso.length ? (ticketActivo ? stageIdx(ticketActivo.etapa) : FLUJO.length - 1) : -1;
+  // etapa actual del caso (para el nodo "Ahora" de la fuente de cuadernos)
+  const cerradoDrawer = ticketsCaso.length > 0 && ticketsCaso.every(t => t.hecho);
+  const etapaActualDrawer = ticketActivo ? ticketActivo.etapa : (cerradoDrawer ? "Cierre" : exp.etapa);
   const [sel, setSel] = useState(ii >= 0 ? ii : ai >= 0 ? ai : exp.estado === "Cerrado" ? FLUJO.length - 1 : ci < 0 ? 0 : ci);
+  const [datosAbierto, setDatosAbierto] = useState(true);   // «Datos de la etapa» colapsable
   const [docSel, setDocSel] = useState(0);
   const [subir, setSubir] = useState(false);
   const [docGen, setDocGen] = useState(false);
@@ -199,7 +204,20 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
             {esMiEtapa && <div style={{ background: "rgba(201,130,27,.12)", border: "1px solid #C9821B", borderRadius: 8, padding: "8px 10px", marginBottom: 10, fontSize: 12.5, color: "#7A4A0A" }}>
               ✋ <b>Esta etapa es tuya.</b> 1) 📎 sube la evidencia y llena los datos · 2) 📄 genera el documento si aplica · 3) pulsa «✔ Terminé esta etapa».
             </div>}
-            <b style={{ color: "var(--titulo)", fontSize: 13 }}>Datos de la etapa</b>
+
+            {/* FUENTE DE CUADERNOS de este caso — arriba del panel de la etapa (clic abre el cuaderno filtrado) */}
+            <div style={{ marginBottom: 12 }}>
+              <CuadernosCaso exp={exp} onAbrirCuaderno={onAbrirCuaderno} perfil={perfil} etapaActual={etapaActualDrawer} cerrado={cerradoDrawer} />
+            </div>
+
+            {/* Datos de la etapa — COLAPSABLE (se puede ocultar para dar protagonismo a los cuadernos) */}
+            <div onClick={() => setDatosAbierto(v => !v)} title={datosAbierto ? "Ocultar los datos de la etapa" : "Mostrar los datos de la etapa"}
+              style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none", padding: "2px 0" }}>
+              <span style={{ color: "var(--mut)", fontSize: 12, width: 12 }}>{datosAbierto ? "▾" : "▸"}</span>
+              <b style={{ color: "var(--titulo)", fontSize: 13 }}>Datos de la etapa</b>
+              {!datosAbierto && <span className="muted" style={{ fontSize: 11 }}>· {s.etapa} ({s.rol}) — clic para mostrar</span>}
+            </div>
+            {datosAbierto && <>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", margin: "8px 0" }}>
               <Tag bg="#E9EEF5" color="var(--tx)">👤 {s.rol}</Tag><Tag bg="#E9EEF5" color="var(--tx)">{s.act}</Tag><Tag bg="#E9EEF5" color="var(--tx)" title="Todos los plazos del contrato son en días HÁBILES (lun-vie sin feriados)">⏱ {s.plazo}</Tag>
               {estPlazo && <Tag bg={estPlazo.c} color="#fff">{estPlazo.t} · {tk.fechaLimite} ({tk.diasRestantes}d háb.)</Tag>}
@@ -269,6 +287,7 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
             {INFO_ETAPA[s.etapa] && <div className="note" style={{ background: "rgba(31,78,140,.08)", border: "1px solid var(--bd)", color: "var(--tx)", fontSize: 11.5, marginTop: 8 }}>
               <b style={{ color: "var(--linkTx)" }}>Según las bases:</b> {INFO_ETAPA[s.etapa].importa}
             </div>}
+            </>}
           </div>
 
           {/* --- Datos del reclamo (editable) + navegador de etapas + observaciones + bitácora --- */}
