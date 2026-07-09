@@ -6,6 +6,9 @@ import RegistrarEvento from "./RegistrarEvento.jsx";
 
 export default function MiDia({ perfil, misReclamos, data = [], tickets = [], recByCode = {}, onEstadoTicket, setSelExp, onCerrarDia, onEscanear }) {
   const [registrar, setRegistrar] = useState(false);
+  // aviso de primer uso (una vez por navegador) — orienta al trabajador a las 3 acciones clave
+  const [tip, setTip] = useState(() => { try { return localStorage.getItem("tip_midia_v1") !== "off"; } catch (e) { return true; } });
+  const cerrarTip = () => { setTip(false); try { localStorage.setItem("tip_midia_v1", "off"); } catch (e) {} };
   const ab = abiertos(tickets);
   const venc = vencidos(tickets);
   const pv = porVencer(tickets, 2);
@@ -23,6 +26,20 @@ export default function MiDia({ perfil, misReclamos, data = [], tickets = [], re
         <button className="btn" title="Enviar tu reporte de hoy al Coordinador" onClick={() => { onCerrarDia(); toast("Día cerrado. Reporte enviado al Coordinador."); }}>Cerrar mi día</button>
       </div>
     </Card>
+
+    {/* AVISO DE PRIMER USO — una vez por navegador, orienta a las 3 acciones clave */}
+    {tip && (
+      <div style={{ position: "relative", marginBottom: 14, padding: "13px 40px 13px 14px", borderRadius: 12, background: "var(--card2)", border: "1px dashed var(--navy)" }}>
+        <button onClick={cerrarTip} title="Entendido, no mostrar más" style={{ position: "absolute", top: 8, right: 10, background: "transparent", border: 0, fontSize: 18, color: "var(--mut)", cursor: "pointer" }}>✕</button>
+        <div style={{ fontWeight: 800, color: "var(--titulo)", marginBottom: 4 }}>👋 Bienvenido, {perfil.nombre.split(" ")[0]}</div>
+        <div style={{ fontSize: 12.5, lineHeight: 1.6, color: "var(--tx)" }}>
+          Trabaja como en tus hojas de siempre. Solo tres cosas:<br />
+          <b>➕ Registrar</b> — anota un evento en un cuaderno (como en tu Excel). ·
+          <b> 📷 Escanear QR</b> — apunta al código pegado en el libro y abre ese caso. ·
+          <b> Tu próxima tarea</b> — abajo te decimos qué sigue; no tienes que buscar nada.
+        </div>
+      </div>
+    )}
 
     {/* ACCIONES PRINCIPALES — grandes y claras: registrar (como en sus hojas) y escanear el QR del libro */}
     <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
