@@ -22,6 +22,7 @@ import MuestraTrimestral from "./components/MuestraTrimestral.jsx";
 import MejorasTR from "./components/MejorasTR.jsx";
 import Cuadernos from "./components/Cuadernos.jsx";
 import TrabajoEquipo from "./components/TrabajoEquipo.jsx";
+import BuscadorGlobal from "./components/BuscadorGlobal.jsx";
 import PenalidadesTope from "./components/PenalidadesTope.jsx";
 import { riesgoSAPGlobal } from "./lib/plazosNormativos.js";
 
@@ -70,6 +71,7 @@ function Shell({ perfil, onLogout }){
   const [archivar, setArchivar] = useState(null);     // {codigo, rec} → modal de archivar caso (con foliado opcional)
   const [sumPend, setSumPend] = useState(()=>{ try{ return new URLSearchParams(window.location.search).get("sum")||""; }catch(e){ return ""; } }); // deep-link QR
   const [sumPicker, setSumPicker] = useState(null);   // {sum, matches} — el suministro tiene >1 reclamo, elegir
+  const [buscarOpen, setBuscarOpen] = useState(false); // 🔎 buscador global (Ctrl+K)
   const [abrirCuad, setAbrirCuad] = useState(null);   // deep-link: {fuente, q} para abrir un cuaderno FILTRADO (desde la Sala)
   const [volverExp, setVolverExp] = useState(null);   // id del expediente al que "← Volver" desde el cuaderno
   function irACuaderno(fuente, q, expId){ setSalaExp(null); setSelExpId(null); setSelEtapa(null); setVolverExp(expId); setAbrirCuad({ fuente, q }); }
@@ -184,6 +186,12 @@ function Shell({ perfil, onLogout }){
     if(etapa){ setSelExpId(id); setSelEtapa(etapa); }
     else setSalaExp(id);
   }
+  // 🔎 Buscador global: atajo Ctrl/Cmd+K desde cualquier pantalla.
+  useEffect(()=>{
+    const h = e => { if((e.ctrlKey||e.metaKey) && (e.key==="k"||e.key==="K")){ e.preventDefault(); setBuscarOpen(true); } };
+    window.addEventListener("keydown", h);
+    return ()=>window.removeEventListener("keydown", h);
+  }, []);
   // DEEP-LINK del QR (?sum=): al cargar los reclamos, resuelve el suministro escaneado.
   //  1 reclamo → abre su Sala · varios → elegir · ninguno → ofrecer crear el caso con ese suministro.
   useEffect(()=>{
@@ -274,6 +282,7 @@ function Shell({ perfil, onLogout }){
               {VER_COMO_OPCIONES.map(u=><option key={u.usuario} value={u.usuario}>{u.nombre.split(" ")[0]} · {ROL_LABEL[u.rol]}</option>)}
             </select>
           )}
+          <button className="btn-ghost" onClick={()=>setBuscarOpen(true)} title="Buscar un caso (Ctrl+K)" style={{fontWeight:600}}>🔎 Buscar</button>
           <button className="btn" onClick={()=>setNuevo(true)} title="Registrar un nuevo expediente" style={{fontWeight:600}}>➕ Nuevo caso</button>
           {puedeVerTodo(perfilVista.rol) && <a className="btn-ghost" href={STREAMLIT_URL} target="_blank" rel="noreferrer" title="Abrir herramientas de análisis (Streamlit) en pestaña nueva">🔧 Herramientas</a>}
           {data && <Notificaciones perfil={perfilVista} activosTk={activos(tickets)} recByCode={recByCode} setSelExp={abrirExp}/>}
@@ -304,6 +313,7 @@ function Shell({ perfil, onLogout }){
           onEditar={(campo,valor)=>onEditarCampo(sx.codigo,campo,valor)} onEliminar={onEliminarExp} ladoALado={exp!=null} onClose={()=>setSalaExp(null)}/>
       ) : null; })()}
       {exp && <Drawer exp={exp} etapaInicial={selEtapa} evidencias={evidencias} datos={datos} tickets={tickets} perfil={perfilVista} comentarios={comentarios} registros={registros} onComentar={onComentar} onEstadoTicket={onEstadoTicket} onEditar={(campo,valor)=>onEditarCampo(exp.codigo,campo,valor)} onClose={()=>{ setSelExpId(null); setSelEtapa(null); }} onSaveDatos={saveDatos} onSubido={obj=>setEvi(ev=>[obj,...ev])}/>}
+      {buscarOpen && data && <BuscadorGlobal data={data} onAbrir={abrirExp} onClose={()=>setBuscarOpen(false)}/>}
       {archivar && <ArchivarCaso info={archivar} onArchivar={doArchivar} onSubido={obj=>setEvi(ev=>[obj,...ev])} onClose={()=>setArchivar(null)}/>}
       {sumPicker && <div className="modal-bg" onClick={()=>setSumPicker(null)} style={{position:"fixed",inset:0,background:"rgba(22,41,75,.45)",zIndex:96,display:"flex",alignItems:"center",justifyContent:"center"}}>
         <div onClick={e=>e.stopPropagation()} style={{background:"var(--card,#fff)",borderRadius:12,padding:18,width:"min(520px,94vw)",maxHeight:"85vh",overflowY:"auto",boxShadow:"0 12px 40px rgba(0,0,0,.25)"}}>
