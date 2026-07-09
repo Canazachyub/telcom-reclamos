@@ -8,6 +8,7 @@ import { relojesDelCaso } from "../lib/plazosNormativos.js";
 import { CUADERNOS, valCuaderno } from "../lib/cuadernosDef.js";
 import { loadCuadernosPorCaso } from "../lib/api.js";
 import { qrDataURL, descargarQR, imprimirQRs } from "../lib/qr.js";
+import RegistrarEvento from "./RegistrarEvento.jsx";
 
 // def de cuaderno por su `fuente` (tipo de registros_control) — para nombres/columnas
 const CUAD_POR_FUENTE = {}; CUADERNOS.forEach(c => { CUAD_POR_FUENTE[c.fuente] = c; });
@@ -319,6 +320,7 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
   const [verTodaAct, setVerTodaAct] = useState(false); // feed comprimido (5) vs completo
   const [cuadRegs, setCuadRegs] = useState(null);   // registros de CUADERNOS de este caso (2ª fuente)
   const [qrImg, setQrImg] = useState("");           // PNG (data-URL) del QR del caso (por suministro)
+  const [regCuad, setRegCuad] = useState(false);    // asistente «Registrar en un cuaderno» (precargado)
   const puedeCorregir = ["GERENTE","COORDINADOR"].includes(perfil?.rol);
 
   // QR del caso (codifica ?sum=<suministro>) — para verlo/descargar/pegar en el libro físico
@@ -329,6 +331,7 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
   }, [exp.suministro]);
 
   // 2ª fuente: los registros de los cuadernos (Excel) que cruzan con ESTE expediente
+  const recargarCuad = () => loadCuadernosPorCaso(exp.codigo, exp.osinerg).then(r => setCuadRegs(r || []));
   useEffect(() => {
     let vivo = true;
     setCuadRegs(null);
@@ -626,7 +629,11 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
 
           {/* ===== 2ª fuente: los CUADERNOS (Excel) que cruzan este mismo expediente ===== */}
           <div style={{marginTop:14, background:"var(--card2)", border:"1px solid var(--bd)", borderRadius:12, padding:"11px 13px"}}>
-            <div style={{fontSize:13.5, fontWeight:700, color:"var(--titulo)"}}>📒 En los cuadernos {cuadRegs!=null && cuadRegs.length>0 ? "("+cuadRegs.length+")" : ""}</div>
+            <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+              <div style={{fontSize:13.5, fontWeight:700, color:"var(--titulo)"}}>📒 En los cuadernos {cuadRegs!=null && cuadRegs.length>0 ? "("+cuadRegs.length+")" : ""}</div>
+              <button className="btn sm" onClick={()=>setRegCuad(true)} title="Anota un paso de ESTE caso en un cuaderno (precargado con su suministro)"
+                style={{marginLeft:"auto",background:"var(--navy)",color:"#fff",border:0,fontWeight:700}}>➕ Registrar en cuaderno</button>
+            </div>
             <div className="muted" style={{fontSize:11, margin:"2px 0 8px"}}>Dónde aparece ESTE expediente en los cuadernos de control: cada línea es un paso que se le registró (inspección, resolución, notificación, apelación…). Es su historial en los libros; arriba está la fuente SIELSE.</div>
             {cuadRegs==null && <div className="muted" style={{fontSize:12}}>Cargando cuadernos…</div>}
             {cuadRegs!=null && cuadRegs.length===0 && <div className="muted" style={{fontSize:12}}>Este expediente aún no figura en ningún cuaderno.</div>}
@@ -776,6 +783,11 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
       {/* ===== Modal: Ficha SIELSE (registro del caso + trabajado por fase + documentos) ===== */}
       {verFicha && (
         <FichaSielse exp={exp} datos={datos} evidencias={evidencias} onClose={()=>setVerFicha(false)} onEditar={onEditar} />
+      )}
+      {/* ===== Modal: Registrar en un cuaderno — MISMO asistente que Mi día, precargado con este caso ===== */}
+      {regCuad && (
+        <RegistrarEvento perfil={perfil} data={[exp]} sumInicial={exp.suministro||""}
+          onClose={()=>setRegCuad(false)} onGuardado={recargarCuad} />
       )}
     </div>
   );
