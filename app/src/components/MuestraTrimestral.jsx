@@ -78,7 +78,7 @@ function ModalInforme({ item, exp, etapa, evidenciasCaso, onClose }) {
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(22,41,75,.45)", zIndex: 120, display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "4vh 12px", overflowY: "auto" }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{ width: "min(640px,100%)", background: "var(--bg)", border: "1px solid var(--bd)", borderRadius: 16, padding: 18, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 24px 70px rgba(22,41,75,.28)" }}>
+      <div style={{ width: "min(640px,100%)", background: "var(--bg)", border: "1px solid var(--bd)", borderRadius: 16, padding: 18, maxHeight: "90vh", overflowY: "auto", boxShadow: "var(--shadow-modal)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
           <h3 style={{ margin: 0, fontSize: 15.5, color: "var(--titulo)" }}>📋 Informe de estado de reclamo</h3>
           <button className="btn-ghost" onClick={onClose}>✕ Cerrar</button>
@@ -165,7 +165,7 @@ export default function MuestraTrimestral({ data, tickets, evidencias, registros
         <div className="muted" style={{ fontSize: 12.5, lineHeight: 1.6 }}>
           OSINERGMIN solicita trimestralmente una muestra de expedientes; ELSE la traslada a TELCOM. Hay que revisar, ordenar y foliar cada expediente elegido (sin importar su etapa), elaborar un <b>Informe de estado de reclamo</b> por cada uno, nombrar los archivos como <b className="mono">N°ITEM.suministro</b> (ej. <span className="mono">1.10010430330.pdf</span>) —incluidos los audios de reclamos telefónicos con igual nomenclatura— y entregarlos por USB o Drive en el plazo que fije ELSE.
         </div>
-        <div className="note" style={{ background: "#FDE7E7", border: "1px solid #F3B4B4", color: "#B91C1C", marginTop: 10 }}>
+        <div className="note" style={{ background: "var(--tint-red-bg)", border: "1px solid var(--tint-red-bd)", color: "var(--tint-red-tx)", marginTop: 10 }}>
           ⚠ Penalidad 5.11: <b>S/2,000</b> por muestra trimestral incumplida.
         </div>
       </div>
@@ -234,7 +234,7 @@ export default function MuestraTrimestral({ data, tickets, evidencias, registros
             const folOk = foliadoOk(m.codigo);
             return (
               <div key={m.codigo} className="chk" style={{ fontSize: 12.5 }}>
-                <span style={{ color: folOk ? "#15803D" : "#DC2626", fontWeight: 700 }}>{folOk ? "✓" : "✗"}</span>
+                <span style={{ color: folOk ? "var(--green)" : "var(--red)", fontWeight: 700 }}>{folOk ? "✓" : "✗"}</span>
                 Ítem {m.item} — {m.exp.solicitante || m.codigo}: expediente foliado {folOk ? "detectado" : "no detectado"} <span className="muted">(evidencia con "Expediente_" o etapa Foliado)</span>
               </div>
             );

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Card } from "./ui.jsx";
-import { postAction } from "../lib/api.js";
+import { postAction, loadCatalogoCampos } from "../lib/api.js";
 
 // Etiquetas amigables y agrupación de los tipos de documento (= plantillas)
 const TIPOS = [
@@ -67,7 +67,7 @@ export default function Formularios({ data, perfil, fijo = null, datosEtapa = nu
   const [res, setRes] = useState(null);
   const [precargados, setPrecargados] = useState(0);
 
-  useEffect(() => { fetch("./catalogo_campos.json").then(r => r.json()).then(setCatalogo).catch(() => setCatalogo({})); }, []);
+  useEffect(() => { loadCatalogoCampos().then(setCatalogo).catch(() => setCatalogo({})); }, []);
 
   const spec = catalogo?.[tipo + ".docx"];
 
@@ -160,7 +160,7 @@ export default function Formularios({ data, perfil, fijo = null, datosEtapa = nu
           <h3 style={{ marginBottom: 2 }}>{(TIPOS.find(t => t[0] === tipo) || [])[1]}</h3>
           <div className="muted" style={{ marginBottom: 10 }}>
             {spec.auto} automáticos · {spec.llena} a llenar · {spec.calc} calculados por el sistema
-            {precargados > 0 && <span style={{ color: "#1E8E5A", fontWeight: 600 }}> · ✓ {precargados} prellenado(s) con los datos registrados en las etapas</span>}
+            {precargados > 0 && <span style={{ color: "var(--tint-green-tx)", fontWeight: 600 }}> · ✓ {precargados} prellenado(s) con los datos registrados en las etapas</span>}
           </div>
 
           {["general", "tabla", "firma"].map(g => {
@@ -177,8 +177,8 @@ export default function Formularios({ data, perfil, fijo = null, datosEtapa = nu
 
           <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 6 }}>
             <button onClick={generar} disabled={gen} style={btnPrim}>{gen ? "Generando…" : "Generar DOCX + PDF"}</button>
-            {res?.ok && <span style={{ color: "#1E8E5A", fontSize: 13 }}>✓ Generado: {res.nombre}</span>}
-            {res && !res.ok && <span style={{ color: "#b91c1c", fontSize: 13 }}>Error: {res.error || "no se pudo generar"}</span>}
+            {res?.ok && <span style={{ color: "var(--tint-green-tx)", fontSize: 13 }}>✓ Generado: {res.nombre}</span>}
+            {res && !res.ok && <span style={{ color: "var(--tint-red-tx)", fontSize: 13 }}>Error: {res.error || "no se pudo generar"}</span>}
             {res?.mock && <span className="muted" style={{ fontSize: 13 }}>(sin backend: inicia sesión real para generar)</span>}
           </div>
           {res?.ok && (
@@ -189,8 +189,8 @@ export default function Formularios({ data, perfil, fijo = null, datosEtapa = nu
           )}
           {res?.ok && (
             <div style={banner}>
-              <b style={{ color: "#7a4a00" }}>Siguientes pasos para que este documento cuente como evidencia:</b>
-              <ol style={{ margin: "6px 0 0", paddingLeft: 18, color: "#4b3a1f" }}>
+              <b style={{ color: "var(--tint-amber-tx)" }}>Siguientes pasos para que este documento cuente como evidencia:</b>
+              <ol style={{ margin: "6px 0 0", paddingLeft: 18, color: "var(--tint-amber-tx)" }}>
                 <li>Descarga el DOCX.</li>
                 <li>Corrige / firma / sella el documento.</li>
                 <li>Sube el escaneado firmado con 📎 <b>Evidencia + datos</b>{etapaActual ? <> en la etapa «{etapaActual}»</> : ""}.</li>
@@ -216,18 +216,18 @@ function Field({ c, val, onChange }) {
   const span = (c.tipo === "textarea") ? "1 / -1" : undefined;
   return (
     <label style={{ fontSize: 12.5, gridColumn: span }}>
-      <span style={{ color: "#5b6b80" }}>{c.label}{auto && <span style={{ color: "#2C6FC0" }}> · auto</span>}</span>
+      <span style={{ color: "var(--mut)" }}>{c.label}{auto && <span style={{ color: "var(--acc)" }}> · auto</span>}</span>
       {input}
     </label>
   );
 }
 
-const inp = { width: "100%", marginTop: 3, padding: "7px 9px", border: "1px solid #d8e0ea", borderRadius: 8, fontSize: 13, fontFamily: "inherit", background: "#fff", color: "#1A2332" };
-const autoStyle = { background: "#f4f7fb", color: "#1A2332" };
-const pick = { textAlign: "left", padding: "7px 10px", border: "1px solid #d8e0ea", borderRadius: 8, background: "#fff", color: "#1A2332", cursor: "pointer", fontSize: 13 };
-const chip = { marginTop: 10, padding: "8px 12px", background: "#eef4fb", border: "1px solid #d8e0ea", borderRadius: 8, fontSize: 13, color: "#1A2332" };
-const xbtn = { border: "1px solid #d8e0ea", borderRadius: 6, background: "#fff", color: "#1A2332", cursor: "pointer", fontSize: 12, padding: "2px 8px" };
-const secTit = { fontSize: 11, textTransform: "uppercase", letterSpacing: ".05em", color: "#5b6b80", fontWeight: 700, borderBottom: "1px solid #d8e0ea", paddingBottom: 4, marginBottom: 8 };
-const btnPrim = { background: "#1F4E8C", color: "#fff", border: 0, borderRadius: 8, padding: "9px 16px", fontSize: 14, cursor: "pointer", fontWeight: 600 };
-const btnDl = { background: "#143A6B", color: "#fff", borderRadius: 8, padding: "8px 14px", fontSize: 13, textDecoration: "none" };
-const banner = { marginTop: 12, background: "#fff3da", border: "1px solid #f2c572", borderRadius: 8, padding: "10px 12px", fontSize: 13 };
+const inp = { width: "100%", marginTop: 3, padding: "7px 9px", border: "1px solid var(--bd)", borderRadius: 8, fontSize: 13, fontFamily: "inherit", background: "var(--card2)", color: "var(--tx)" };
+const autoStyle = { background: "var(--tint-acc-bg)", color: "var(--tx)" };
+const pick = { textAlign: "left", padding: "7px 10px", border: "1px solid var(--bd)", borderRadius: 8, background: "var(--card2)", color: "var(--tx)", cursor: "pointer", fontSize: 13 };
+const chip = { marginTop: 10, padding: "8px 12px", background: "var(--tint-acc-bg)", border: "1px solid var(--tint-acc-bd)", borderRadius: 8, fontSize: 13, color: "var(--tx)" };
+const xbtn = { border: "1px solid var(--bd)", borderRadius: 6, background: "var(--card2)", color: "var(--tx)", cursor: "pointer", fontSize: 12, padding: "2px 8px" };
+const secTit = { fontSize: 11, textTransform: "uppercase", letterSpacing: ".05em", color: "var(--mut)", fontWeight: 700, borderBottom: "1px solid var(--bd)", paddingBottom: 4, marginBottom: 8 };
+const btnPrim = { background: "var(--acc)", color: "#fff", border: 0, borderRadius: 8, padding: "9px 16px", fontSize: 14, cursor: "pointer", fontWeight: 600 };
+const btnDl = { background: "var(--navy)", color: "#fff", borderRadius: 8, padding: "8px 14px", fontSize: 13, textDecoration: "none" };
+const banner = { marginTop: 12, background: "var(--tint-amber-bg)", border: "1px solid var(--tint-amber-bd)", borderRadius: 8, padding: "10px 12px", fontSize: 13 };

@@ -1,45 +1,15 @@
-import { useState, useEffect } from "react";
-import { FLUJO, stageIdx, fmtFecha, parseFecha, daysLeft, wName, wColor, DRIVE_URL, ETAPA_NN } from "../lib/model.js";
-import { estadoColor, urgColor, Tag, toast } from "./ui.jsx";
+import { useState, useEffect, lazy, Suspense } from "react";
+import { FLUJO, stageIdx, parseFecha, wColor, wName, ETAPA_NN } from "../lib/model.js";
+import { Tag } from "./ui.jsx";
 import Timeline from "./Timeline.jsx";
-import SubirEvidencia from "./SubirEvidencia.jsx";
-import Formularios from "./Formularios.jsx";
 import FichaSielse from "./FichaSielse.jsx";
-import { INFO_ETAPA, CAMPOS_ETAPA, CAMPOS_POR_FALLO } from "../lib/camposEtapa.js";
-import { resumirIA } from "../lib/api.js";
-import { GuiaSielseBox, GUIA_SIELSE } from "../lib/guiaSielse.jsx";
-import { fmtCuando, humanizarRegistro } from "./SalaExpediente.jsx";
-import CuadernosCaso from "./CuadernosCaso.jsx";
-
-const humaniza = k => String(k).replace(/_/g, " ").toLowerCase().replace(/^\w/, c => c.toUpperCase());
-// URL de previsualización embebible de un archivo de Drive.
-function previewUrl(url) {
-  const m = String(url || "").match(/\/d\/([^/]+)/) || String(url || "").match(/[?&]id=([^&]+)/);
-  return m ? `https://drive.google.com/file/d/${m[1]}/preview` : url;
-}
-const esImg = n => /\.(jpg|jpeg|png|gif|webp)$/i.test(String(n || ""));
-
-// Mismo mapa de iconos por etapa que SalaExpediente (copiado como constante local — no se importa
-// porque SalaExpediente no lo exporta, solo exporta fmtCuando/humanizarRegistro).
-const ICONO_ETAPA = { "Recepción": "📥", "Evaluación": "🔍", "Campo": "🚙", "SIELSE": "💻", "Resolución": "⚖️", "Firmas": "✍️", "Notificación": "📨", "Apelación (JARU)": "🏛️", "Foliado": "📚", "Cierre": "✅" };
-
-// fecha ISO ("2026-03-31T05:00:00.000Z") -> "31/03/2026"; el resto se muestra tal cual (mismo
-// patrón fmtValor de FichaSielse.jsx, duplicado aquí porque no se exporta desde allá).
-const ISO_RE = /^\d{4}-\d{2}-\d{2}T/;
-function fmtValor(v) {
-  if (v == null || v === "") return v;
-  const s = String(v);
-  if (ISO_RE.test(s)) {
-    const d = new Date(s);
-    if (!isNaN(d.getTime())) {
-      const dd = String(d.getUTCDate()).padStart(2, "0");
-      const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
-      const yy = d.getUTCFullYear();
-      return `${dd}/${mm}/${yy}`;
-    }
-  }
-  return s;
-}
+// Formularios (modal "Generar documento") solo se monta con docGen=true: en diferido (F4-B).
+const Formularios = lazy(() => import("./Formularios.jsx"));
+import { CAMPOS_ETAPA, CAMPOS_POR_FALLO } from "../lib/camposEtapa.js";
+import { ICONO_ETAPA, wrap, cols, col } from "./drawer/utils.js";
+import { ColumnaVisor } from "./drawer/ColumnaVisor.jsx";
+import { PanelEtapa } from "./drawer/PanelEtapa.jsx";
+import { DatosReclamo } from "./drawer/DatosReclamo.jsx";
 
 // Workspace del expediente a pantalla completa: timeline arriba · VISOR · datos del formulario · datos del reclamo + etapas.
 // AQUÍ se hace TODO el trabajo de una etapa: subir evidencia + datos, generar documento y marcar la etapa hecha.
@@ -69,7 +39,6 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
   const [w, setW] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
   useEffect(() => { const f = () => setW(window.innerWidth); window.addEventListener("resize", f); return () => window.removeEventListener("resize", f); }, []);
   const mobile = w < 880;
-  const [iaResumen, setIaResumen] = useState(""); const [iaBusy, setIaBusy] = useState(false);
 
   const evisDe = et => (evidencias || []).filter(e => e.exp === exp.codigo && (e.etapa === et || e.etapa === ETAPA_NN[et]));
   const datosDe = et => (datos && datos[exp.codigo + "|" + et]) || {};
@@ -92,7 +61,6 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
   const docs = evisDe(s.etapa);
   const dat = datosDe(s.etapa); const datK = Object.keys(dat);
   const tk = ticketDe(s.etapa);
-  const doc = docs[Math.min(docSel, Math.max(docs.length - 1, 0))];
 
   // Faltantes para poder cerrar la etapa: evidencia requerida sin match (misma lógica del
   // checklist "Evidencia requerida") + campos de CAMPOS_ETAPA[etapa] (incl. los del sentido
@@ -106,14 +74,14 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
   const datEf = previosDe(s.etapa);
   const camposFaltantes = camposEtapaTodos.filter(c => datEf[c.k] == null || datEf[c.k] === "").map(c => c.label);
   const faltantes = [...evisFaltantes, ...camposFaltantes];
-  const estPlazo = tk && tk.abierto ? (tk.vencido ? { t: "VENCIDO", c: "#7f1d1d" } : (tk.diasRestantes != null && tk.diasRestantes <= 2 ? { t: "POR VENCER", c: "#78350f" } : { t: "VIGENTE", c: "#14532d" })) : null;
+  const estPlazo = tk && tk.abierto ? (tk.vencido ? { t: "VENCIDO", c: "var(--tint-red-bg)", tx: "var(--tint-red-tx)" } : (tk.diasRestantes != null && tk.diasRestantes <= 2 ? { t: "POR VENCER", c: "var(--tint-amber-bg)", tx: "var(--tint-amber-tx)" } : { t: "VIGENTE", c: "var(--tint-green-bg)", tx: "var(--tint-green-tx)" })) : null;
   // Pill de estado de la etapa SELECCIONADA (para la cabecera hero) — según su ticket si existe:
   // hecha ✓ verde / vencida roja / en curso ámbar. Sin ticket: "sin ticket" gris neutro.
   const pillEtapaSel = !tk
-    ? { t: "SIN TICKET", bg: "#E9EEF5", c: "var(--mut)" }
-    : tk.hecho ? { t: "HECHA ✓", bg: "#E5F7EC", c: "#15803D" }
-      : tk.abierto && tk.vencido ? { t: "VENCIDA", bg: "#FDE7E7", c: "#DC2626" }
-        : { t: "EN CURSO", bg: "#FEF3DF", c: "#B45309" };
+    ? { t: "SIN TICKET", bg: "var(--card2)", c: "var(--mut)" }
+    : tk.hecho ? { t: "HECHA ✓", bg: "var(--tint-green-bg)", c: "var(--tint-green-tx)" }
+      : tk.abierto && tk.vencido ? { t: "VENCIDA", bg: "var(--tint-red-bg)", c: "var(--tint-red-tx)" }
+        : { t: "EN CURSO", bg: "var(--tint-amber-bg)", c: "var(--tint-amber-tx)" };
   const selEst = i => { setSel(i); setDocSel(0); setSubir(false); };
   const esMiEtapa = tk && perfil && tk.respId === perfil.resp_id && tk.abierto;
   const puedeAccion = tk && perfil && (esMiEtapa || perfil.rol === "GERENTE" || perfil.rol === "COORDINADOR");
@@ -126,10 +94,10 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
     <div className="overlay" style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: mobile ? 0 : 16 }} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div style={wrapS}>
         {/* ===== Header estilo courier (hero compacto) + línea de tiempo (full width) ===== */}
-        <div style={{ background: "linear-gradient(120deg,#DDF0FA,#EDF7FC)", borderBottom: "1px solid var(--bd)" }}>
+        <div style={{ background: "linear-gradient(120deg,var(--tint-acc-bg),var(--card))", borderBottom: "1px solid var(--bd)" }}>
           <div style={{ padding: "12px 18px 6px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-              <div style={{ width: 40, height: 40, borderRadius: 11, background: "linear-gradient(135deg,#E3001B,#FF5A63)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 19, flexShrink: 0 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 11, background: "linear-gradient(135deg,var(--acc),var(--accLight))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 19, flexShrink: 0 }}>
                 {ICONO_ETAPA[s.etapa] || "📄"}
               </div>
               <div>
@@ -140,8 +108,8 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
                 <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
                   <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 999, background: pillEtapaSel.bg, color: pillEtapaSel.c }}>{pillEtapaSel.t}</span>
                   <Tag bg={wColor(exp.resp)} color="#fff">👤 {wName(exp.resp)}</Tag>
-                  {exp.tipoRes && <Tag bg="#E9EEF5" color="var(--tx)">{exp.tipoRes}</Tag>}
-                  {exp.apelacion && <Tag bg="#7c3aed" color="#fff">APELACIÓN JARU</Tag>}
+                  {exp.tipoRes && <Tag bg="var(--card2)" color="var(--tx)">{exp.tipoRes}</Tag>}
+                  {exp.apelacion && <Tag bg="var(--purple)" color="#fff">APELACIÓN JARU</Tag>}
                 </div>
               </div>
             </div>
@@ -162,180 +130,36 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
 
         {/* ===== 3 columnas (se apilan en móvil) ===== */}
         <div style={colsS}>
-          {/* --- VISOR --- */}
-          <div style={{ ...colS, ...bordR, display: "flex", flexDirection: "column", minHeight: mobile ? 380 : "auto" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
-              <b style={{ color: "var(--titulo)", fontSize: 13 }}>Visor — {s.etapa}</b>
-              <div style={{ display: "flex", gap: 6 }}>
-                <button className="btn sm" onClick={() => setSubir(v => !v)} title="Subir evidencia y registrar datos de esta etapa">📎 {subir ? "Cerrar" : "Evidencia + datos"}</button>
-                <button className="btn sm" onClick={() => setDocGen(true)} title="Generar el documento de este expediente">📄 Generar documento</button>
-                <button className="btn sm" onClick={() => setFichaSielse(true)} title="Ver el registro SIELSE completo del caso, lo trabajado por fase y sus documentos">📋 Ficha SIELSE</button>
-              </div>
-            </div>
-            {docs.length > 0 && (
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
-                {docs.map((d, i) => (
-                  <button key={i} onClick={() => setDocSel(i)} style={{ ...chip, ...(i === docSel ? chipOn : {}) }}>{d.tipo || "PDF"} · {String(d.nombre).slice(0, 22)}</button>
-                ))}
-              </div>
-            )}
-            {subir && <SubirEvidencia key={s.etapa} reclamo={exp.codigo} etapa={s.etapa} etapaNN={ETAPA_NN[s.etapa]} perfil={perfil} previos={previosDe(s.etapa)} onSaveDatos={onSaveDatos} onSubido={onSubido} onClose={() => setSubir(false)} />}
-            <div style={{ flex: 1, marginTop: 8, minHeight: 320, borderRadius: 10, border: "1px solid var(--bd)", overflow: "hidden", background: "var(--card2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {doc && doc.url
-                ? (esImg(doc.nombre)
-                  ? <img src={doc.url} alt={doc.nombre} style={{ maxWidth: "100%", maxHeight: "100%" }} />
-                  : <iframe title="visor" src={previewUrl(doc.url)} style={{ width: "100%", height: "100%", border: 0 }} />)
-                : <div style={{ textAlign: "center", color: "var(--mut)", padding: 30 }}>
-                  <div style={{ fontSize: 40 }}>📄</div>
-                  <div style={{ fontSize: 13, marginTop: 8 }}>Sin documento en esta etapa</div>
-                  <div style={{ fontSize: 11 }}>Sube el PDF/imagen con «📎 Subir evidencia»</div>
-                </div>}
-            </div>
-            {doc && doc.url && <div style={{ marginTop: 6, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-              <a className="link" style={{ fontSize: 11 }} href={doc.url} target="_blank" rel="noreferrer">🔗 abrir {doc.nombre} en Drive ↗</a>
-              <button className="btn sm" disabled={iaBusy} onClick={async () => { setIaBusy(true); setIaResumen(""); const r = await resumirIA({ url: doc.url, reclamo: exp.codigo, etapa: s.etapa }); setIaBusy(false); setIaResumen(r?.ok ? r.resumen : "⚠ " + (r?.error || "no se pudo resumir (¿configuraste la API key de Gemini?)")); }}>{iaBusy ? "Resumiendo…" : "🤖 Resumir con IA"}</button>
-            </div>}
-            {iaResumen && <div style={{ marginTop: 8, background: "rgba(124,58,237,.10)", border: "1px solid #6d28d9", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "var(--tx)", whiteSpace: "pre-wrap", lineHeight: 1.5 }}>
-              <b style={{ color: "#6D28D9" }}>🤖 Resumen IA del documento:</b><br />{iaResumen}</div>}
-          </div>
+          <ColumnaVisor style={{ ...colS, ...bordR }} s={s} etapaNN={ETAPA_NN[s.etapa]} docs={docs} docSel={docSel} setDocSel={setDocSel}
+            subir={subir} setSubir={setSubir} setDocGen={setDocGen} setFichaSielse={setFichaSielse}
+            exp={exp} perfil={perfil} previosDe={previosDe} onSaveDatos={onSaveDatos} onSubido={onSubido} />
 
-          {/* --- Datos del formulario (lo que llenó el trabajador) --- */}
-          <div style={{ ...colS, ...bordR }}>
-            {esMiEtapa && <div style={{ background: "rgba(201,130,27,.12)", border: "1px solid #C9821B", borderRadius: 8, padding: "8px 10px", marginBottom: 10, fontSize: 12.5, color: "#7A4A0A" }}>
-              ✋ <b>Esta etapa es tuya.</b> 1) 📎 sube la evidencia y llena los datos · 2) 📄 genera el documento si aplica · 3) pulsa «✔ Terminé esta etapa».
-            </div>}
+          <PanelEtapa style={{ ...colS, ...bordR }} esMiEtapa={esMiEtapa} exp={exp} onAbrirCuaderno={onAbrirCuaderno}
+            perfil={perfil} etapaActualDrawer={etapaActualDrawer} cerradoDrawer={cerradoDrawer}
+            datosAbierto={datosAbierto} setDatosAbierto={setDatosAbierto} s={s} estPlazo={estPlazo} tk={tk}
+            faltantes={faltantes} puedeAccion={puedeAccion} onEstadoTicket={onEstadoTicket}
+            sel={sel} setSel={setSel} FLUJO={FLUJO} setDocSel={setDocSel} setSubir={setSubir}
+            camposEtapaTodos={camposEtapaTodos} planDescartado={planDescartado} setPlanDescartado={setPlanDescartado}
+            datK={datK} dat={dat} onComentar={onComentar} docs={docs} ci={ci} />
 
-            {/* FUENTE DE CUADERNOS de este caso — arriba del panel de la etapa (clic abre el cuaderno filtrado) */}
-            <div style={{ marginBottom: 12 }}>
-              <CuadernosCaso exp={exp} onAbrirCuaderno={onAbrirCuaderno} perfil={perfil} etapaActual={etapaActualDrawer} cerrado={cerradoDrawer} />
-            </div>
-
-            {/* Datos de la etapa — COLAPSABLE (se puede ocultar para dar protagonismo a los cuadernos) */}
-            <div onClick={() => setDatosAbierto(v => !v)} title={datosAbierto ? "Ocultar los datos de la etapa" : "Mostrar los datos de la etapa"}
-              style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none", padding: "2px 0" }}>
-              <span style={{ color: "var(--mut)", fontSize: 12, width: 12 }}>{datosAbierto ? "▾" : "▸"}</span>
-              <b style={{ color: "var(--titulo)", fontSize: 13 }}>Datos de la etapa</b>
-              {!datosAbierto && <span className="muted" style={{ fontSize: 11 }}>· {s.etapa} ({s.rol}) — clic para mostrar</span>}
-            </div>
-            {datosAbierto && <>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", margin: "8px 0" }}>
-              <Tag bg="#E9EEF5" color="var(--tx)">👤 {s.rol}</Tag><Tag bg="#E9EEF5" color="var(--tx)">{s.act}</Tag><Tag bg="#E9EEF5" color="var(--tx)" title="Todos los plazos del contrato son en días HÁBILES (lun-vie sin feriados)">⏱ {s.plazo}</Tag>
-              {estPlazo && <Tag bg={estPlazo.c} color="#fff">{estPlazo.t} · {tk.fechaLimite} ({tk.diasRestantes}d háb.)</Tag>}
-              {tk && tk.hecho && <Tag bg="#064e3b" color="#fff">✓ hecho</Tag>}
-            </div>
-            {s.quien && (
-              <div style={{ background: "var(--card2)", border: "1px solid var(--bd)", borderRadius: 8, padding: "7px 10px", margin: "0 0 10px", fontSize: 12, color: "var(--tx)" }}>
-                👥 <b>Quién lo hace:</b> {s.quien}
-              </div>
-            )}
-            {tk?.hecho && faltantes.length > 0 && (
-              <div style={{ background: "#FEF3DF", border: "1px solid #F0C36D", borderRadius: 8, padding: "7px 10px", margin: "0 0 10px", fontSize: 12, color: "#B45309" }}>
-                ⚠ Esta etapa figura <b>HECHA</b> pero le faltan {faltantes.length} ítem(s) de datos/evidencia — inconsistencia que ELSE puede observar. Súbelos ahora con «📎 Evidencia + datos», o Coordinación puede reabrirla desde la Sala (clic en la etapa → ↩ Reabrir).
-              </div>
-            )}
-            {puedeAccion && tk.abierto && (
-              <div style={{ display: "flex", gap: 8, margin: "4px 0 10px", flexWrap: "wrap" }}>
-                {tk.estado === "pendiente" && <button className="btn sm" onClick={() => { onEstadoTicket?.(tk, "en_proceso"); toast("«" + s.etapa + "» en proceso"); setPlanDescartado(p => ({ ...p, [s.etapa]: false })); }}>▶ Iniciar etapa</button>}
-                <button className="btn sm" style={{ background: "#1E8E5A", color: "#fff", border: 0 }} onClick={() => {
-                  // Regla de integridad: una etapa NO se marca hecha con datos/evidencia faltantes.
-                  // Operativos: bloqueo real. Coordinación/Gerencia: pueden forzar SOLO con motivo (queda en bitácora).
-                  if (faltantes.length) {
-                    const lista = "· " + faltantes.slice(0, 10).join("\n· ") + (faltantes.length > 10 ? "\n…" : "");
-                    const esJefe = ["GERENTE", "COORDINADOR"].includes(perfil?.rol);
-                    if (!esJefe) {
-                      alert("Para terminar «" + s.etapa + "» todavía falta:\n" + lista + "\n\nSúbelo con «📎 Evidencia + datos». Si algo no aplica a este caso, pide a Coordinación que cierre la etapa con motivo.");
-                      return;
-                    }
-                    const motivo = prompt("«" + s.etapa + "» tiene " + faltantes.length + " faltante(s):\n" + lista + "\n\nComo Coordinación/Gerencia puedes cerrarla igual, pero el MOTIVO es obligatorio (queda en la bitácora del caso):");
-                    if (motivo == null) return;
-                    if (!String(motivo).trim()) { toast("⛔ Sin motivo no se cierra una etapa con faltantes"); return; }
-                    onComentar?.({ reclamo: exp.codigo, etapa: s.etapa, texto: "⚠ CIERRE CON FALTANTES (" + faltantes.length + "): " + String(motivo).trim(), nombre: perfil?.nombre });
-                  }
-                  onEstadoTicket?.(tk, "hecho");
-                  const sig = sel < FLUJO.length - 1 ? FLUJO[sel + 1].etapa : null;
-                  toast("✓ «" + s.etapa + "» hecha" + (sig ? " · sigue: " + sig : " · expediente cerrado"));
-                  if (sig) { setSel(sel + 1); setDocSel(0); setSubir(false); }
-                }}>✔ Terminé esta etapa</button>
-              </div>
-            )}
-
-            {tk && tk.estado === "en_proceso" && datK.length === 0 && !planDescartado[s.etapa] && (
-              <PlanEtapa
-                etapa={s.etapa}
-                campos={camposEtapaTodos}
-                evidencias={s.evi}
-                guia={GUIA_SIELSE[s.etapa]}
-                onAbrirEvidencia={() => setSubir(true)}
-                onCerrar={() => setPlanDescartado(p => ({ ...p, [s.etapa]: true }))}
-              />
-            )}
-
-            <div style={{ marginTop: 10 }}><GuiaSielseBox etapa={s.etapa} compacta /></div>
-
-            <Sec t="📝 Lo que registró el trabajador (formulario)">
-              {datK.length ? <div style={{ display: "grid", gap: 4 }}>
-                {datK.map(k => <div key={k} style={{ fontSize: 12.5 }}><b style={{ color: "var(--mut)" }}>{humaniza(k)}:</b> <span style={{ color: "var(--tx)" }}>{String(dat[k])}</span></div>)}
-              </div> : <div className="muted" style={{ fontSize: 12 }}>Aún no se registraron datos en esta etapa.</div>}
-            </Sec>
-
-            <Sec t="¿Qué hizo / qué falta?">
-              {s.pasos.map((p, k) => { const done = tk ? tk.hecho : (sel < ci || exp.estado === "Cerrado"); return <div className="chk" key={k}><span style={{ color: done ? "#15803D" : tk && tk.estado === "en_proceso" ? "#B45309" : "var(--mut)" }}>{done ? "✓" : "○"}</span> {p}</div>; })}
-            </Sec>
-            <Sec t="Evidencia requerida">
-              {s.evi.map((ev, k) => { const has = docs.some(d => String(d.nombre).toLowerCase().includes(ev.split(" ")[0].toLowerCase())); return <div className="chk" key={k}><span style={{ color: has ? "#15803D" : "#DC2626" }}>{has ? "✓" : "✗ falta"}</span> {ev}</div>; })}
-            </Sec>
-            {INFO_ETAPA[s.etapa] && <div className="note" style={{ background: "rgba(31,78,140,.08)", border: "1px solid var(--bd)", color: "var(--tx)", fontSize: 11.5, marginTop: 8 }}>
-              <b style={{ color: "var(--linkTx)" }}>Según las bases:</b> {INFO_ETAPA[s.etapa].importa}
-            </div>}
-            </>}
-          </div>
-
-          {/* --- Datos del reclamo (editable) + navegador de etapas + observaciones + bitácora --- */}
-          <div style={colS}>
-            <b style={{ color: "var(--titulo)", fontSize: 13 }}>Datos del reclamo</b>
-            <div style={{ margin: "8px 0" }}>
-              <FilaEditable label="Clase" value={exp.raw?.NombreClaseReclamo ?? exp.clase} campo="NombreClaseReclamo" onEditar={onEditar} />
-              <FilaEditable label="Suministro" value={exp.raw?.CodigoSuministro ?? exp.suministro} campo="CodigoSuministro" onEditar={onEditar} />
-              <FilaEditable label="Dirección" value={exp.raw?.DireccionSolicitante ?? exp.direccion} campo="DireccionSolicitante" onEditar={onEditar} />
-              <FilaEditable label="Distrito" value={exp.raw?.NombreDistrito ?? exp.distrito} campo="NombreDistrito" onEditar={onEditar} />
-              <FilaEditable label="F. admisión" value={exp.raw?.FechaAdmisionReclamo ?? exp.fechaAdm} campo="FechaAdmisionReclamo" onEditar={onEditar} formato={fmtValor} title="OJO: mueve el reloj de plazos" />
-              <div className="kv"><b>F. límite SIELSE</b><span>{fmtFecha(exp.fechaLim)}</span></div>
-              <FilaEditable label="Doc. ref." value={exp.raw?.DocumentoReferencia ?? exp.docRef} campo="DocumentoReferencia" onEditar={onEditar} />
-              <FilaEditable label="Descripción" value={exp.raw?.DescripcionReclamo ?? exp.descripcion} campo="DescripcionReclamo" onEditar={onEditar} area />
-            </div>
-            <b style={{ color: "var(--titulo)", fontSize: 13 }}>Etapas</b>
-            <div style={{ display: "grid", gap: 5, marginTop: 8 }}>
-              {FLUJO.map((f, i) => {
-                const t = ticketDe(f.etapa);
-                const est = t ? (t.hecho ? "hecho" : t.estado === "en_proceso" ? "proceso" : "pend") : (exp.estado === "Cerrado" ? "hecho" : i < ci ? "hecho" : i === ci ? "proceso" : "pend");
-                const col2 = est === "hecho" ? "#E3001B" : est === "proceso" ? "#2C6FC0" : "var(--mut)";
-                return (
-                  <div key={i} onClick={() => selEst(i)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 9px", borderRadius: 8, cursor: "pointer", background: i === sel ? "var(--selBg)" : "var(--card2)", border: `1px solid ${i === sel ? "#2C6FC0" : "var(--bd)"}` }}>
-                    <span style={{ width: 18, height: 18, borderRadius: "50%", background: col2, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800 }}>{est === "hecho" ? "✓" : est === "proceso" ? "◐" : "○"}</span>
-                    <span style={{ flex: 1, fontSize: 12, color: "var(--tx)" }}>{f.etapa}</span>
-                    {t && t.abierto && t.vencido && <span style={{ fontSize: 10, color: "#DC2626" }}>vencido</span>}
-                    {t && <span className="muted" style={{ fontSize: 10 }}>{t.responsable.split(" ")[0]}</span>}
-                  </div>
-                );
-              })}
-            </div>
-            <Observaciones reclamo={exp.codigo} etapa={s.etapa} perfil={perfil} comentarios={comentarios} onComentar={onComentar} />
-            <BitacoraCaso reclamo={exp.codigo} registros={registros} />
-          </div>
+          <DatosReclamo style={colS} exp={exp} onEditar={onEditar} ci={ci} ticketDe={ticketDe} sel={sel} selEst={selEst}
+            FLUJO={FLUJO} comentarios={comentarios} perfil={perfil} onComentar={onComentar} registros={registros} etapaActual={s.etapa} />
         </div>
 
         {/* ===== Modal: generar documento de este expediente ===== */}
         {docGen && (
           <div className="overlay" style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 16, zIndex: 60 }} onClick={e => { if (e.target === e.currentTarget) setDocGen(false); }}>
-            <div style={{ width: "min(880px,94vw)", maxHeight: "90vh", overflowY: "auto", background: "#fff", border: "1px solid var(--bd)", borderRadius: 14, padding: 16 }}>
+            <div style={{ width: "min(880px,94vw)", maxHeight: "90vh", overflowY: "auto", background: "var(--card)", border: "1px solid var(--bd)", borderRadius: 14, padding: 16 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                 <b style={{ color: "var(--titulo)" }}>📄 Generar documento — <span className="mono">{exp.osinerg || exp.codigo}</span></b>
                 <button className="btn sec sm" onClick={() => setDocGen(false)}>✕ cerrar</button>
               </div>
+              <Suspense fallback={null}>
               <Formularios data={[exp]} perfil={perfil} fijo={exp}
                 datosEtapa={FLUJO.reduce((acc, f) => ({ ...acc, ...datosDe(f.etapa) }), {})}
                 etapaActual={s.etapa}
                 onSaveDatos={onSaveDatos ? (campos) => onSaveDatos({ exp: exp.codigo, etapa: s.etapa, rol: perfil?.rol, campos }) : null} />
+              </Suspense>
             </div>
           </div>
         )}
@@ -348,172 +172,3 @@ export default function Drawer({ exp, etapaInicial, evidencias, datos, tickets, 
     </div>
   );
 }
-
-// Observaciones del expediente — cualquier rol puede añadir (queda con su nombre y rol).
-function Observaciones({ reclamo, etapa, perfil, comentarios, onComentar }) {
-  const [txt, setTxt] = useState("");
-  const mis = (comentarios || []).filter(c => c.reclamo === reclamo).sort((a, b) => (a.fecha < b.fecha ? 1 : -1));
-  const enviar = () => {
-    const t = txt.trim(); if (!t) return;
-    onComentar?.({ reclamo, etapa, texto: t, nombre: perfil?.nombre, rol: perfil?.rol, usuario: perfil?.usuario, fecha: new Date().toISOString().slice(0, 16).replace("T", " ") });
-    setTxt("");
-  };
-  return (
-    <div style={{ marginTop: 14 }}>
-      <b style={{ color: "var(--titulo)", fontSize: 13 }}>Observaciones ({mis.length})</b>
-      <div style={{ display: "flex", gap: 6, margin: "8px 0" }}>
-        <input value={txt} onChange={e => setTxt(e.target.value)} onKeyDown={e => e.key === "Enter" && enviar()}
-          placeholder="Añade una observación… (escribe «MEJORA: …» para proponer una mejora del sistema)" style={{ flex: 1, background: "#fff", color: "var(--tx)", border: "1px solid var(--bd)", borderRadius: 8, padding: "7px 9px", fontSize: 12.5 }} />
-        <button className="btn sm" onClick={enviar}>Enviar</button>
-      </div>
-      <div style={{ display: "grid", gap: 6 }}>
-        {mis.map((c, i) => (
-          <div key={i} style={{ background: "var(--card2)", border: "1px solid var(--bd)", borderRadius: 8, padding: "7px 10px" }}>
-            <div style={{ fontSize: 12.5, color: "var(--tx)" }}>{c.texto}</div>
-            <div className="muted" style={{ fontSize: 10.5, marginTop: 3 }}>{c.nombre || c.usuario} · {c.rol} · {c.fecha}{c.etapa ? " · " + c.etapa : ""}</div>
-          </div>
-        ))}
-        {!mis.length && <div className="muted" style={{ fontSize: 12 }}>Sin observaciones aún.</div>}
-      </div>
-    </div>
-  );
-}
-
-// Plan de trabajo sugerido al iniciar una etapa (aparece cuando el ticket está EN PROCESO y
-// todavía no hay ningún dato registrado): 4 pasos generados de datos REALES ya disponibles en
-// el Drawer (campos de la etapa, evidencia requerida, guía SIELSE) — nada inventado ni nuevo
-// estado global, solo reutiliza lo que el Drawer ya calcula. Descartable (✕) para esa sesión.
-function PlanEtapa({ etapa, campos, evidencias, guia, onAbrirEvidencia, onCerrar }) {
-  const nCampos = campos.length;
-  const primerosLabels = campos.slice(0, 3).map(c => c.label).join(", ");
-  return (
-    <div style={{ border: "2px solid var(--navy)", background: "#EAF1F9", borderRadius: 12, padding: "10px 12px", margin: "10px 0" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-        <b style={{ fontSize: 13.5, fontWeight: 700, color: "var(--navy)" }}>🎯 Plan de trabajo — {etapa}</b>
-        <button onClick={onCerrar} title="No volver a mostrar este plan en esta sesión"
-          style={{ background: "transparent", border: "none", color: "var(--mut)", fontSize: 12, cursor: "pointer", flexShrink: 0, padding: "0 2px" }}>✕</button>
-      </div>
-      <ol style={{ margin: "8px 0 0", paddingLeft: 18, fontSize: 12.5, color: "var(--tx)", display: "grid", gap: 7 }}>
-        {nCampos > 0 && (
-          <li>
-            Llena los datos de la fase ({nCampos} campos): {primerosLabels}{nCampos > 3 ? "…" : ""}
-            {" "}
-            <button className="btn sm" style={{ padding: "2px 8px", fontSize: 11 }} onClick={onAbrirEvidencia}>📎 Abrir Evidencia + datos</button>
-          </li>
-        )}
-        {evidencias.length > 0 && <li>Sube la evidencia requerida: {evidencias.join(", ")}</li>}
-        {guia && <li>Transcribe en SIELSE: {guia.resumen} <span style={{ color: "var(--mut2)" }}>(la guía completa está abajo)</span></li>}
-        <li>Cuando todo esté ✓, pulsa «✔ Terminé esta etapa».</li>
-      </ol>
-    </div>
-  );
-}
-
-const Sec = ({ t, children }) => (
-  <div style={{ marginTop: 10 }}>
-    <div style={{ fontWeight: 600, fontSize: 12, color: "var(--tx)", marginBottom: 4 }}>{t}</div>
-    {children}
-  </div>
-);
-
-// Fila de "Datos del reclamo" editable inline: valor + lapicito ✏️ (visible siempre, chico) que
-// se convierte en input + ✓/✕. Al guardar llama onEditar(campo, valor) con la COLUMNA REAL de
-// SIELSE. `formato` (opcional) formatea el valor mostrado (p.ej. fecha ISO -> dd/mm/aaaa) sin
-// tocar lo que se edita/envía (el input trabaja con el string crudo). `area` usa un <textarea>
-// para textos largos (descripción).
-function FilaEditable({ label, value, campo, onEditar, formato, title, area }) {
-  const [editando, setEditando] = useState(false);
-  const [val, setVal] = useState("");
-  const [guardando, setGuardando] = useState(false);
-  const [valorMostrado, setValorMostrado] = useState(null); // override optimista tras guardar
-
-  const valorActual = valorMostrado != null ? valorMostrado : value;
-  const vacio = valorActual == null || valorActual === "";
-  const mostrar = formato ? formato(valorActual) : valorActual;
-
-  const empezar = () => { setVal(valorActual == null ? "" : String(valorActual)); setEditando(true); };
-  const cancelar = () => setEditando(false);
-  const guardar = async () => {
-    if (!onEditar || !campo) return;
-    setGuardando(true);
-    try {
-      await onEditar(campo, val);
-      setValorMostrado(val);
-      setEditando(false);
-      toast("✓ " + label + " actualizado");
-    } catch (e) {
-      toast("No se pudo guardar " + label);
-    } finally {
-      setGuardando(false);
-    }
-  };
-
-  if (editando) {
-    return (
-      <div className="kv" style={{ alignItems: "flex-start" }} title={title}>
-        <b>{label}</b>
-        <div style={{ display: "flex", gap: 6, alignItems: area ? "flex-start" : "center" }}>
-          {area
-            ? <textarea autoFocus value={val} onChange={e => setVal(e.target.value)} rows={3}
-                style={{ flex: 1, fontSize: 12.5, color: "var(--tx)", border: "1px solid var(--acc)", borderRadius: 6, padding: "4px 6px", fontFamily: "inherit", resize: "vertical" }} />
-            : <input autoFocus value={val} onChange={e => setVal(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter") guardar(); if (e.key === "Escape") cancelar(); }}
-                style={{ flex: 1, fontSize: 12.5, color: "var(--tx)", border: "1px solid var(--acc)", borderRadius: 6, padding: "2px 6px", fontFamily: "inherit" }} />}
-          <button onClick={guardar} disabled={guardando} title="Guardar" style={{ flexShrink: 0, background: "transparent", border: "1px solid var(--bd)", color: "#15803D", borderRadius: 6, padding: "1px 6px", fontSize: 11, cursor: guardando ? "wait" : "pointer" }}>✓</button>
-          <button onClick={cancelar} disabled={guardando} title="Cancelar" style={{ flexShrink: 0, background: "transparent", border: "1px solid var(--bd)", color: "#DC2626", borderRadius: 6, padding: "1px 6px", fontSize: 11, cursor: "pointer" }}>✕</button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="kv fila-editable" style={{ alignItems: "flex-start" }} title={title}>
-      <b>{label}</b>
-      <span style={{ display: "flex", alignItems: "flex-start", gap: 6 }}>
-        <span style={{ flex: 1, color: vacio ? "var(--mut)" : undefined }}>{vacio ? "—" : mostrar}</span>
-        {onEditar && campo && (
-          <button onClick={empezar} title={"Editar " + label} className="lapiz-editable"
-            style={{ flexShrink: 0, background: "transparent", border: "none", color: "var(--mut)", borderRadius: 6, padding: "0 2px", fontSize: 11, cursor: "pointer" }}>✏️</button>
-        )}
-      </span>
-    </div>
-  );
-}
-
-// Bitácora del caso: memoria completa (registros globales) filtrada por expediente, plegada por
-// defecto. Excluye 'comentario' (esos ya se ven en Observaciones, evita duplicar). Más nuevo arriba.
-function BitacoraCaso({ reclamo, registros }) {
-  const [abierta, setAbierta] = useState(false);
-  const propios = (registros || []).filter(r => String(r.reclamo) === String(reclamo) && String(r.tipo) !== "comentario");
-  const ordenados = [...propios].reverse().slice(0, 12);
-  return (
-    <div style={{ marginTop: 14 }}>
-      <button onClick={() => setAbierta(v => !v)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
-        <span style={{ fontSize: 11, color: "var(--mut)" }}>{abierta ? "▾" : "▸"}</span>
-        <b style={{ color: "var(--titulo)", fontSize: 13 }}>Bitácora del caso ({propios.length})</b>
-      </button>
-      {abierta && (
-        <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
-          {ordenados.map((r, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, background: "var(--card2)", border: "1px solid var(--bd)", borderRadius: 8, padding: "6px 9px" }}>
-              <span style={{ width: 20, height: 20, borderRadius: "50%", background: "#1E5FAF", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9.5, fontWeight: 700, flexShrink: 0 }}>
-                {(r.usuario || "—").split(" ").map(s => s[0]).slice(0, 2).join("").toUpperCase()}
-              </span>
-              <div style={{ flex: 1, fontSize: 12, color: "var(--tx)" }}>
-                <b style={{ color: "var(--titulo)" }}>{r.usuario || "—"}</b> {humanizarRegistro(r)}
-              </div>
-              <span style={{ fontSize: 10.5, color: "var(--mut2)", whiteSpace: "nowrap", flexShrink: 0 }}>{fmtCuando(r.fecha)}</span>
-            </div>
-          ))}
-          {!ordenados.length && <div className="muted" style={{ fontSize: 12 }}>Sin registros de bitácora para este caso todavía.</div>}
-        </div>
-      )}
-    </div>
-  );
-}
-
-const wrap = { width: "96vw", maxWidth: 1500, height: "92vh", background: "#fff", border: "1px solid var(--bd)", borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 20px 60px rgba(22,41,75,.15)" };
-const cols = { flex: 1, display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr", overflow: "hidden" };
-const col = { padding: 14, overflowY: "auto" };
-const chip = { background: "var(--card2)", color: "var(--tx)", border: "1px solid var(--bd)", borderRadius: 7, padding: "4px 8px", fontSize: 11, cursor: "pointer" };
-const chipOn = { background: "#1F4E8C", color: "#fff", borderColor: "#2C6FC0" };

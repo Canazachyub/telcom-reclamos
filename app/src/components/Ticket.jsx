@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { urgColorTicket, urgLabel, verMontos } from "../lib/tickets.js";
 import { INFO_ETAPA } from "../lib/camposEtapa.js";
 import { metaEtapa } from "../lib/model.js";
@@ -14,10 +14,10 @@ export function SemaforoPlazo({ t, big = false }) {
   const c = urgColorTicket(t);
   return (
     <span title={`Límite ${t.fechaLimite || "—"}`} style={{
-      display: "inline-flex", alignItems: "center", gap: 5, background: c, color: "#08111e",
+      display: "inline-flex", alignItems: "center", gap: 5, background: c, color: "var(--ink)",
       borderRadius: 999, padding: big ? "4px 12px" : "2px 9px", fontSize: big ? 13 : 11.5, fontWeight: 700,
     }}>
-      <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#08111e", opacity: .55 }} />
+      <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--ink)", opacity: .55 }} />
       {urgLabel(t)}
     </span>
   );
@@ -32,19 +32,19 @@ export function InfoBoton({ etapa, rol, t }) {
   // Plazo concreto de ESTE ticket (fecha límite + días hábiles), si lo tenemos.
   const concreto = t && t.fechaLimite
     ? { txt: `vence ${fmtDia(t.fechaLimite)} · ${t.vencido ? `vencido ${Math.abs(t.diasRestantes ?? 0)}d háb.` : (t.diasRestantes != null ? `faltan ${t.diasRestantes} día(s) háb.` : "abierto")}`,
-        color: t.vencido ? "#DC2626" : (t.diasRestantes != null && t.diasRestantes <= 2 ? "#B45309" : "#15803D") }
+        color: t.vencido ? "var(--red)" : (t.diasRestantes != null && t.diasRestantes <= 2 ? "var(--amber)" : "var(--green)") }
     : null;
   return (
     <span style={{ position: "relative", display: "inline-block" }}>
       <button onClick={() => setOpen(o => !o)} title="¿Qué es esta etapa según las bases?" style={{
-        width: 22, height: 22, borderRadius: "50%", border: "1px solid #2b6fc0",
-        background: open ? "#1F4E8C" : "transparent", color: open ? "#fff" : "var(--linkTx)",
+        width: 22, height: 22, borderRadius: "50%", border: "1px solid var(--acc)",
+        background: open ? "var(--acc)" : "transparent", color: open ? "#fff" : "var(--linkTx)",
         fontWeight: 700, fontStyle: "italic", fontFamily: "Georgia,serif", cursor: "pointer", lineHeight: 1,
       }}>i</button>
       {open && (
         <div style={{
-          position: "absolute", zIndex: 30, top: 26, left: 0, width: 320, background: "#fff",
-          border: "1px solid #1F4E8C", borderRadius: 10, padding: 12, boxShadow: "0 10px 30px rgba(22,41,75,.2)",
+          position: "absolute", zIndex: 30, top: 26, left: 0, width: 320, background: "var(--card)",
+          border: "1px solid var(--acc)", borderRadius: 10, padding: 12, boxShadow: "var(--shadow-pop)",
           color: "var(--tx)", fontSize: 12,
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6, gap: 8 }}>
@@ -64,7 +64,7 @@ export function InfoBoton({ etapa, rol, t }) {
           <Kv b="Plazo" v={info.plazo} />
           {concreto && <Kv b="En este caso" v={concreto.txt} color={concreto.color} />}
           <Kv b="Penalidad" v={info.pen + (verMontos(rol) && info.penMonto ? "  ·  " + info.penMonto : "")}
-            color={info.pen === "—" ? "var(--mut)" : "#DC2626"} />
+            color={info.pen === "—" ? "var(--mut)" : "var(--red)"} />
           {!verMontos(rol) && info.pen !== "—" && <div style={{ color: "var(--mut)", fontSize: 10.5, marginTop: 4 }}>El importe en S/ lo gestiona Gerencia.</div>}
         </div>
       )}
@@ -78,46 +78,105 @@ const Kv = ({ b, v, color }) => (
   </div>
 );
 
-// Tarjeta de un ticket: etapa · reclamo · semáforo · penalidad · acción de estado.
-export function TicketCard({ t, rec, perfil, onEstado, onAbrir }) {
+// ⋯ Menú contextual de una fila de tarea: agrupa las acciones secundarias (cambiar estado,
+// reasignar, archivar) en vez de repetirlas como controles sueltos en cada fila. Mismo estado
+// local en todas las colas que usan TicketCard (Mi día, Trabajo del equipo, cola del
+// Coordinador). Cierra con clic afuera o Escape. Los handlers son EXACTAMENTE los que ya
+// recibía la fila (onEstado/onReasignar/onArchivar) — solo cambia dónde viven los controles.
+function MenuAcciones({ t, puedeEditar, onEstado, onReasignar, teamOptions, onArchivar }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const btnRef = useRef(null);   // el botón "⋯" — recupera el foco al cerrar con Escape
+  const firstItemRef = useRef(null); // primer control interactivo del menú — recibe el foco al abrir
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const onKey = e => { if (e.key === "Escape") { setOpen(false); btnRef.current?.focus(); } };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("mousedown", onDoc); document.removeEventListener("keydown", onKey); };
+  }, [open]);
+  // al abrir, foco al primer ítem del menú (navegación por teclado)
+  useEffect(() => { if (open) firstItemRef.current?.focus(); }, [open]);
+  const selSty = { display: "block", width: "100%", marginTop: 4, background: "var(--card2)", color: "var(--tx)", border: "1px solid var(--bd)", borderRadius: 8, padding: "8px 7px", fontSize: 12.5, minHeight: 40 };
+  const lblSty = { fontSize: 10, textTransform: "uppercase", letterSpacing: ".05em", color: "var(--mut)" };
+  const esPrimeroEstado = puedeEditar;
+  const esPrimeroReasignar = !esPrimeroEstado && onReasignar && teamOptions;
+  const esPrimeroArchivar = !esPrimeroEstado && !esPrimeroReasignar && onArchivar;
+  return (
+    <span ref={ref} style={{ position: "relative", flexShrink: 0 }}>
+      <button ref={btnRef} className="icon-btn" onClick={() => setOpen(o => !o)} title="Más acciones" aria-haspopup="menu" aria-expanded={open}>⋯</button>
+      {open && (
+        <div role="menu" style={{ position: "absolute", right: 0, top: 40, zIndex: 40, minWidth: 200, background: "var(--card)", border: "1px solid var(--bd)", borderRadius: 10, padding: 6, boxShadow: "var(--shadow-pop)" }}>
+          {puedeEditar && (
+            <label style={{ display: "block", padding: "4px 6px 6px" }}>
+              <span style={lblSty}>Estado</span>
+              <select ref={esPrimeroEstado ? firstItemRef : undefined} value={t.estado} onChange={e => { onEstado?.(t, e.target.value); setOpen(false); }} title="Cambiar estado de la tarea" style={selSty}>
+                {ESTADOS.map(s => <option key={s} value={s}>{ESTADO_TICKET_LABEL[s] || s}</option>)}
+              </select>
+            </label>
+          )}
+          {onReasignar && teamOptions && (
+            <label style={{ display: "block", padding: "4px 6px 6px" }}>
+              <span style={lblSty}>Reasignar</span>
+              <select ref={esPrimeroReasignar ? firstItemRef : undefined} value={t.respId} onChange={e => { onReasignar(t, e.target.value); setOpen(false); }} title="Reasignar responsable" style={selSty}>
+                {teamOptions.map(m => <option key={m.id} value={m.id}>{m.corto} · {m.rol}</option>)}
+                <option value={0}>Externo / Call Center</option>
+              </select>
+            </label>
+          )}
+          {onArchivar && (
+            <button ref={esPrimeroArchivar ? firstItemRef : undefined} role="menuitem" onClick={() => { onArchivar(t); setOpen(false); }}
+              title="Archivar: cerrar el caso y sacarlo de la cola/alarmas (ya está cerrado en la vida real)"
+              style={{ width: "100%", textAlign: "left", border: 0, background: "transparent", color: "var(--tx)", padding: "9px 10px", borderRadius: 7, fontSize: 12.5, cursor: "pointer", minHeight: 40 }}>🗄 Archivar caso</button>
+          )}
+        </div>
+      )}
+    </span>
+  );
+}
+
+// Tarjeta de un ticket: jerarquía = código completo · ⚡ suministro · reclamante · semáforo con
+// días. La etapa y las acciones secundarias (estado/reasignar/archivar) quedan un nivel abajo,
+// agrupadas en el menú "⋯" (MenuAcciones) — antes eran controles repetidos en cada fila.
+export function TicketCard({ t, rec, perfil, onEstado, onAbrir, onReasignar, teamOptions, onArchivar }) {
   const rol = perfil?.rol;
   const propio = t.respId === perfil?.resp_id;
-  const puedeEditar = propio || rol === "GERENTE" || rol === "COORDINADOR";
+  const puedeEditar = !!onEstado && (propio || rol === "GERENTE" || rol === "COORDINADOR");
   const verResp = rol === "GERENTE" || rol === "COORDINADOR";
   const c = urgColorTicket(t);
+  const hayMenu = puedeEditar || (onReasignar && teamOptions) || onArchivar;
+  const nombre = rec?.solicitante || "";
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10,
       background: "var(--card2)", border: "1px solid var(--bd)", borderLeft: `4px solid ${c}`,
     }}>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <b style={{ color: "var(--titulo)", fontSize: 13 }}>{t.etapa}</b>
+        {/* jerarquía #1 — lo primero que se lee: código completo · suministro · reclamante */}
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+          <span className="mono" style={{ fontWeight: 700, fontSize: 13, color: "var(--titulo)" }} title={"Código: " + (rec?.osinerg || t.reclamo)}>{rec?.osinerg || t.reclamo}</span>
+          {rec?.suministro && <span className="mono" style={{ fontSize: 12.5, color: "var(--tx)" }} title="Suministro — con esto te guías (es la clave del QR y de los cuadernos)">⚡ {rec.suministro}</span>}
+          {nombre && <span style={{ fontSize: 12, color: "var(--tx2)" }} title={nombre}>{nombre.length > 26 ? nombre.slice(0, 26) + "…" : nombre}</span>}
+        </div>
+        {/* jerarquía #2 — contexto de la tarea: etapa · ayuda · abrir */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 2 }}>
+          <span style={{ color: "var(--mut)", fontSize: 11.5 }}>{t.etapa}</span>
           <InfoBoton etapa={t.etapa} rol={rol} t={t} />
           {onAbrir && <a onClick={() => onAbrir(t)} title="Abrir el expediente en esta etapa" style={{ color: "var(--linkTx)", fontSize: 11, cursor: "pointer" }}>abrir y trabajar ↗</a>}
-        </div>
-        <div style={{ color: "var(--mut)", fontSize: 11.5, marginTop: 2 }}>
-          <span style={{ fontFamily: "ui-monospace,monospace" }} title={"Código: " + (rec?.osinerg || t.reclamo)}>{rec?.osinerg || t.reclamo}</span>
-          {rec?.suministro && <span title="Suministro — con esto te guías (es la clave del QR y de los cuadernos)"> · ⚡ <b style={{ fontWeight: 600, color: "var(--tx)" }}>{rec.suministro}</b></span>}
-          {rec?.solicitante ? <span title={rec.solicitante}> · {rec.solicitante.length > 26 ? rec.solicitante.slice(0, 26) + "…" : rec.solicitante}</span> : ""}
-          {verResp && <> · 👤 {t.responsable}</>}
+          {verResp && <span className="muted" style={{ fontSize: 11 }}>· 👤 {t.responsable}</span>}
         </div>
         {t.penalidadItem && t.penalidadItem !== "—" && t.penalidadItem !== "mora" && (
-          <div style={{ marginTop: 5, fontSize: 11, color: t.vencido ? "#DC2626" : "var(--tx)" }}>
+          <div style={{ marginTop: 5, fontSize: 11, color: t.vencido ? "var(--red)" : "var(--tx)" }}>
             ⚠ penalidad <b>{t.penalidadItem}</b> · plazo {t.plazoHabiles} días háb.
-            {verMontos(rol) && t.exposicion ? <> · <b style={{ color: "#DC2626" }}>S/ {t.exposicion.toLocaleString("es-PE")}</b></> : ""}
+            {verMontos(rol) && t.exposicion ? <> · <b className="mono" style={{ color: "var(--red)" }}>S/ {t.exposicion.toLocaleString("es-PE")}</b></> : ""}
           </div>
         )}
       </div>
       <SemaforoPlazo t={t} />
-      {puedeEditar ? (
-        <select value={t.estado} onChange={e => onEstado?.(t, e.target.value)} title="Cambiar estado de la tarea" style={{
-          background: "#fff", color: "var(--tx)", border: "1px solid var(--bd)", borderRadius: 8,
-          padding: "5px 7px", fontSize: 12,
-        }}>
-          {ESTADOS.map(s => <option key={s} value={s}>{ESTADO_TICKET_LABEL[s] || s}</option>)}
-        </select>
-      ) : <span style={{ fontSize: 11, color: "var(--mut)" }}>{ESTADO_TICKET_LABEL[t.estado] || t.estado}</span>}
+      {hayMenu
+        ? <MenuAcciones t={t} puedeEditar={puedeEditar} onEstado={onEstado} onReasignar={onReasignar} teamOptions={teamOptions} onArchivar={onArchivar} />
+        : <span style={{ fontSize: 11, color: "var(--mut)" }}>{ESTADO_TICKET_LABEL[t.estado] || t.estado}</span>}
     </div>
   );
 }

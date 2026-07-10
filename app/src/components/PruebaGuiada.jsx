@@ -248,7 +248,7 @@ export default function PruebaGuiada({ perfil, sinCasos = false }) {
         <button
           onClick={() => setSugForm({ pasoTitulo: "" })}
           title="Enviar una sugerencia u obstáculo al Gerente"
-          style={fabStyle("#B45309")}
+          style={fabStyle("var(--amber)", "var(--ink)")}
         >Sugerencia</button>
         <button
           onClick={() => setAbierto(v => !v)}
@@ -277,7 +277,7 @@ export default function PruebaGuiada({ perfil, sinCasos = false }) {
                 <span>Progreso</span><span>{hechosN} de {total}</span>
               </div>
               <div style={{ height: 8, borderRadius: 999, background: "var(--card2)", overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${total ? (hechosN / total) * 100 : 0}%`, background: "#15803D", transition: "width .2s" }} />
+                <div style={{ height: "100%", width: `${total ? (hechosN / total) * 100 : 0}%`, background: "var(--green)", transition: "width .2s" }} />
               </div>
             </div>
 
@@ -299,12 +299,12 @@ export default function PruebaGuiada({ perfil, sinCasos = false }) {
                       style={{ marginTop: 3, width: 16, height: 16, flexShrink: 0, cursor: "pointer" }}
                     />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: hechos[i] ? "#15803D" : "var(--titulo)" }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: hechos[i] ? "var(--green)" : "var(--titulo)" }}>
                         {i + 1}. {p.t}
                       </div>
 
                       {p.ctx && (
-                        <div style={{ fontSize: 11.5, color: "#6D28D9", marginTop: 4, lineHeight: 1.4, fontStyle: "italic" }}>
+                        <div style={{ fontSize: 11.5, color: "var(--purple)", marginTop: 4, lineHeight: 1.4, fontStyle: "italic" }}>
                           {p.ctx}
                         </div>
                       )}
@@ -326,7 +326,7 @@ export default function PruebaGuiada({ perfil, sinCasos = false }) {
 
                       <button
                         onClick={() => setSugForm({ pasoTitulo: p.t })}
-                        style={{ marginTop: 8, background: "transparent", border: "1px solid var(--bd)", color: "#6D28D9", borderRadius: 7, padding: "3px 8px", fontSize: 11, cursor: "pointer" }}
+                        style={{ marginTop: 8, background: "transparent", border: "1px solid var(--bd)", color: "var(--purple)", borderRadius: 7, padding: "3px 8px", fontSize: 11, cursor: "pointer" }}
                       >Comentar este paso</button>
                     </div>
                   </div>
@@ -336,7 +336,7 @@ export default function PruebaGuiada({ perfil, sinCasos = false }) {
             </div>
 
             {hechosN === total && (
-              <div className="note" style={{ marginTop: 14, background: "rgba(21,128,61,.10)", border: "1px solid #1E8E5A", color: "#15803D" }}>
+              <div className="note" style={{ marginTop: 14, background: "var(--tint-green-bg)", border: "1px solid var(--tint-green-bd)", color: "var(--tint-green-tx)" }}>
                 Completaste todos los pasos. Gracias por probar la plataforma — si algo te costó, cuéntalo con el botón Sugerencia.
               </div>
             )}
@@ -372,12 +372,12 @@ function SugerenciaForm({ perfil, pasoTitulo, onClose }) {
       onClick={onClose}
       style={{ position: "fixed", inset: 0, zIndex: 260, background: "rgba(22,41,75,.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
     >
-      <div onClick={e => e.stopPropagation()} style={{ width: "min(420px,94vw)", background: "var(--card)", border: "1px solid var(--bd)", borderRadius: 14, padding: 16, boxShadow: "0 20px 60px rgba(22,41,75,.15)" }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: "min(420px,94vw)", background: "var(--card)", border: "1px solid var(--bd)", borderRadius: 14, padding: 16, boxShadow: "var(--shadow-modal)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
           <b style={{ color: "var(--titulo)", fontSize: 14 }}>💡 Enviar sugerencia</b>
           <button className="btn sec sm" onClick={onClose}>✕</button>
         </div>
-        {pasoTitulo && <div className="muted" style={{ fontSize: 11.5, marginBottom: 8 }}>Sobre el paso: <b style={{ color: "#6D28D9" }}>{pasoTitulo}</b></div>}
+        {pasoTitulo && <div className="muted" style={{ fontSize: 11.5, marginBottom: 8 }}>Sobre el paso: <b style={{ color: "var(--purple)" }}>{pasoTitulo}</b></div>}
         <textarea
           autoFocus
           value={texto}
@@ -388,22 +388,22 @@ function SugerenciaForm({ perfil, pasoTitulo, onClose }) {
         />
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 10 }}>
           <button className="btn sec sm" onClick={onClose}>Cancelar</button>
-          <button className="btn sm" disabled={enviando || !texto.trim()} style={{ background: "#B45309" }} onClick={enviar}>{enviando ? "Enviando…" : "Enviar"}</button>
+          <button className="btn sm" disabled={enviando || !texto.trim()} style={{ background: "var(--amber)", color: "var(--ink)" }} onClick={enviar}>{enviando ? "Enviando…" : "Enviar"}</button>
         </div>
       </div>
     </div>
   );
 }
 
-const fabStyle = bg => ({
-  background: bg, color: "#fff", border: 0, borderRadius: 999, padding: "12px 18px", fontSize: 13.5,
-  fontWeight: 600, cursor: "pointer", boxShadow: "0 8px 24px rgba(22,41,75,.25)", whiteSpace: "nowrap",
+const fabStyle = (bg, fg = "#fff") => ({
+  background: bg, color: fg, border: 0, borderRadius: 999, padding: "12px 18px", fontSize: 13.5,
+  fontWeight: 600, cursor: "pointer", boxShadow: "var(--shadow-pop)", whiteSpace: "nowrap",
 });
 
 const panelStyle = {
   position: "absolute", right: 0, top: 0, height: "100%", width: "min(400px,92vw)",
   background: "var(--bg)", borderLeft: "1px solid var(--bd)", overflowY: "auto", padding: 16,
-  boxShadow: "-12px 0 40px rgba(22,41,75,.15)",
+  boxShadow: "var(--shadow-modal)",
 };
 
 const sectionHdrStyle = {

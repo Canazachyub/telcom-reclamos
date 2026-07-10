@@ -1,19 +1,33 @@
-import { useState } from "react";
-import { Card, Kpi } from "./ui.jsx";
+import { useEffect, useState } from "react";
+import { Card, Kpi, textOn, TOKENS } from "./ui.jsx";
 import { TicketCard } from "./Ticket.jsx";
-import { TEAM, teamById, ETAPAS } from "../lib/model.js";
+import { TEAM, teamById, ETAPAS, CRITICAS } from "../lib/model.js";
 import { abiertos, vencidos, ordenUrgencia, exposicionTotal, verMontos } from "../lib/tickets.js";
 import { USERS } from "../lib/auth.js";
 
 const soles = n => "S/ " + Number(n || 0).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const TOPE = 0.10 * 1250000; // 10% del contrato (referencia)
 
+// Vistas guardadas de la cola (F3 §5): trabajador/etapa/chip de urgencia/búsqueda persisten en
+// localStorage — al volver a entrar el Coordinador ve el mismo recorte. Cero red, solo UI.
+const COLA_FILTROS_KEY = "cola_filtros_v1";
+function leerFiltrosGuardados() {
+  try { const raw = localStorage.getItem(COLA_FILTROS_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+}
+
 // ===== Coordinador/Gerente: cola priorizada + asignación de tareas =====
 export function AtenderPrimero({ tickets, perfil, recByCode, onEstado, onReasignar, onArchivar, setSelExp }) {
-  const [filtro, setFiltro] = useState("todos");   // urgencia: todos | vencidos | porvencer | enplazo
-  const [resp, setResp] = useState("todos");       // por trabajador (respId) — clave para Gerencia
-  const [etapaF, setEtapaF] = useState("todas");   // por etapa del flujo
-  const [q, setQ] = useState("");                  // búsqueda libre
+  const [filtro, setFiltro] = useState(() => leerFiltrosGuardados()?.filtro || "todos");   // urgencia: todos | vencidos | porvencer | enplazo
+  const [resp, setResp] = useState(() => leerFiltrosGuardados()?.resp || "todos");         // por trabajador (respId) — clave para Gerencia
+  const [etapaF, setEtapaF] = useState(() => leerFiltrosGuardados()?.etapaF || "todas");   // por etapa del flujo
+  const [q, setQ] = useState(() => leerFiltrosGuardados()?.q || "");                       // búsqueda libre
+  useEffect(() => {
+    try { localStorage.setItem(COLA_FILTROS_KEY, JSON.stringify({ filtro, resp, etapaF, q })); } catch (e) {}
+  }, [filtro, resp, etapaF, q]);
+  const limpiarFiltros = () => {
+    setResp("todos"); setEtapaF("todas"); setQ(""); setFiltro("todos");
+    try { localStorage.removeItem(COLA_FILTROS_KEY); } catch (e) {}
+  };
   const ab = abiertos(tickets);
 
   // Filtros TRANSVERSALES (trabajador · etapa · búsqueda): definen la POBLACIÓN antes de los chips
@@ -43,16 +57,16 @@ export function AtenderPrimero({ tickets, perfil, recByCode, onEstado, onReasign
   const chip = (k, txt, n, color) => (
     <button onClick={() => setFiltro(k)} style={{
       border: `1px solid ${filtro === k ? color : "var(--bd)"}`, background: filtro === k ? color : "transparent",
-      color: filtro === k ? "#fff" : "var(--tx)", borderRadius: 999, padding: "4px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer",
-    }}>{txt} <b>{n}</b></button>
+      color: filtro === k ? textOn(color) : "var(--tx)", borderRadius: 999, padding: "4px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", minHeight: 30,
+    }}>{txt} <b className="mono">{n}</b></button>
   );
   const selSty = { background: "var(--card2)", color: "var(--tx)", border: "1px solid var(--bd)", borderRadius: 8, padding: "6px 9px", fontSize: 12.5 };
   return (
     <Card>
       <h3 style={{ marginBottom: 4 }}>{puedeAsignar ? "Asignar tareas — " : ""}Cola del equipo</h3>
       <div className="muted" style={{ fontSize: 12, marginBottom: 10 }}>
-        Un caso = una tarea en su etapa actual. Ordenado por urgencia. {puedeAsignar && "Reasigna en el selector de la derecha; "}
-        {puedeAsignar && <>🗄 <b>archiva</b> los que ya están cerrados en la vida real (salen de la cola y de las alarmas).</>}
+        Un caso = una tarea en su etapa actual. Ordenado por urgencia. {puedeAsignar && "Reasigna o "}
+        {puedeAsignar && <>🗄 <b>archiva</b> desde el menú «⋯» de cada fila (los cerrados en la vida real salen de la cola y de las alarmas).</>}
       </div>
       {/* Filtros del jefe: por TRABAJADOR · por ETAPA · búsqueda. Los chips de urgencia se recalculan al subconjunto. */}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 10 }}>
@@ -66,36 +80,36 @@ export function AtenderPrimero({ tickets, perfil, recByCode, onEstado, onReasign
           {etapasPresentes.map(o => <option key={o.e} value={o.e}>{o.e} ({o.n})</option>)}
         </select>
         <input value={q} onChange={e => setQ(e.target.value)} placeholder="🔎 OSINERG · suministro · nombre" style={{ ...selSty, minWidth: 210, flex: "1 1 210px" }} />
-        {hayFiltroTransversal && <button onClick={() => { setResp("todos"); setEtapaF("todas"); setQ(""); }} style={{ ...selSty, cursor: "pointer", fontWeight: 600 }}>✕ Limpiar</button>}
+        {hayFiltroTransversal && <button onClick={limpiarFiltros} style={{ ...selSty, cursor: "pointer", fontWeight: 600 }}>✕ Limpiar</button>}
       </div>
       {hayFiltroTransversal && <div className="muted" style={{ fontSize: 11.5, marginBottom: 8 }}>
         Mostrando <b>{base.length}</b> caso(s){resp !== "todos" ? " de " + (TEAM.find(m => String(m.id) === String(resp))?.nombre || (resp === "0" ? "Externo" : "")) : ""}{etapaF !== "todas" ? " en «" + etapaF + "»" : ""}{q.trim() ? " que coinciden con «" + q.trim() + "»" : ""}.
       </div>}
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
-        {chip("todos", "Todos", base.length, "#1F4E8C")}
-        {chip("vencidos", "🔴 Vencidos", venc.length, "#C0392B")}
-        {chip("porvencer", "🟡 Por vencer", porVen.length, "#C9821B")}
-        {chip("enplazo", "🟢 En plazo", enPlazo.length, "#1E8E5A")}
+        {chip("todos", "Todos", base.length, TOKENS.acc)}
+        {chip("vencidos", "Vencidos", venc.length, TOKENS.red)}
+        {chip("porvencer", "Por vencer", porVen.length, TOKENS.amber)}
+        {chip("enplazo", "En plazo", enPlazo.length, TOKENS.green)}
       </div>
       <div style={{ display: "grid", gap: 8 }}>
+        {/* Acciones secundarias (estado/reasignar/archivar) viven en el menú "⋯" de cada fila —
+            mismos handlers de siempre (onEstado, reasignar→onReasignar, onArchivar), solo cambió
+            dónde viven los controles (antes: select+botón repetidos por fila). */}
         {orden.map(t => (
-          <div key={t.id} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <div style={{ flex: 1, minWidth: 0 }}><TicketCard t={t} rec={recByCode[t.reclamo]} perfil={perfil} onEstado={onEstado} onAbrir={abrir} /></div>
-            {puedeAsignar && (
-              <select value={t.respId} onChange={e => reasignar(t, e.target.value)} title="Reasignar responsable"
-                style={{ background: "var(--card2)", color: "var(--tx)", border: `1px solid ${TEAM.find(x => x.id === t.respId)?.color || "var(--bd)"}`, borderRadius: 8, padding: "6px 8px", fontSize: 12, minWidth: 175 }}>
-                {TEAM.map(m => <option key={m.id} value={m.id}>{m.corto} · {m.rol}</option>)}
-                <option value={0}>Externo / Call Center</option>
-              </select>
-            )}
-            {puedeAsignar && onArchivar && (
-              <button title="Archivar: cerrar el caso y sacarlo de la cola/alarmas (ya está cerrado en la vida real)"
-                onClick={() => onArchivar(t)}
-                style={{ border: "1px solid var(--bd)", background: "transparent", color: "var(--mut)", borderRadius: 8, padding: "6px 9px", fontSize: 13, cursor: "pointer", flexShrink: 0 }}>🗄</button>
-            )}
-          </div>
+          <TicketCard key={t.id} t={t} rec={recByCode[t.reclamo]} perfil={perfil} onEstado={onEstado} onAbrir={abrir}
+            onReasignar={puedeAsignar ? reasignar : undefined}
+            teamOptions={puedeAsignar ? TEAM : undefined}
+            onArchivar={puedeAsignar ? onArchivar : undefined} />
         ))}
-        {!orden.length && <div className="muted">Sin casos en «{filtro === "todos" ? "la cola" : filtro}». 🎉</div>}
+        {!orden.length && (
+          <div className="muted" style={{ padding: 12 }}>
+            {filtro === "vencidos" ? "No tienes tareas vencidas ahora mismo. 🎉" :
+              filtro === "porvencer" ? "No hay tareas por vencer (≤2 días). 🎉" :
+              filtro === "enplazo" ? "No hay tareas en plazo con este filtro." :
+              "Sin casos en la cola con este filtro."}
+            {hayFiltroTransversal && <> · <a onClick={() => { setResp("todos"); setEtapaF("todas"); setQ(""); }} style={{ color: "var(--linkTx)", cursor: "pointer" }}>✕ Limpiar filtros</a></>}
+          </div>
+        )}
       </div>
     </Card>
   );
@@ -111,11 +125,11 @@ export function ResumenDiario({ registros = [], tickets = [] }) {
   const det = r => { try { const d = typeof r.detalle === "string" ? JSON.parse(r.detalle) : (r.detalle || {}); return d; } catch (e) { return {}; } };
   const accion = r => ({ ticket: "actualizó ticket", datos: "registró datos", evidencia: "subió evidencia", documento: "generó documento", comentario: "observación", delegacion: "reasignó", reporte: "cerró su día", estado: "cambió estado" }[r.tipo] || r.tipo);
   return <>
-    <div className="grid g4">
-      <Kpi label="Tickets actualizados" value={cuenta("ticket") + cuenta("estado")} sub="hoy" s="verde" />
-      <Kpi label="Evidencias subidas" value={cuenta("evidencia")} sub="hoy" s="verde" />
-      <Kpi label="Documentos generados" value={cuenta("documento")} sub="hoy" s="verde" />
-      <Kpi label="Observaciones" value={cuenta("comentario")} sub="hoy" s="verde" />
+    <div className="kpigrid">
+      <Kpi label="Tickets actualizados" value={cuenta("ticket") + cuenta("estado")} sub="hoy" />
+      <Kpi label="Evidencias subidas" value={cuenta("evidencia")} sub="hoy" />
+      <Kpi label="Documentos generados" value={cuenta("documento")} sub="hoy" />
+      <Kpi label="Observaciones" value={cuenta("comentario")} sub="hoy" />
     </div>
     <Card style={{ marginTop: 14 }}>
       <h3>Resumen del día — {hoy} ({deHoy.length} acciones)</h3>
@@ -124,7 +138,7 @@ export function ResumenDiario({ registros = [], tickets = [] }) {
           <div style={{ fontWeight: 700, color: "var(--linkTx)", fontSize: 13, marginBottom: 4 }}>{u} <span className="muted" style={{ fontWeight: 400 }}>· {list.length} acción(es)</span></div>
           {list.slice(0, 12).map((r, i) => {
             const d = det(r);
-            return <div key={i} className="chk" style={{ fontSize: 12 }}><span style={{ color: "#15803D" }}>•</span> {accion(r)}{r.reclamo ? ` · ${String(r.reclamo).slice(-6)}` : ""}{d.etapa ? ` · ${d.etapa}` : ""}{d.estado ? ` → ${d.estado}` : ""}</div>;
+            return <div key={i} className="chk" style={{ fontSize: 12 }}><span style={{ color: "var(--green)" }}>•</span> {accion(r)}{r.reclamo ? ` · ${String(r.reclamo).slice(-6)}` : ""}{d.etapa ? ` · ${d.etapa}` : ""}{d.estado ? ` → ${d.estado}` : ""}</div>;
           })}
         </div>
       )) : <div className="muted">Sin actividad registrada hoy ({hoy}). Cuando el equipo trabaje, aquí verás el resumen automático.</div>}
@@ -152,16 +166,16 @@ export function ResumenEquipo({ tickets, perfil }) {
             {porResp.map(o => (
               <tr key={o.m.id}>
                 <td><span className="dot" style={{ background: o.m.color }} />{o.m.nombre} <span className="muted" style={{ fontSize: 11 }}>· {o.m.rol}</span></td>
-                <td>{o.total}</td><td>{o.ab}</td>
-                <td style={{ color: o.venc ? "#C0392B" : "var(--mut)", fontWeight: o.venc ? 700 : 400 }}>{o.venc}</td>
-                <td>{o.riesgo ? <span style={{ color: "#B45309" }}>⚠ {o.riesgo}</span> : "—"}</td>
-                {ger && <td style={{ color: o.exp ? "#DC2626" : "var(--mut)", fontWeight: o.exp ? 700 : 400 }}>{o.exp ? soles(o.exp) : "—"}</td>}
+                <td className="mono">{o.total}</td><td className="mono">{o.ab}</td>
+                <td className="mono" style={{ color: o.venc ? "var(--red)" : "var(--mut)", fontWeight: o.venc ? 700 : 400 }}>{o.venc}</td>
+                <td>{o.riesgo ? <span style={{ color: "var(--amber)" }}>⚠ {o.riesgo}</span> : "—"}</td>
+                {ger && <td className="mono" style={{ color: o.exp ? "var(--red)" : "var(--mut)", fontWeight: o.exp ? 700 : 400 }}>{o.exp ? soles(o.exp) : "—"}</td>}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      {!ger && <div className="note" style={{ marginTop: 10, background: "var(--hoverBg)", border: "1px solid #1F4E8C", color: "var(--tx)", fontSize: 12 }}>Los importes en S/ de exposición los gestiona Gerencia.</div>}
+      {!ger && <div className="note st-acc" style={{ marginTop: 10, fontSize: 12 }}>Los importes en S/ de exposición los gestiona Gerencia.</div>}
     </Card>
   );
 }
@@ -173,10 +187,10 @@ export function DineroRiesgo({ tickets, perfil, recByCode, setSelExp }) {
   const pct = total / TOPE * 100;
   const abrir = t => { const r = recByCode[t.reclamo]; if (r) setSelExp(r.id, t.etapa); };
   return <>
-    <div className="grid g3">
-      <Kpi label="Dinero en riesgo hoy" value={soles(total)} sub={`${pct.toFixed(1)}% del tope`} s={pct > 7 ? "rojo" : pct > 4 ? "ambar" : "verde"} />
-      <Kpi label="Tope de penalidades" value={soles(TOPE)} sub="10% del contrato → ELSE puede resolver" s="ambar" />
-      <Kpi label="Tickets en riesgo" value={ries.length} sub="vencidos con penalidad" s={ries.length ? "rojo" : "verde"} />
+    <div className="kpigrid">
+      <Kpi label="Dinero en riesgo hoy" value={soles(total)} sub={`${pct.toFixed(1)}% del tope`} s={pct > 7 ? "rojo" : pct > 4 ? "ambar" : null} />
+      <Kpi label="Tope de penalidades" value={soles(TOPE)} sub="10% del contrato → ELSE puede resolver" />
+      <Kpi label="Tickets en riesgo" value={ries.length} sub="vencidos con penalidad" s={ries.length ? "rojo" : null} />
     </div>
     <Card style={{ marginTop: 14 }}>
       <h3>Exposición por ticket (mayor a menor)</h3>
@@ -190,12 +204,12 @@ export function DineroRiesgo({ tickets, perfil, recByCode, setSelExp }) {
                 <td className="mono">{recByCode[t.reclamo]?.suministro || "—"}</td>
                 <td>{t.etapa}</td><td>{t.responsable}</td>
                 <td>{t.penalidadItem}</td>
-                <td style={{ color: "#C0392B" }}>{t.fechaLimite}</td>
-                <td style={{ fontWeight: 700, color: "#DC2626" }}>{soles(t.exposicion)}</td>
+                <td className="mono" style={{ color: "var(--red)" }}>{t.fechaLimite}</td>
+                <td className="mono" style={{ fontWeight: 700, color: "var(--red)" }}>{soles(t.exposicion)}</td>
                 <td><button className="btn sm" onClick={() => abrir(t)}>ver</button></td>
               </tr>
             ))}
-            {!ries.length && <tr><td colSpan={7} className="muted" style={{ textAlign: "center", padding: 14 }}>Sin exposición en riesgo. 🎉</td></tr>}
+            {!ries.length && <tr><td colSpan={7} className="muted" style={{ textAlign: "center", padding: 14 }}>Sin exposición en riesgo.</td></tr>}
           </tbody>
         </table>
       </div>
@@ -208,7 +222,8 @@ export function DineroRiesgo({ tickets, perfil, recByCode, setSelExp }) {
 // Etapas donde un ticket vencido/por vencer expone al contrato a que JARU declare
 // silencio administrativo positivo si no se atiende a tiempo (penalidad 5.5: S/300 + el
 // monto del reclamo). Son las etapas de plazo legal "duro" hacia el usuario/JARU.
-const ETAPAS_SILENCIO = ["Resolución", "Notificación", "Apelación (JARU)"];
+// (dedup: usa CRITICAS de lib/model.js — sincronizada con Dominio.ETAPAS_CRITICAS del backend)
+const ETAPAS_SILENCIO = CRITICAS;
 
 // Mapa usuario (login, p.ej. "jcondori") -> resp_id del TEAM (model.js).
 // Criterio: USERS (lib/auth.js) YA trae resp_id = TEAM.id para cada login — es el mismo id
@@ -250,7 +265,7 @@ export function VerificacionDiaria({ tickets = [], registros = [], perfil }) {
   });
 
   const semIcon = { verde: "✓", ambar: "⚠", rojo: "✗" };
-  const semColor = { verde: "#16A34A", ambar: "#D97706", rojo: "#DC2626" };
+  const semColor = { verde: "var(--green)", ambar: "var(--amber)", rojo: "var(--red)" };
 
   return (
     <Card>
@@ -261,13 +276,13 @@ export function VerificacionDiaria({ tickets = [], registros = [], perfil }) {
         </div>
       </div>
 
-      {/* Banner SAP */}
+      {/* Banner SAP — riesgo REAL de silencio positivo: aquí el rojo está ganado. */}
       {ordenSAP.length === 0 ? (
-        <div className="note" style={{ marginTop: 14, background: "#EAF7EE", border: "1px solid #16A34A", color: "#15803D", fontWeight: 700, fontSize: 13 }}>
-          0 expedientes en riesgo de silencio positivo ✓ (meta cumplida)
+        <div className="note st-green" style={{ marginTop: 14, fontWeight: 700, fontSize: 13 }}>
+          0 expedientes en riesgo de silencio positivo (meta cumplida)
         </div>
       ) : (
-        <div className="note" style={{ marginTop: 14, background: "#FDECEC", border: "2px solid #DC2626", color: "#991B1B", padding: 14 }}>
+        <div className="note st-red" style={{ marginTop: 14, borderWidth: 2, padding: 14 }}>
           <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 8 }}>
             ⚠ {ordenSAP.length} EXPEDIENTE{ordenSAP.length > 1 ? "S" : ""} EN RIESGO DE SILENCIO POSITIVO — penalidad 5.5: S/300 + el monto del reclamo cada uno
           </div>
@@ -281,7 +296,7 @@ export function VerificacionDiaria({ tickets = [], registros = [], perfil }) {
                     <td className="mono">{recByCode[t.reclamo]?.suministro || "—"}</td>
                     <td>{t.etapa}</td>
                     <td>{t.responsable || teamById(t.respId).nombre}</td>
-                    <td style={{ color: "#DC2626", fontWeight: 700 }}>{Math.abs(t.diasRestantes ?? 0)}d</td>
+                    <td className="mono" style={{ color: "var(--tint-red-tx)", fontWeight: 700 }}>{Math.abs(t.diasRestantes ?? 0)}d</td>
                   </tr>
                 ))}
               </tbody>
@@ -302,11 +317,11 @@ export function VerificacionDiaria({ tickets = [], registros = [], perfil }) {
             {filas.map(f => (
               <tr key={f.m.id}>
                 <td><span className="dot" style={{ background: f.m.color }} />{f.m.nombre} <span className="muted" style={{ fontSize: 11 }}>· {f.m.rol}</span></td>
-                <td>{f.enCurso}</td>
-                <td style={{ color: f.criticos ? "#B91C1C" : "var(--mut)", fontWeight: f.criticos ? 700 : 400 }}>{f.criticos}</td>
-                <td style={{ color: f.venc ? "#DC2626" : "var(--mut)", fontWeight: f.venc ? 700 : 400 }}>{f.venc}</td>
-                <td style={{ color: f.porVenc ? "#D97706" : "var(--mut)", fontWeight: f.porVenc ? 700 : 400 }}>{f.porVenc}</td>
-                <td>{f.actividadHoy}</td>
+                <td className="mono">{f.enCurso}</td>
+                <td className="mono" style={{ color: f.criticos ? "var(--red)" : "var(--mut)", fontWeight: f.criticos ? 700 : 400 }}>{f.criticos}</td>
+                <td className="mono" style={{ color: f.venc ? "var(--red)" : "var(--mut)", fontWeight: f.venc ? 700 : 400 }}>{f.venc}</td>
+                <td className="mono" style={{ color: f.porVenc ? "var(--amber)" : "var(--mut)", fontWeight: f.porVenc ? 700 : 400 }}>{f.porVenc}</td>
+                <td className="mono">{f.actividadHoy}</td>
                 <td style={{ color: semColor[f.semaforo], fontWeight: 700, fontSize: 14 }}>{semIcon[f.semaforo]}</td>
               </tr>
             ))}

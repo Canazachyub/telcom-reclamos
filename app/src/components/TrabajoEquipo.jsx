@@ -13,7 +13,7 @@ function AsignadaA({ t }) {
   const cargo = sinAsignar ? "en el pozo del equipo" : (ROL_LABEL[m.rol] || m.rol);
   return (
     <div style={{ fontSize: 11.5, color: "var(--mut)", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 6 }}>
-      <span style={{ width: 9, height: 9, borderRadius: "50%", background: sinAsignar ? "#94a3b8" : (m.color || "#64748b"), flexShrink: 0 }} />
+      <span style={{ width: 9, height: 9, borderRadius: "50%", background: sinAsignar ? "var(--mut)" : (m.color || "var(--mut2)"), flexShrink: 0 }} />
       <span>{sinAsignar ? "🫙" : "👤"} <b style={{ color: "var(--tx)" }}>{nombre}</b> · {cargo}</span>
     </div>
   );
@@ -50,7 +50,7 @@ export default function TrabajoEquipo({ perfil, tickets, recByCode, onTomar, onE
           <h3 style={{ margin: 0 }}>🌐 Trabajo del equipo — {etiquetaRol}</h3>
           <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>
             Tareas abiertas que trabaja tu rol: <b>{nMias}</b> tuya(s) · <b>{nOtros}</b> de tus pares
-            {nVenc ? <> · <span style={{ color: "#C0392B" }}>{nVenc} vencida(s)</span></> : ""}.
+            {nVenc ? <> · <span style={{ color: "var(--tint-red-tx)" }}>{nVenc} vencida(s)</span></> : ""}.
             «✋ Tomar» pasa la tarea a tu nombre y a tu «Mi día» (queda en bitácora).
           </div>
         </div>
@@ -73,8 +73,8 @@ export default function TrabajoEquipo({ perfil, tickets, recByCode, onTomar, onE
                 <AsignadaA t={t} />
                 {mia
                   ? <span title="Ya es tuya — la ves en «Mi día»"
-                      style={{ fontSize: 11, fontWeight: 700, color: "#047857", background: "#E8F6EC",
-                               border: "1px solid #BFE5CB", borderRadius: 999, padding: "5px 10px", whiteSpace: "nowrap" }}>✓ tuya</span>
+                      style={{ fontSize: 11, fontWeight: 700, color: "var(--tint-green-tx)", background: "var(--tint-green-bg)",
+                               border: "1px solid var(--tint-green-bd)", borderRadius: 999, padding: "5px 10px", whiteSpace: "nowrap" }}>✓ tuya</span>
                   : tomable
                     ? <button className="btn sm" title={"Tomar esta tarea — hoy la tiene " + (t.responsable || "sin asignar")}
                         onClick={() => onTomar?.(t)}

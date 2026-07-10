@@ -187,7 +187,7 @@ export default function MejorasTR({ data, tickets, datos, registros, perfil }) {
                 <tr key={i}>
                   <td className="mono">{f.reclamo}</td><td className="mono">{f.suministro}</td><td>{f.ot}</td>
                   <td>{f.fechaLimite}</td><td>{f.fechaInforme}</td>
-                  <td style={{ color: "#DC2626", fontWeight: 700 }}>{f.atraso}</td>
+                  <td style={{ color: "var(--red)", fontWeight: 700 }}>{f.atraso}</td>
                   <td style={{ maxWidth: 260 }}>{f.causa}</td>
                 </tr>
               ))}
@@ -219,7 +219,7 @@ export default function MejorasTR({ data, tickets, datos, registros, perfil }) {
                   <span style={{ color: "var(--tx)" }}>{causa}</span>
                   <span className="muted">{n} · {pct.toFixed(0)}%</span>
                 </div>
-                <div style={{ background: "#E9EEF5", borderRadius: 6, height: 14, overflow: "hidden" }}>
+                <div style={{ background: "var(--card2)", borderRadius: 6, height: 14, overflow: "hidden" }}>
                   <div style={{ width: Math.max(4, n / maxCausa * 100) + "%", height: "100%", background: "var(--acc)", borderRadius: 6 }} />
                 </div>
               </div>

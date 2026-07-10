@@ -71,7 +71,7 @@ export default function SubirEvidencia({ reclamo, etapa, etapaNN, perfil, previo
   }
 
   return (
-    <div style={{ background: "rgba(30,58,95,.06)", border: "1px solid var(--navy)", borderRadius: 10, padding: 12, marginTop: 8 }}>
+    <div style={{ background: "var(--tint-acc-bg)", border: "1px solid var(--navy)", borderRadius: 10, padding: 12, marginTop: 8 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
         <b style={{ fontSize: 12.5, color: "var(--tx)" }}>Subir evidencia de «{etapa}»</b>
         <button onClick={onClose} style={xbtn}>✕</button>
@@ -109,22 +109,22 @@ export default function SubirEvidencia({ reclamo, etapa, etapaNN, perfil, previo
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6, gap: 8, flexWrap: "wrap" }}>
             <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".05em", color: "var(--mut)", fontWeight: 700 }}>Datos de la fase</div>
             <button onClick={extraer} disabled={iaBusy || !files.length} title={files.length ? "La IA lee el documento y sugiere los datos" : "Adjunta primero el documento"}
-              style={{ background: "rgba(109,40,217,.10)", color: "#6D28D9", border: "1px solid #6d28d9", borderRadius: 8, padding: "5px 10px", fontSize: 11.5, cursor: files.length ? "pointer" : "not-allowed", fontWeight: 600 }}>
+              style={{ background: "var(--tint-purple-bg)", color: "var(--tint-purple-tx)", border: "1px solid var(--tint-purple-bd)", borderRadius: 8, padding: "5px 10px", fontSize: 11.5, cursor: files.length ? "pointer" : "not-allowed", fontWeight: 600 }}>
               {iaBusy ? "Leyendo documento…" : "🤖 Extraer del documento (sugerencia)"}
             </button>
           </div>
-          {sugeridos.size > 0 && <div style={{ fontSize: 11, color: "#6D28D9", marginBottom: 6 }}>✨ La IA sugirió {sugeridos.size} dato(s) — <b>revísalos y corrige</b> antes de guardar.</div>}
-          {precargados.size > 0 && <div style={{ fontSize: 11, color: "#15803D", marginBottom: 6 }}>✓ {precargados.size} dato(s) ya registrados (aquí o en SIELSE) vienen pre-llenados — <b>corrige solo si hace falta</b>; lo que no toques no se vuelve a guardar.</div>}
+          {sugeridos.size > 0 && <div style={{ fontSize: 11, color: "var(--purple)", marginBottom: 6 }}>✨ La IA sugirió {sugeridos.size} dato(s) — <b>revísalos y corrige</b> antes de guardar.</div>}
+          {precargados.size > 0 && <div style={{ fontSize: 11, color: "var(--tint-green-tx)", marginBottom: 6 }}>✓ {precargados.size} dato(s) ya registrados (aquí o en SIELSE) vienen pre-llenados — <b>corrige solo si hace falta</b>; lo que no toques no se vuelve a guardar.</div>}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             {spec.campos.map(c => {
               const sg = sugeridos.has(c.k);
               const pc = !sg && precargados.has(c.k) && String(datos[c.k] ?? "") !== "";
-              const st = sg ? { ...inp, borderColor: "#7c3aed", background: "rgba(109,40,217,.06)" }
-                : pc ? { ...inp, borderColor: "#BFE5CB", background: "#F4FBF6" } : inp;
+              const st = sg ? { ...inp, borderColor: "var(--tint-purple-bd)", background: "var(--tint-purple-bg)" }
+                : pc ? { ...inp, borderColor: "var(--tint-green-bd)", background: "var(--tint-green-bg)" } : inp;
               const set = v => { setDatos(d => ({ ...d, [c.k]: v })); if (sg) setSugeridos(s => { const n = new Set(s); n.delete(c.k); return n; }); if (precargados.has(c.k)) setPrecargados(s => { const n = new Set(s); n.delete(c.k); return n; }); };
               return (
                 <label key={c.k} title={AYUDA_CAMPO[c.k] || ""} style={{ fontSize: 12, gridColumn: c.tipo === "textarea" ? "1 / -1" : undefined }}>
-                  <span style={{ color: "var(--mut)" }}>{c.label}{AYUDA_CAMPO[c.k] && <span style={{ color: "var(--linkTx)" }}> ⓘ</span>}{sg && <span style={{ marginLeft: 5, fontSize: 9, background: "#6d28d9", color: "#fff", borderRadius: 4, padding: "1px 4px" }}>IA</span>}{pc && <span title="Ya registrado aquí o digitado en SIELSE — solo se re-guarda si lo corriges" style={{ marginLeft: 5, fontSize: 9, background: "#E8F6EC", color: "#15803D", border: "1px solid #BFE5CB", borderRadius: 4, padding: "1px 4px" }}>✓ ya registrado</span>}</span>
+                  <span style={{ color: "var(--mut)" }}>{c.label}{AYUDA_CAMPO[c.k] && <span style={{ color: "var(--linkTx)" }}> ⓘ</span>}{sg && <span style={{ marginLeft: 5, fontSize: 9, background: "var(--purple)", color: "#fff", borderRadius: 4, padding: "1px 4px" }}>IA</span>}{pc && <span title="Ya registrado aquí o digitado en SIELSE — solo se re-guarda si lo corriges" style={{ marginLeft: 5, fontSize: 9, background: "var(--tint-green-bg)", color: "var(--tint-green-tx)", border: "1px solid var(--tint-green-bd)", borderRadius: 4, padding: "1px 4px" }}>✓ ya registrado</span>}</span>
                   {c.tipo === "select"
                     ? <select value={datos[c.k] || ""} onChange={e => set(e.target.value)} style={st}><option value="">—</option>{c.opciones.map(o => <option key={o} value={o}>{o}</option>)}</select>
                     : c.tipo === "textarea"
@@ -149,7 +149,7 @@ export default function SubirEvidencia({ reclamo, etapa, etapaNN, perfil, previo
             </button>
           );
         })()}
-        {hechos.length > 0 && <span style={{ fontSize: 12, color: "#15803D" }}>✓ {hechos.filter(h => h.ok).length} subido(s)</span>}
+        {hechos.length > 0 && <span style={{ fontSize: 12, color: "var(--tint-green-tx)" }}>✓ {hechos.filter(h => h.ok).length} subido(s)</span>}
       </div>
       {hechos.some(h => h.ok && h.url) && (
         <div style={{ marginTop: 8, display: "grid", gap: 3 }}>
@@ -160,5 +160,5 @@ export default function SubirEvidencia({ reclamo, etapa, etapaNN, perfil, previo
   );
 }
 
-const inp = { width: "100%", marginTop: 3, padding: "6px 8px", borderRadius: 7, fontSize: 12.5, fontFamily: "inherit", background: "#fff", color: "var(--tx)", border: "1px solid var(--bd)" };
+const inp = { width: "100%", marginTop: 3, padding: "6px 8px", borderRadius: 7, fontSize: 12.5, fontFamily: "inherit", background: "var(--card2)", color: "var(--tx)", border: "1px solid var(--bd)" };
 const xbtn = { border: "1px solid var(--bd)", borderRadius: 6, background: "transparent", color: "var(--mut)", cursor: "pointer", fontSize: 11, padding: "2px 7px" };

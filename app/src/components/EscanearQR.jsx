@@ -56,9 +56,9 @@ export default function EscanearQR({ onDetect, onClose }) {
         <canvas ref={canvasRef} style={{ display: "none" }} />
         {/* marco guía */}
         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
-          <div style={{ width: "70vmin", maxWidth: 320, aspectRatio: "1", border: "3px solid #1F4E8C", borderRadius: 16, boxShadow: "0 0 0 9999px rgba(0,0,0,.35)" }} />
+          <div style={{ width: "70vmin", maxWidth: 320, aspectRatio: "1", border: "3px solid var(--acc)", borderRadius: 16, boxShadow: "0 0 0 9999px rgba(0,0,0,.35)" }} />
         </div>
-        {error && <div style={{ position: "absolute", left: 16, right: 16, bottom: 24, background: "#C0392B", color: "#fff", padding: 12, borderRadius: 10, fontSize: 13, textAlign: "center" }}>{error}</div>}
+        {error && <div style={{ position: "absolute", left: 16, right: 16, bottom: 24, background: "var(--red)", color: "#fff", padding: 12, borderRadius: 10, fontSize: 13, textAlign: "center" }}>{error}</div>}
       </div>
       <div style={{ color: "#fff", opacity: .85, textAlign: "center", padding: "12px 16px", fontSize: 13 }}>Apunta al QR pegado en el libro. Se detecta solo.</div>
     </div>

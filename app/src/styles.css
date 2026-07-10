@@ -1,20 +1,66 @@
-/* ===== Paleta v4 — clara tipo courier: rojo acción #E3001B · azul marino #16294B · fondos claros =====
-   Mismos nombres de variables que la v3 oscura para no romper los var() de los componentes. */
-:root{--bg:#F4F7FB;--card:#ffffff;--card2:#F0F4F9;--bd:#E2E8F0;--tx:#31445F;--mut:#5B708C;--mut2:#8B9BB1;
---blue:#E3001B;--green:#16A34A;--amber:#D97706;--red:#DC2626;--teal:#0E7490;--purple:#7C3AED;--orange:#B45309;--emerald:#047857;
---titulo:#16294B;--tx2:#3A4E6E;--acc:#E3001B;--accHover:#C50018;--navy:#1E3A5F;--linkTx:#1E5FAF;--hoverBg:#EDF2F8;--selBg:#FDEDEE;--lineaBd:#EDF1F6;}
+/* ===== Sistema de diseño §11 (SDD) — tokens únicos =====
+   Base OSCURA por defecto; variante clara opcional vía :root[data-theme="light"] (toggle en
+   la cabecera, App.jsx). Mismos NOMBRES de variable que las paletas anteriores para no romper
+   ningún var() ya usado en los componentes — solo cambian los VALORES. */
+:root, :root[data-theme="dark"]{
+  /* superficies */
+  --bg:#0E1422; --card:#161E2E; --card2:#1B2436; --bd:#26303F; --lineaBd:#20293A;
+  --hoverBg:rgba(255,255,255,.05); --selBg:rgba(31,78,140,.20); --scrim:rgba(4,7,14,.6);
+  /* texto */
+  --tx:#E6EAF0; --tx2:#C3CBD7; --mut:#9AA7B8; --mut2:#7A8698; --titulo:#F4F6FA;
+  color-scheme: dark; /* controles nativos (select/input/scrollbar) oscuros — evita texto "apagado" en <select> */
+  /* acento + semántica — "el rojo se gana": SOLO vencido/penalidad real */
+  --acc:#1F4E8C; --accHover:#2C5FA3; --accLight:#3E76BE; --navy:#22364F; --linkTx:#6FA8DC;
+  --green:#1E8E5A; --emerald:#22A06B; --amber:#C9821B; --orange:#B9631F; --red:#C0392B;
+  --blue:#2E6DA4; --teal:#1E8A96; --purple:#7B5EA7;
+  --ink:#0B1220; /* texto oscuro para usar SOBRE fondos claros/de acento (p.ej. pill ámbar) */
+  /* tintas suaves — banners/notas/badges de estado (sin inventar rgba() sueltos en componentes) */
+  --tint-red-bg:rgba(192,57,43,.14); --tint-red-bd:rgba(192,57,43,.4); --tint-red-tx:#E5786B;
+  --tint-amber-bg:rgba(201,130,27,.16); --tint-amber-bd:rgba(201,130,27,.42); --tint-amber-tx:#E3A855;
+  --tint-green-bg:rgba(30,142,90,.14); --tint-green-bd:rgba(30,142,90,.4); --tint-green-tx:#4FBE8B;
+  --tint-acc-bg:rgba(31,78,140,.18); --tint-acc-bd:rgba(31,78,140,.45); --tint-acc-tx:#6FA8DC;
+  --tint-purple-bg:rgba(123,94,167,.16); --tint-purple-bd:rgba(123,94,167,.42); --tint-purple-tx:#B49BD8;
+  /* sombras (suaves, pensadas para tema oscuro) */
+  --shadow-card:0 1px 3px rgba(0,0,0,.35); --shadow-pop:0 16px 44px rgba(0,0,0,.45); --shadow-modal:0 20px 60px rgba(0,0,0,.55);
+  /* espaciado — múltiplos de 4px */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px;
+  /* radios */
+  --r-sm:10px; --r-md:12px; --r-lg:16px;
+  /* tipografía — Inter vía stack local, SIN @import de red (PWA offline-first) */
+  --font-sans:'Inter',system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+}
+:root[data-theme="light"]{
+  --bg:#F5F7FA; --card:#FFFFFF; --card2:#F0F3F7; --bd:#DDE3EA; --lineaBd:#E7ECF2;
+  --hoverBg:#EEF2F7; --selBg:#EAF1FB; --scrim:rgba(15,23,32,.45);
+  --tx:#1B2430; --tx2:#33445A; --mut:#5B6B7F; --mut2:#8A97A8; --titulo:#0F1720;
+  --acc:#1F4E8C; --accHover:#173D6E; --accLight:#3E76BE; --navy:#1E3A5F; --linkTx:#1B5FA6;
+  --green:#1E8E5A; --emerald:#0E7C52; --amber:#B5720E; --orange:#9A5417; --red:#B23223;
+  --blue:#265E8C; --teal:#0E7480; --purple:#6B4A9C;
+  --ink:#0B1220;
+  --tint-red-bg:#FBEAE8; --tint-red-bd:#E7B9B2; --tint-red-tx:#8E271A;
+  --tint-amber-bg:#FBF0DF; --tint-amber-bd:#E9C58B; --tint-amber-tx:#7A4C0C;
+  --tint-green-bg:#E8F5EE; --tint-green-bd:#A9DAC1; --tint-green-tx:#125E3E;
+  --tint-acc-bg:#EAF1FB; --tint-acc-bd:#B9CFE8; --tint-acc-tx:#173D6E;
+  --tint-purple-bg:#F1ECF8; --tint-purple-bd:#CFC0E4; --tint-purple-tx:#4E3579;
+  --shadow-card:0 1px 3px rgba(16,24,40,.08); --shadow-pop:0 16px 44px rgba(16,24,40,.18); --shadow-modal:0 20px 60px rgba(16,24,40,.22);
+  color-scheme: light;
+}
 *{box-sizing:border-box}
 @keyframes girar{to{transform:rotate(360deg)}}
-body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;font-size:14px}
-.wrap{max-width:1320px;margin:0 auto;padding:18px}
-h1{font-size:21px;margin:0;color:var(--titulo)}.sub{color:var(--mut);font-size:12.5px;margin-top:2px}.muted{color:var(--mut2)}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:var(--font-sans);font-size:14px}
+/* el scroll horizontal SIEMPRE vive DENTRO de su propio contenedor (tablas .tbl con overflowX
+   inline) — nunca en el body/.wrap. Salvaguarda contra grids/filas con contenido largo. */
+.wrap{max-width:1320px;margin:0 auto;padding:18px;overflow-x:hidden}
+.grid>*, .kpigrid>*{min-width:0}
+h1{font-size:21px;font-weight:600;margin:0;color:var(--titulo)}.sub{color:var(--mut);font-size:12.5px;margin-top:2px}.muted{color:var(--mut2)}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:4px}
 header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
-.toggle{display:flex;gap:4px;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:4px}
+.toggle{display:flex;gap:4px;background:var(--card);border:1px solid var(--bd);border-radius:var(--r-md);padding:4px}
 .toggle button{border:0;background:transparent;color:var(--mut);padding:8px 15px;border-radius:9px;cursor:pointer;font-size:14px}
 .toggle button.on-admin{background:var(--navy);color:#fff}.toggle button.on-worker{background:var(--emerald);color:#fff}
 .tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
 .tabs button{border:1px solid var(--bd);background:var(--card);color:var(--mut);padding:7px 13px;border-radius:9px;cursor:pointer;font-size:13px}
-.tabs button.on{background:var(--card);color:var(--acc);border-color:var(--acc);font-weight:700}
+.tabs button.on{background:var(--tint-acc-bg);color:var(--acc);border-color:var(--acc);font-weight:700}
 @media(max-width:760px){
   .tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
   .tabs button{flex:0 0 auto;white-space:nowrap}
@@ -23,28 +69,34 @@ header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:cen
 @media(max-width:980px){.g6,.g4{grid-template-columns:repeat(2,1fr)}.g3,.g2{grid-template-columns:1fr}}
 @media(max-width:760px){.g6,.g4{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:480px){.g6,.g4,.g3,.g2{grid-template-columns:1fr}}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:16px;box-shadow:0 1px 3px rgba(22,41,75,.06)}
+/* Grid único de KPIs (§F2 addendum): auto-fit/minmax — 1 fila en desktop, 2×2 en móvil,
+   SIN media queries frágiles. Úsalo para los 4-5 KPI de Hoy/MiDia en vez de tarjetas sueltas. */
+.kpigrid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(132px,1fr))}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:var(--r-lg);padding:16px;box-shadow:var(--shadow-card)}
 .card h3{margin:0 0 12px;font-size:14px;color:var(--tx2);font-weight:600}
 .kpi{position:relative;overflow:hidden;padding-left:18px}.kpi .barL{position:absolute;left:0;top:0;width:6px;height:100%}
-.kpi .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut)}.kpi .val{font-size:27px;font-weight:800;margin-top:4px;line-height:1;color:var(--titulo)}.kpi .sub{font-size:11px;color:var(--mut);margin-top:6px}
+.kpi .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}.kpi .val{font-size:27px;font-weight:700;margin-top:4px;line-height:1;color:var(--titulo);font-variant-numeric:tabular-nums}.kpi .sub{font-size:11px;color:var(--mut);margin-top:6px}
 .row{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--card2);border-radius:10px;padding:9px 11px;margin-bottom:7px}
-.pill{font-size:11px;padding:2px 9px;border-radius:999px;white-space:nowrap}.tag{font-size:10px;padding:1px 7px;border-radius:6px;font-weight:600}
-.dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:7px;vertical-align:middle}.mono{font-family:ui-monospace,Consolas,monospace}
+.pill{font-size:11px;padding:3px 9px;border-radius:999px;white-space:nowrap;font-weight:600}.tag{font-size:10px;padding:1px 7px;border-radius:6px;font-weight:600}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:7px;vertical-align:middle}.mono{font-family:ui-monospace,Consolas,monospace;font-variant-numeric:tabular-nums}
 .bars .b{display:flex;align-items:center;gap:8px;margin-bottom:9px}.bars .b .nm{width:80px;font-size:12px;color:var(--tx2);text-align:right}
-.bars .b .track{flex:1;background:#E9EEF5;border-radius:6px;height:18px;overflow:hidden}.bars .b .fill{height:100%;border-radius:6px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:11px;color:#fff}
-.metric{background:var(--card2);border-radius:10px;padding:11px;text-align:center}.metric .m{font-size:21px;font-weight:700;color:var(--titulo)}.metric .l{font-size:11px;color:var(--mut);margin-top:4px}
+.bars .b .track{flex:1;background:var(--card2);border-radius:6px;height:18px;overflow:hidden}.bars .b .fill{height:100%;border-radius:6px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums}
+.metric{background:var(--card2);border-radius:10px;padding:11px;text-align:center}.metric .m{font-size:21px;font-weight:700;color:var(--titulo);font-variant-numeric:tabular-nums}.metric .l{font-size:11px;color:var(--mut);margin-top:4px}
 table.tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}
-.tbl th{color:var(--mut);font-size:10px;text-transform:uppercase;text-align:left;padding:6px;border-bottom:1px solid var(--bd);white-space:nowrap}
-.tbl td{padding:5px 6px;border-bottom:1px solid var(--lineaBd);vertical-align:middle}
+.tbl th{color:var(--mut);font-size:10px;text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:6px;border-bottom:1px solid var(--bd);white-space:nowrap}
+.tbl td{padding:5px 6px;border-bottom:1px solid var(--lineaBd);vertical-align:middle;font-variant-numeric:tabular-nums}
 .tbl tr.clk{cursor:pointer}.tbl tr.clk:hover td{background:var(--selBg)}
 .tbl tbody tr:hover td{background:var(--hoverBg)}
 .tbl select,.tbl input{background:var(--card);border:1px solid var(--bd);color:var(--tx);border-radius:6px;padding:4px;font-size:12px;font-family:inherit}
-.btn{background:var(--acc);color:#fff;border:0;border-radius:9px;padding:8px 13px;font-size:13px;cursor:pointer;font-weight:600}.btn:hover{background:var(--accHover)}
-.btn.sec{background:var(--navy)}.btn.sm{padding:5px 10px;font-size:12px}.btn.del{background:transparent;color:var(--red);padding:3px 8px}
+.btn{background:var(--acc);color:#fff;border:0;border-radius:var(--r-sm);padding:8px 13px;font-size:13px;cursor:pointer;font-weight:600;min-height:36px}.btn:hover{background:var(--accHover)}
+.btn.sec{background:var(--navy)}.btn.sm{padding:5px 10px;font-size:12px;min-height:30px}.btn.del{background:transparent;color:var(--red);padding:3px 8px}
+/* texto oscuro sobre verde sólido — blanco sobre --green da ~4.13:1 (falla AA 4.5:1 en texto
+   chico); var(--ink) sobre --green da ~4.52:1 (pasa). Mismo patrón textOn() de ui.jsx. */
+.btn.ok{background:var(--green);color:var(--ink)}.btn.ok:hover{background:var(--emerald)}
 .flt{background:var(--card);border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:7px 10px;font-size:12px}
 .note{font-size:12px;border-radius:10px;padding:9px;margin-top:10px}
 a.link{color:var(--linkTx);text-decoration:none}a.link:hover{text-decoration:underline}
-.overlay{position:fixed;inset:0;background:rgba(22,41,75,.45);z-index:100;display:flex;justify-content:flex-end}
+.overlay{position:fixed;inset:0;background:var(--scrim);z-index:100;display:flex;justify-content:flex-end}
 .drawer{width:min(720px,100%);height:100%;background:var(--bg);border-left:1px solid var(--bd);overflow-y:auto;padding:18px}
 .stage{border:1px solid var(--bd);border-radius:12px;margin-bottom:9px;overflow:hidden;background:var(--card)}
 .stage .hd{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer}
@@ -55,12 +107,28 @@ a.link{color:var(--linkTx);text-decoration:none}a.link:hover{text-decoration:und
 .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--tx2);margin-top:6px}
 .kv{display:grid;grid-template-columns:130px 1fr;gap:4px 10px;font-size:12.5px;margin:3px 0}
 .kv b{color:var(--mut);font-weight:500}
-.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:11px 20px;border-radius:10px;z-index:200;box-shadow:0 6px 18px rgba(22,41,75,.3);font-size:13px}
+/* Toast discreto: posición fija consistente, fuera del flujo (pointer-events:none cuando está
+   oculto, así nunca "tapa" un botón debajo mientras no se ve) + fade/slide breve; safe-area para
+   no quedar bajo la barra del sistema en móvil. .show la agrega/quita toast() (ui.jsx). */
+.toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translate(-50%,8px);background:var(--navy);color:#fff;padding:11px 20px;border-radius:10px;z-index:200;box-shadow:var(--shadow-pop);font-size:13px;max-width:min(420px,90vw);text-align:center;opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s ease}
+.toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+@media(prefers-reduced-motion:reduce){.toast{transition:opacity .01s linear;transform:translate(-50%,0)}}
 footer{text-align:center;color:var(--mut2);font-size:11px;margin-top:26px}
+
+/* ===== Skeleton (F3 §3) — reemplaza "Cargando…" por la FORMA del contenido ===== */
+@keyframes skel-shimmer{0%{background-position:100% 0}100%{background-position:0 0}}
+.skel{background:linear-gradient(90deg,var(--card2) 25%,var(--bd) 37%,var(--card2) 63%);background-size:400% 100%;animation:skel-shimmer 1.4s ease infinite}
+@media(prefers-reduced-motion:reduce){.skel{animation:none;background:var(--card2)}}
+
+/* ===== fila de tarea — menú contextual "⋯" (Ticket.jsx) =====
+   Un solo botón por fila agrupa las acciones secundarias (estado/reasignar/archivar) en vez de
+   repetir selects/botones en cada fila. Target táctil ≥44px en móvil (regla dura §5). */
+.icon-btn{width:32px;height:32px;min-width:32px;border-radius:8px;border:1px solid var(--bd);background:transparent;color:var(--tx);cursor:pointer;font-size:16px;line-height:1;display:inline-flex;align-items:center;justify-content:center}
+.icon-btn:hover{border-color:var(--acc);color:var(--acc)}
 
 /* ===== marca / corporativo ===== */
 .brand{display:flex;align-items:center;gap:11px}
-.brand .logo{width:38px;height:38px;border-radius:9px;background:linear-gradient(135deg,#E3001B,#FF5A63);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:15px;letter-spacing:.5px}
+.brand .logo{width:38px;height:38px;border-radius:9px;background:linear-gradient(135deg,var(--acc),var(--accLight));display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:15px;letter-spacing:.5px}
 .logo-img{height:30px;display:block}
 .loginbox .logo-img{height:36px;margin-bottom:2px}
 .usr{display:flex;align-items:center;gap:10px}
@@ -68,8 +136,8 @@ footer{text-align:center;color:var(--mut2);font-size:11px;margin-top:26px}
 .bellwrap{position:relative}
 .bell{position:relative;background:var(--card);border:1px solid var(--bd);color:var(--mut);border-radius:10px;width:40px;height:38px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .bell:hover{border-color:var(--acc);color:var(--acc)}
-.bell .badge{position:absolute;top:-6px;right:-6px;background:#E3001B;color:#fff;border-radius:999px;min-width:18px;height:18px;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0 5px;font-weight:700;border:2px solid var(--bg)}
-.notifpanel{position:absolute;right:0;top:46px;width:370px;max-height:460px;overflow-y:auto;background:var(--card);border:1px solid var(--bd);border-radius:14px;box-shadow:0 16px 44px rgba(22,41,75,.18);z-index:150;padding:10px}
+.bell .badge{position:absolute;top:-6px;right:-6px;background:var(--red);color:#fff;border-radius:999px;min-width:18px;height:18px;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0 5px;font-weight:700;border:2px solid var(--bg);font-variant-numeric:tabular-nums}
+.notifpanel{position:absolute;right:0;top:46px;width:370px;max-height:460px;overflow-y:auto;background:var(--card);border:1px solid var(--bd);border-radius:14px;box-shadow:var(--shadow-pop);z-index:150;padding:10px}
 .notifpanel h4{margin:4px 6px 8px;font-size:13px;color:var(--titulo)}
 .notifitem{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 9px;border-radius:9px;cursor:pointer}
 .notifitem:hover{background:var(--card2)}
@@ -80,40 +148,55 @@ footer{text-align:center;color:var(--mut2);font-size:11px;margin-top:26px}
   h1{font-size:18px}
   .drawer{padding:12px}
   /* toque cómodo en celular + evitar el zoom de iOS al enfocar (font >=16px) */
-  .btn,.btn-ghost{padding:10px 14px;font-size:14px;min-height:42px}
-  .btn.sm{padding:8px 11px;font-size:13px;min-height:36px}
-  .tabs button{padding:9px 13px;font-size:14px;min-height:40px}
+  .btn,.btn-ghost{padding:10px 14px;font-size:14px;min-height:44px}
+  .btn.sm{padding:8px 11px;font-size:13px;min-height:38px}
+  .tabs button{padding:9px 13px;font-size:14px;min-height:44px}
   input,select,textarea{font-size:16px !important}
   .tbl,.tbl input,.tbl select{font-size:13px !important}
+  /* KPI en móvil: 2×2 dentro de una sola card (el .kpigrid ya resuelve esto con auto-fit,
+     pero forzamos 2 columnas exactas bajo 640px para que no queden 3+1 huérfano) */
+  .kpigrid{grid-template-columns:repeat(2,1fr);gap:8px}
+  .kpi{padding-left:14px}
+  .kpi .val{font-size:22px}
   /* la barra de acciones de un cuaderno se apila y no desborda */
   .drawer{width:100vw;max-width:100vw}
+  /* menú "⋯" de la fila de tarea: target táctil cómodo en móvil */
+  .icon-btn{width:44px;height:44px;min-width:44px}
 }
 /* toques limpios (sin flash gris) en toda la app táctil */
 button,a,.clk{-webkit-tap-highlight-color:transparent}
 
 /* ===== login ===== */
-.loginbg{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(1200px 600px at 50% -10%, #DDF0FA 0%, #F4F7FB 55%)}
-.loginbox{width:380px;max-width:100%;background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:28px;box-shadow:0 20px 60px rgba(22,41,75,.16)}
-.loginbox h2{margin:14px 0 2px;font-size:19px;color:var(--titulo)}
+.loginbg{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(1200px 600px at 50% -10%, var(--tint-acc-bg) 0%, var(--bg) 55%)}
+.loginbox{width:380px;max-width:100%;background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:28px;box-shadow:var(--shadow-modal)}
+.loginbox h2{margin:14px 0 2px;font-size:19px;font-weight:600;color:var(--titulo)}
 .loginbox .sub{color:var(--mut);font-size:12.5px;margin-bottom:20px}
-.field{margin-bottom:13px}.field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);margin-bottom:5px}
-.field input{width:100%;background:var(--card2);border:1px solid var(--bd);color:var(--tx);border-radius:10px;padding:11px 12px;font-size:14px;font-family:inherit}
-.field input:focus{outline:2px solid var(--navy);border-color:transparent}
-.loginbtn{width:100%;background:linear-gradient(135deg,#E3001B,#FF5A63);color:#fff;border:0;border-radius:10px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;margin-top:6px}
+.field{margin-bottom:13px}.field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin-bottom:5px}
+.field input{width:100%;background:var(--card2);border:1px solid var(--bd);color:var(--tx);border-radius:10px;padding:11px 12px;font-size:16px;font-family:inherit}
+.field input:focus{outline:2px solid var(--acc);border-color:transparent}
+.loginbtn{width:100%;background:linear-gradient(135deg,var(--acc),var(--accLight));color:#fff;border:0;border-radius:10px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;margin-top:6px;min-height:44px}
 .loginbtn:disabled{opacity:.6;cursor:default}
-.loginerr{background:#FDECEC;border:1px solid #F3B4B4;color:#B91C1C;border-radius:9px;padding:9px 11px;font-size:12.5px;margin-bottom:12px}
+.loginerr{background:var(--tint-red-bg);border:1px solid var(--tint-red-bd);color:var(--tint-red-tx);border-radius:9px;padding:9px 11px;font-size:12.5px;margin-bottom:12px}
 .hint{font-size:11px;color:var(--mut2);text-align:center;margin-top:16px;line-height:1.7}
 .hint code{background:var(--card2);padding:1px 6px;border-radius:5px;color:var(--tx2)}
 
 /* ===== dropzone evidencias ===== */
-.drop{border:1.5px dashed #A9CDE9;border-radius:14px;padding:26px;text-align:center;color:var(--mut);background:#F4FAFE;cursor:pointer;transition:.15s}
-.drop.over{border-color:var(--acc);background:var(--selBg);color:var(--tx)}
+.drop{border:1.5px dashed var(--bd);border-radius:14px;padding:26px;text-align:center;color:var(--mut);background:var(--card2);cursor:pointer;transition:.15s}
+.drop.over{border-color:var(--acc);background:var(--tint-acc-bg);color:var(--tx)}
 .evic{display:flex;align-items:center;gap:11px;background:var(--card2);border:1px solid var(--bd);border-radius:11px;padding:10px 12px;margin-bottom:8px}
-.evic .th{width:40px;height:40px;border-radius:8px;background:#E9EEF5;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--mut);font-weight:700;flex-shrink:0}
-.btn-ghost{background:transparent;border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:7px 12px;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;text-decoration:none;white-space:nowrap}
+.evic .th{width:40px;height:40px;border-radius:8px;background:var(--bd);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--mut);font-weight:700;flex-shrink:0}
+.btn-ghost{background:transparent;border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:7px 12px;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;text-decoration:none;white-space:nowrap;min-height:36px}
 .btn-ghost:hover{border-color:var(--acc);color:var(--acc)}
 .statebar{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 12px}
 .seg{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mut)}
+
+/* ===== estados semánticos ("el rojo se gana": SOLO vencido/penalidad real) =====
+   Clases utilitarias para banners/badges de estado — evitan que cada componente invente
+   rgba()/hex sueltos para "vencido / por vencer / en plazo / informativo". */
+.st-red{background:var(--tint-red-bg);border:1px solid var(--tint-red-bd);color:var(--tint-red-tx)}
+.st-amber{background:var(--tint-amber-bg);border:1px solid var(--tint-amber-bd);color:var(--tint-amber-tx)}
+.st-green{background:var(--tint-green-bg);border:1px solid var(--tint-green-bd);color:var(--tint-green-tx)}
+.st-acc{background:var(--tint-acc-bg);border:1px solid var(--tint-acc-bd);color:var(--tint-acc-tx)}
 
 /* ===== Bandeja de correos =====
    El layout de la bandeja (Bandeja.jsx) usa estilos inline (mismo patrón que Drawer.jsx /

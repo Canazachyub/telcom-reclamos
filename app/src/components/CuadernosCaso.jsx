@@ -62,7 +62,7 @@ export default function CuadernosCaso({ exp, registros, onAbrirCuaderno, onRegis
             const queryCaso = r.reclamo || r.suministro || exp.codigo;
             return <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", position: "relative", paddingBottom: 12 }}>
               <span style={{ position: "absolute", left: 9, top: 19, bottom: 0, width: 2, background: "var(--bd)" }} />
-              <span title="Paso registrado" style={{ flexShrink: 0, width: 20, height: 20, borderRadius: "50%", background: "#1E8E5A", color: "#fff", fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1 }}>✓</span>
+              <span title="Paso registrado" style={{ flexShrink: 0, width: 20, height: 20, borderRadius: "50%", background: "var(--green)", color: "#fff", fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1 }}>✓</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
                   <span onClick={() => onAbrirCuaderno && onAbrirCuaderno(r.tipo, queryCaso)}

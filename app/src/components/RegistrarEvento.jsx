@@ -76,8 +76,8 @@ export default function RegistrarEvento({ perfil, data = [], sumInicial = "", on
 
   const cerrar = { position: "absolute", top: 10, right: 12, background: "transparent", border: 0, fontSize: 20, color: "var(--mut)", cursor: "pointer" };
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(14,20,34,.55)", zIndex: 98, display: "flex", alignItems: "flex-start", justifyContent: "center", overflowY: "auto", padding: "16px 10px" }}>
-      <div onClick={e => e.stopPropagation()} style={{ position: "relative", background: "var(--card,#fff)", borderRadius: 16, padding: 18, width: "min(560px,100%)", boxShadow: "0 12px 40px rgba(0,0,0,.3)" }}>
+    <div style={{ position: "fixed", inset: 0, background: "var(--scrim)", zIndex: 98, display: "flex", alignItems: "flex-start", justifyContent: "center", overflowY: "auto", padding: "16px 10px" }}>
+      <div onClick={e => e.stopPropagation()} style={{ position: "relative", background: "var(--card)", borderRadius: 16, padding: 18, width: "min(560px,100%)", boxShadow: "var(--shadow-modal)" }}>
         <button onClick={onClose} style={cerrar}>✕</button>
         <h2 style={{ margin: "0 0 2px", fontSize: 19 }}>➕ Registrar en un cuaderno</h2>
         <div className="muted" style={{ fontSize: 12, marginBottom: 14 }}>Paso {paso} de 3 · como en tus hojas de siempre</div>

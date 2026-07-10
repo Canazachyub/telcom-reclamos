@@ -114,6 +114,10 @@ export const ETAPA_ROL = {
 // ¿Este rol puede TOMAR (auto-asignarse) un ticket de esta etapa? Mismo rol = sí.
 export const puedeTomar = (rol, etapa) => !!rol && ETAPA_ROL[etapa] === rol;
 
+// Etapas de plazo legal "duro" (riesgo de silencio administrativo positivo / notarial) — ESPEJO
+// de Dominio.ETAPAS_CRITICAS del backend. Fallback local; `aplicarDominio` la reemplaza en sitio.
+export const CRITICAS = ["Resolución", "Notificación", "Apelación (JARU)"];
+
 // ===== fechas =====
 export function parseFecha(s){
   if(!s) return null;
@@ -130,13 +134,29 @@ export function parseFecha(s){
   return new Date(+m[3], +m[2]-1, +m[1], +(m[4]||0), +(m[5]||0), +(m[6]||0));
 }
 // ===== días HÁBILES (lun-vie, sin feriados Perú/Cusco — alineado con lib/plazosNormativos y backend) =====
+// FALLBACK local (hasta que cargue GET dominio / si la red falla): fijos por patrón MM-DD
+// (aplica a CUALQUIER año) + móviles explícitos 2026-2028. Cubre el plazo del contrato aunque
+// nunca llegue a aplicarse `aplicarDominio` (sin red, sin sesión, etc.).
 const FERIADOS_FIJOS_MMDD = new Set(["01-01","05-01","06-07","06-24","06-29","07-23","07-28","07-29","08-06","08-30","10-08","11-01","12-08","12-09","12-25"]);
 const FERIADOS_MOVILES_ISO = new Set(["2026-04-02","2026-04-03","2027-03-25","2027-03-26","2028-04-13","2028-04-14"]);
+// Fuente ÚNICA real (Dominio.FERIADOS del backend, 2026-2030): vacío hasta que `aplicarDominio()`
+// la llene (una vez, al arrancar la app). Mientras esté vacío, esDiaHabil usa el fallback de arriba.
+const FERIADOS_ISO = new Set();
+// esFeriado: única fuente de "¿es feriado?" (SIN el chequeo de fin de semana — eso lo hace
+// esDiaHabil aquí abajo, y esHabil en plazosNormativos.js). Exportada para que
+// lib/plazosNormativos.js (SalaExpediente/CalendarioRelojes) deje de mantener su propia copia
+// de FERIADOS_FIJOS_MMDD/FERIADOS_VARIABLES_ISO — misma lista, misma semántica (verificado
+// 2026-07: ambas copias eran idénticas antes de unificar). No se expone el Set FERIADOS_ISO
+// directo (mutable, lo llena aplicarDominio) para que nadie fuera de este módulo lo reasigne.
+export function esFeriado(d){
+  const mm = String(d.getMonth()+1).padStart(2,"0"), dd = String(d.getDate()).padStart(2,"0");
+  if(FERIADOS_ISO.size) return FERIADOS_ISO.has(d.getFullYear()+"-"+mm+"-"+dd);   // backend ya cargó: manda
+  if(FERIADOS_FIJOS_MMDD.has(mm+"-"+dd)) return true;                             // fallback local
+  return FERIADOS_MOVILES_ISO.has(d.getFullYear()+"-"+mm+"-"+dd);
+}
 export function esDiaHabil(d){
   const dow = d.getDay(); if(dow===0 || dow===6) return false;
-  const mm = String(d.getMonth()+1).padStart(2,"0"), dd = String(d.getDate()).padStart(2,"0");
-  if(FERIADOS_FIJOS_MMDD.has(mm+"-"+dd)) return false;
-  return !FERIADOS_MOVILES_ISO.has(d.getFullYear()+"-"+mm+"-"+dd);
+  return !esFeriado(d);
 }
 // días HÁBILES restantes hasta la fecha (negativo = venció hace N d háb.) — los plazos del
 // contrato y de la Directiva son SIEMPRE hábiles; nada se muestra en días corridos.
@@ -198,3 +218,80 @@ export function mapReclamo(r, i){
 // ===== penalidades (escala resumida) =====
 export const PEN_TOPE_PCT = 10;
 export const MONTO_CONTRATO = 1250000;
+
+// ============================================================================
+// ===== SINCRONIZACIÓN CON EL BACKEND (GET dominio → Dominio.publico()) =====
+// ============================================================================
+// TEAM/FLUJO/ETAPA_ROL/CRITICAS/feriados arriba son el FALLBACK local: la app debe seguir
+// funcionando (con esos valores) si `dominio` falla o no hay red — hay plazos contractuales
+// de por medio. `aplicarDominio(dom)` la llama api.js UNA sola vez al arrancar (loadDominio,
+// con caché) y actualiza estas estructuras EN SITIO (mutación in-place: los `find`/push/Object.assign
+// de abajo, nunca `TEAM = ...`) para que las referencias que YA importaron otros módulos
+// (tickets.js, componentes…) vean el cambio sin tener que volver a importar nada.
+//
+// Qué SÍ se sincroniza 1:1 (mismo shape, mismo significado en front y back):
+//   - equipo: usuario/nombre/corto/color/buzones de cada TEAM[i] (match por `id` = resp_id).
+//   - ETAPA_ROL[etapa]: el rol-enum que trabaja cada etapa (backend = única fuente real).
+//   - CRITICAS: la lista de etapas con plazo legal duro.
+//   - feriados: reemplaza POR COMPLETO el set de fechas no laborables (backend cubre 2026-2030
+//     completo; el fallback local solo llega a 2028).
+//
+// Qué NO se pisa (y por qué — ver riesgos en el mensaje final del worker):
+//   - TEAM[i].rol / TEAM[i].match: `dominio.equipo[].rol` es el ENUM (p.ej. "COORDINADOR"), no
+//     el label humano que usa la UI ("Coordinador General"); y el backend NO expone `match`
+//     (los patrones para reconocer el campo Responsable de SIELSE) — solo vive en el código.
+//     El enum sí se guarda, pero aparte, en `TEAM[i].rolEnum` (campo nuevo, aditivo).
+//   - FLUJO[i].rol/plazo/pen (textos humanos, a veces combinan varios códigos de penalidad,
+//     p.ej. "5.9 / 5.5 +monto"): `dominio.etapas[].rol/pen` son más simples (un solo código/enum)
+//     y pisarlos perdería esa información ya mostrada en FlujoCards. Se guardan aparte, aditivos,
+//     en FLUJO[i].rolEnum / FLUJO[i].penCodigo. Sí se sincronizan `act`, `dias` (nuevo, aditivo)
+//     y `nn` (nuevo, aditivo) por ser el mismo dato con el mismo formato.
+//   - EXTERNO (id 0, sentinel "sin match" para Responsable que no calza con nadie del equipo):
+//     el backend NO lo manda en `equipo` (ahí id 0 sería el GERENTE, otro concepto) — se
+//     conserva intacto, nunca se toca ni se borra.
+export function aplicarDominio(dom){
+  if(!dom || typeof dom !== "object") return;
+
+  // ---- equipo (roster real: cambia con las altas/bajas de personal — 2026-07 resp_id 4/6/7) ----
+  if(Array.isArray(dom.equipo)){
+    dom.equipo.forEach(d => {
+      const m = TEAM.find(x => x.id === d.id);
+      if(!m) return;   // id que no existe en el fallback local: no hay slot, se ignora
+      if(d.usuario) m.usuario = d.usuario;
+      if(d.nombre)  m.nombre  = d.nombre;
+      if(d.corto)   m.corto   = d.corto;
+      if(d.color)   m.color   = d.color;
+      if(Array.isArray(d.buzones)) m.buzones = d.buzones;
+      if(d.rol)     m.rolEnum = d.rol;   // enum aparte — no pisa el label humano `rol`
+    });
+  }
+
+  // ---- etapas: FLUJO conserva su contenido editorial (desc/pasos/evi/guia/penDesc/plazo/pen);
+  // solo sincroniza los campos operativos con el mismo shape/semántica en ambos lados.
+  if(Array.isArray(dom.etapas)){
+    dom.etapas.forEach(d => {
+      const f = FLUJO.find(x => x.etapa === d.etapa);
+      if(f){
+        if(d.act) f.act = d.act;
+        if(d.nn) f.nn = d.nn;
+        if(d.dias != null) f.dias = d.dias;
+        if(d.rol) f.rolEnum = d.rol;
+        if(d.pen) f.penCodigo = d.pen;
+      }
+      // ETAPA_ROL[etapa]: SÍ es un espejo 1:1 del enum del backend — aquí manda el backend.
+      if(d.etapa && d.rol) ETAPA_ROL[d.etapa] = d.rol;
+    });
+  }
+
+  // ---- etapas críticas (plazo legal duro / riesgo SAP) ----
+  if(Array.isArray(dom.criticas) && dom.criticas.length){
+    CRITICAS.length = 0;
+    dom.criticas.forEach(e => CRITICAS.push(e));
+  }
+
+  // ---- feriados: el backend es la fuente real (2026-2030); reemplaza el set completo ----
+  if(Array.isArray(dom.feriados) && dom.feriados.length){
+    FERIADOS_ISO.clear();
+    dom.feriados.forEach(f => { if(f) FERIADOS_ISO.add(String(f).slice(0,10)); });
+  }
+}

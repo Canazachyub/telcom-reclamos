@@ -1,5 +1,5 @@
 // ===== Capa de acceso a datos =====
-import { mapReclamo } from "./model.js";
+import { mapReclamo, aplicarDominio } from "./model.js";
 
 // ===== BACKEND V2 (corte 2026-07-07) — router declarativo, GETs con token =====
 export const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxJUZgISsiaXr1rNOFS5alyULjmhYkxGvn0AdmWytIrCcNIS3rYQPUGUtDD5F8-i4pI4w/exec";
@@ -32,6 +32,15 @@ async function cached(key, ttlMs, fn){
   const vacio = v==null || (Array.isArray(v)&&!v.length) || (typeof v==="object"&&!Array.isArray(v)&&!Object.keys(v).length);
   if(!vacio) _cache.set(key, { t: Date.now(), v });
   return v;
+}
+
+// Catálogo de campos de plantillas (asset ESTÁTICO de public/, no es una action del backend;
+// vive aquí para respetar la regla "toda la red pasa por api.js"). Caché 10 min.
+export function loadCatalogoCampos(){
+  return cached("catalogo_campos", 600000, async () => {
+    try{ const r = await fetch("./catalogo_campos.json"); return await r.json(); }
+    catch(e){ return {}; }
+  });
 }
 
 // Lectura de reclamos EN VIVO desde el Sheet (fuente de verdad). El JSON local queda
@@ -299,6 +308,22 @@ export async function loadConfig(){
 // calendario y deja el rastro firmado en la bitácora (registros y datos_etapa se conservan).
 export async function eliminarReclamo(codigo, motivo){
   return postAction("eliminar_reclamo", { codigo, motivo });
+}
+
+// Dominio (equipo/etapas/feriados): fuente única = Dominio.publico() del backend (V2_01_Nucleo,
+// GET action=dominio). Se pide UNA vez al arrancar la app (misma caché de 10 min que
+// config/catálogos) y, al llegar, actualiza EN SITIO TEAM/FLUJO/ETAPA_ROL/CRITICAS/feriados de
+// model.js vía aplicarDominio() — así ningún componente cambia de import. Si la red falla,
+// model.js se queda con su fallback local (el equipo sigue pudiendo trabajar sin depender de esto).
+export async function loadDominio(){
+  return cached("dominio", 600000, async () => {   // roster/etapas/feriados cambian poco → caché 10 min
+    try{
+      const r = await fetch(GET_URL("dominio"));
+      const j = await r.json();
+      if(j && j.ok && j.dominio){ aplicarDominio(j.dominio); return j.dominio; }
+    }catch(e){ /* respaldo: model.js conserva sus valores locales */ }
+    return null;
+  });
 }
 
 // Catálogos SIELSE (v4): hoja `catalogos` del Sheet (grupo|valor|extra); si aún no existe

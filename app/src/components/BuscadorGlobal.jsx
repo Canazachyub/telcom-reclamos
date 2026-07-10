@@ -20,8 +20,8 @@ export default function BuscadorGlobal({ data, onAbrir, onClose }) {
   };
 
   return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(14,20,34,.55)", zIndex: 99, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "10vh 12px 12px" }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: "var(--card,#fff)", borderRadius: 14, width: "min(620px,100%)", boxShadow: "0 20px 60px rgba(0,0,0,.35)", overflow: "hidden" }}>
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "var(--scrim)", zIndex: 99, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "10vh 12px 12px" }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: "var(--card)", borderRadius: 14, width: "min(620px,100%)", boxShadow: "var(--shadow-modal)", overflow: "hidden" }}>
         <input ref={ref} value={q} onChange={e => setQ(e.target.value)} onKeyDown={onKey}
           placeholder="Buscar caso — N° OSINERG · suministro · nombre · código…"
           style={{ width: "100%", border: 0, borderBottom: "1px solid var(--bd)", padding: "16px 18px", fontSize: 17, background: "transparent", color: "var(--tx)", boxSizing: "border-box", outline: "none" }} />

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { wName } from "../lib/model.js";
 import { urgColorTicket, urgLabel } from "../lib/tickets.js";
-import { Tag } from "./ui.jsx";
+import { Tag, textOn } from "./ui.jsx";
 
 // Campana de notificaciones: EL TICKET ACTIVO es la única fuente de verdad (vencidos o por
 // vencer ≤2d háb.). Operativo -> solo los suyos. Coordinador/Gerente -> los de todo el equipo.
@@ -18,7 +18,9 @@ export default function Notificaciones({ perfil, activosTk = [], recByCode = {},
 
   const vencidos = pend.filter(t => t.vencido);
   const porVencer = pend.filter(t => !t.vencido);
-  const badgeBg = vencidos.length ? "#E3001B" : porVencer.length ? "#C9821B" : "#E3001B";
+  // rojo SOLO si hay algo de verdad vencido; si solo hay "por vencer" el badge es ámbar
+  // (el rojo se gana). El .badge base ya es rojo (CSS) — aquí solo se aclara a ámbar si aplica.
+  const badgeBg = vencidos.length ? "var(--red)" : "var(--amber)";
 
   const irSala = (t, e) => { const r = recByCode[String(t.reclamo)]; if (r) setSelExp(r.id); e.stopPropagation(); setOpen(false); };
   const irTrabajar = (t, e) => { const r = recByCode[String(t.reclamo)]; if (r) setSelExp(r.id, t.etapa); e.stopPropagation(); setOpen(false); };
@@ -40,7 +42,7 @@ export default function Notificaciones({ perfil, activosTk = [], recByCode = {},
               Etapa: {t.etapa}{verTodo ? ` · ${wName(t.respId)}` : ""} · {motivo(t)}
             </div>
           </div>
-          <Tag bg={urgColorTicket(t)} color="#fff">{urgLabel(t)}</Tag>
+          <Tag bg={urgColorTicket(t)} color={textOn(urgColorTicket(t))}>{urgLabel(t)}</Tag>
         </div>
         <div style={{ display: "flex", gap: 12, marginTop: 2 }}>
           <button className="btn-ghost" style={{ fontSize: 11, padding: "3px 9px" }} onClick={e => irSala(t, e)}>🧭 Sala</button>
@@ -66,13 +68,13 @@ export default function Notificaciones({ perfil, activosTk = [], recByCode = {},
             <>
               {vencidos.length > 0 && (
                 <div style={{ marginBottom: 6 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#DC2626", padding: "2px 6px" }}>Vencidos ({vencidos.length})</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "var(--red)", padding: "2px 6px" }}>Vencidos ({vencidos.length})</div>
                   <div style={{ display: "grid", gap: 4 }}>{vencidos.slice(0, 30).map(t => <Fila t={t} key={t.id} />)}</div>
                 </div>
               )}
               {porVencer.length > 0 && (
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#B45309", padding: "2px 6px" }}>Por vencer ≤2 d ({porVencer.length})</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "var(--tint-amber-tx)", padding: "2px 6px" }}>Por vencer ≤2 d ({porVencer.length})</div>
                   <div style={{ display: "grid", gap: 4 }}>{porVencer.slice(0, 30).map(t => <Fila t={t} key={t.id} />)}</div>
                 </div>
               )}

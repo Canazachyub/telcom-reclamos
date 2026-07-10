@@ -256,9 +256,9 @@ export default function ValorizacionMensual({ data, tickets, evidencias, registr
         </div>
         <div className="note" style={{
           marginTop: 10,
-          background: yaPaso ? "#FDE7E7" : "#FEF3DF",
-          border: `1px solid ${yaPaso ? "#F3B4B4" : "#F0C36D"}`,
-          color: yaPaso ? "#DC2626" : "#B45309",
+          background: yaPaso ? "var(--tint-red-bg)" : "var(--tint-amber-bg)",
+          border: `1px solid ${yaPaso ? "var(--tint-red-bd)" : "var(--tint-amber-bd)"}`,
+          color: yaPaso ? "var(--tint-red-tx)" : "var(--tint-amber-tx)",
         }}>
           {yaPaso
             ? `⛔ Plazo vencido: debía presentarse hasta el 3er día hábil de ${mesSigLabel} (${fmtFecha(limiteISO.split("-").reverse().join("/"))}) — penalidad 3.1: S/100/día de retraso. Retraso estimado: ${diasRetraso} día(s).`
@@ -267,7 +267,8 @@ export default function ValorizacionMensual({ data, tickets, evidencias, registr
         {ultimoEstado && (
           <div className="row" style={{ marginTop: 10 }}>
             <span>Estado actual del ciclo — <b>{mesLabel}</b></span>
-            <Tag bg={ultimoEstado.tipo_valorizacion === "conforme" ? "#1E8E5A" : ultimoEstado.tipo_valorizacion === "observada" ? "#C9821B" : "#1E3A5F"} color="#fff">
+            <Tag bg={ultimoEstado.tipo_valorizacion === "conforme" ? "var(--green)" : ultimoEstado.tipo_valorizacion === "observada" ? "var(--amber)" : "var(--navy)"}
+              color={ultimoEstado.tipo_valorizacion === "observada" || ultimoEstado.tipo_valorizacion === "conforme" ? "var(--ink)" : "#fff"}>
               {ultimoEstado.tipo_valorizacion}
             </Tag>
           </div>
@@ -275,8 +276,8 @@ export default function ValorizacionMensual({ data, tickets, evidencias, registr
         {puedeCiclo && (
           <div className="valm-noprint" style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
             <button className="btn sm" onClick={() => marcarCiclo("presentada")}>Marcar presentada</button>
-            <button className="btn sm" style={{ background: "#C9821B" }} onClick={() => marcarCiclo("observada")}>Marcar observada</button>
-            <button className="btn sm" style={{ background: "#1E8E5A" }} onClick={() => marcarCiclo("conforme")}>Marcar conforme</button>
+            <button className="btn sm" style={{ background: "var(--amber)", color: "var(--ink)" }} onClick={() => marcarCiclo("observada")}>Marcar observada</button>
+            <button className="btn sm" style={{ background: "var(--green)", color: "var(--ink)" }} onClick={() => marcarCiclo("conforme")}>Marcar conforme</button>
             <span className="muted" style={{ fontSize: 11.5, alignSelf: "center" }}>ELSE revisa en 5 d.h.; si observa, subsanar y conformidad en 2 d.h. adicionales.</span>
           </div>
         )}
@@ -294,7 +295,7 @@ export default function ValorizacionMensual({ data, tickets, evidencias, registr
                   <td>S/ {(r.cant * r.pu).toLocaleString("es-PE")}</td>
                 </tr>
               ))}
-              <tr><td colSpan={4} style={{ textAlign: "right" }}><b>Total del mes</b></td><td><b style={{ color: "#1E8E5A" }}>S/ {totalMes.toLocaleString("es-PE")}</b></td></tr>
+              <tr><td colSpan={4} style={{ textAlign: "right" }}><b>Total del mes</b></td><td><b style={{ color: "var(--green)" }}>S/ {totalMes.toLocaleString("es-PE")}</b></td></tr>
             </tbody>
           </table>
         </div>
@@ -334,8 +335,8 @@ export default function ValorizacionMensual({ data, tickets, evidencias, registr
         <h3>(g) Acta de capacitación mensual</h3>
         <div className="muted" style={{ fontSize: 11.5, marginBottom: 8 }}>Criterio: evidencia del mes cuyo nombre contiene "capacit" (acta + fotos fechadas, firmada por Coordinador y supervisor ELSE).</div>
         {actaCapacitacion
-          ? <Tag bg="#1E8E5A" color="#fff">✓ Acta de capacitación registrada en {mesLabel}</Tag>
-          : <Tag bg="#DC2626" color="#fff">✗ FALTA — es requisito de la valorización</Tag>}
+          ? <Tag bg="var(--green)" color="var(--ink)">✓ Acta de capacitación registrada en {mesLabel}</Tag>
+          : <Tag bg="var(--red)" color="#fff">✗ FALTA — es requisito de la valorización</Tag>}
       </Card>
 
       <Card style={{ marginTop: 14 }}>
@@ -343,7 +344,7 @@ export default function ValorizacionMensual({ data, tickets, evidencias, registr
         <div style={{ display: "grid", gap: 6 }}>
           {checklist.map(c => (
             <div key={c.k} className="chk" style={{ fontSize: 13 }}>
-              <span style={{ color: c.ok === false ? "#DC2626" : c.ok === true ? "#1E8E5A" : "var(--mut)" }}>
+              <span style={{ color: c.ok === false ? "var(--red)" : c.ok === true ? "var(--green)" : "var(--mut)" }}>
                 {c.ok === false ? "☐" : c.ok === true ? "☑" : "☐"}
               </span> {c.label}
             </div>

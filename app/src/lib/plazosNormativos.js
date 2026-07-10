@@ -5,19 +5,14 @@
 // Este módulo es de SOLO LECTURA sobre `datos` (objeto datos[codigo+"|Etapa"]) y `tickets/exp`.
 // No escribe nada — solo calcula relojes para mostrarlos (SalaExpediente) y para el KPI (App/Hoy).
 
-// ----- feriados (Perú, nacionales + Inti Raymi Cusco) — ALINEADO con FERIADOS_DEF del backend
-// (Tickets.gs). Fijos: Año Nuevo, Trabajo, Bandera 07/06, Inti Raymi 24/06, San Pedro 29/06,
-// Fuerza Aérea 23/07, Fiestas Patrias 28-29/07, Junín 06/08, Sta. Rosa 30/08, Angamos 08/10,
-// Todos los Santos, Inmaculada 08/12, Ayacucho 09/12, Navidad. Variables: Semana Santa 2026-2028.
-const FERIADOS_FIJOS_MMDD = new Set(["01-01","05-01","06-07","06-24","06-29","07-23","07-28","07-29","08-06","08-30","10-08","11-01","12-08","12-09","12-25"]);
-const FERIADOS_VARIABLES_ISO = new Set(["2026-04-02","2026-04-03","2027-03-25","2027-03-26","2028-04-13","2028-04-14"]);
+// ----- feriados (Perú, nacionales + Inti Raymi Cusco) — fuente ÚNICA: lib/model.js (`esFeriado`),
+// que a su vez se sincroniza con el backend (Dominio.publico() -> GET dominio, feriados 2026-2030)
+// vía aplicarDominio(), con fallback local si la red falla. Antes este módulo mantenía su propia
+// copia (FERIADOS_FIJOS_MMDD/FERIADOS_VARIABLES_ISO) idéntica a la de model.js — verificado
+// 2026-07-09: mismas 15 fechas fijas MM-DD y mismas 6 fechas móviles ISO 2026-2028, sin
+// divergencias. Se eliminó la copia; se delega en model.js para no mantener dos fuentes a mano.
+import { esFeriado } from "./model.js";
 
-function esFeriado(d){
-  const mm = ("0"+(d.getMonth()+1)).slice(-2), dd = ("0"+d.getDate()).slice(-2);
-  if(FERIADOS_FIJOS_MMDD.has(mm+"-"+dd)) return true;
-  const iso = d.getFullYear()+"-"+mm+"-"+dd;
-  return FERIADOS_VARIABLES_ISO.has(iso);
-}
 function esHabil(d){
   const dow = d.getDay(); // 0=dom, 6=sáb
   if(dow===0 || dow===6) return false;

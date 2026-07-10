@@ -68,7 +68,7 @@ export default function PenalidadesTope({ registros, config, perfil }) {
   const acumulado = historial.reduce((s, h) => s + (Number(h.monto) || 0), 0);
   const tope = 0.10 * Number(config?.MONTO_CONTRATO || 1250000);
   const pct = tope > 0 ? Math.min(100, (acumulado / tope) * 100) : 0;
-  const colorBarra = pct < 50 ? "#22c55e" : pct < 80 ? "#f59e0b" : "#ef4444";
+  const colorBarra = pct < 50 ? "var(--green)" : pct < 80 ? "var(--amber)" : "var(--red)";
 
   function registrar() {
     if (!itemSel) { toast("Elige el ítem de la escala"); return; }
@@ -100,7 +100,7 @@ export default function PenalidadesTope({ registros, config, perfil }) {
     tit: { margin: "0 0 8px", fontSize: 14, color: "var(--titulo)", fontWeight: 700 },
     th: { fontSize: 10.5, textTransform: "uppercase", color: "var(--mut)" },
     lblSpan: { color: "var(--mut)", fontSize: 10.5, textTransform: "uppercase", letterSpacing: ".05em", fontWeight: 600, display: "block", marginBottom: 3 },
-    inp: { width: "100%", padding: "7px 9px", borderRadius: 8, fontSize: 13, fontFamily: "inherit", background: "#fff", color: "var(--tx)", border: "1px solid var(--bd)", boxSizing: "border-box" },
+    inp: { width: "100%", padding: "7px 9px", borderRadius: 8, fontSize: 13, fontFamily: "inherit", background: "var(--card2)", color: "var(--tx)", border: "1px solid var(--bd)", boxSizing: "border-box" },
   };
 
   return (

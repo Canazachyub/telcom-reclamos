@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Card } from "./ui.jsx";
+import { Card, textOn } from "./ui.jsx";
 import { abiertos, urgColorTicket, urgLabel } from "../lib/tickets.js";
 import { wName } from "../lib/model.js";
 
@@ -35,7 +35,7 @@ export default function Calendario({ tickets = [], recByCode = {}, perfil, setSe
     if (list.some(e => e.hito)) return "hito";
     return "ok";
   };
-  const colorClase = { vencido: "#C0392B", porVencer: "#C9821B", hito: "#1E3A5F", ok: "#1E8E5A" };
+  const colorClase = { vencido: "var(--red)", porVencer: "var(--amber)", hito: "var(--navy)", ok: "var(--green)" };
 
   // grilla del mes
   const y = mes.getFullYear(), m = mes.getMonth();
@@ -77,9 +77,9 @@ export default function Calendario({ tickets = [], recByCode = {}, perfil, setSe
       }}>
         <span style={{ color: "var(--tx)" }}>Este mes: <b style={{ color: "var(--titulo)" }}>{totCasos}</b> vencimiento{totCasos === 1 ? "" : "s"}</span>
         <span style={{ color: "var(--mut2)" }}>·</span>
-        <span style={{ color: "#C0392B", fontWeight: 700 }}>{totVencidos} vencido{totVencidos === 1 ? "" : "s"}</span>
+        <span style={{ color: "var(--tint-red-tx)", fontWeight: 700 }}>{totVencidos} vencido{totVencidos === 1 ? "" : "s"}</span>
         <span style={{ color: "var(--mut2)" }}>·</span>
-        <span style={{ color: "#B45309", fontWeight: 700 }}>{totPorVencer} por vencer</span>
+        <span style={{ color: "var(--tint-amber-tx)", fontWeight: 700 }}>{totPorVencer} por vencer</span>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4 }}>
@@ -100,13 +100,13 @@ export default function Calendario({ tickets = [], recByCode = {}, perfil, setSe
                 <div style={{ marginTop: 3, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 4 }}>
                   {nVencidos > 0 && (
                     <span title={`${nVencidos} vencido(s)`} style={{
-                      fontSize: 9.5, fontWeight: 700, color: "#fff", background: "#C0392B", borderRadius: 999,
+                      fontSize: 9.5, fontWeight: 700, color: "#fff", background: "var(--red)", borderRadius: 999,
                       minWidth: 14, height: 14, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 3px",
                     }}>{nVencidos}</span>
                   )}
                   {nPorVencer > 0 && (
                     <span title={`${nPorVencer} por vencer`} style={{
-                      fontSize: 9.5, fontWeight: 700, color: "#fff", background: "#C9821B", borderRadius: 999,
+                      fontSize: 9.5, fontWeight: 700, color: "var(--ink)", background: "var(--amber)", borderRadius: 999,
                       minWidth: 14, height: 14, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 3px",
                     }}>{nPorVencer}</span>
                   )}
@@ -140,13 +140,13 @@ export default function Calendario({ tickets = [], recByCode = {}, perfil, setSe
               }
               const r = recByCode[e.reclamo];
               const t = e.t;
-              const semaforo = e.vencido ? { tx: `vencido ${Math.abs(t.diasRestantes ?? 0)}d háb.`, cl: "#DC2626", bg: "#FDE7E7" }
-                : (t.diasRestantes != null && t.diasRestantes <= 0) ? { tx: "vence hoy", cl: "#B45309", bg: "#FEF3DF" }
-                : { tx: `${t.diasRestantes ?? "—"}d háb.`, cl: t.diasRestantes != null && t.diasRestantes <= 2 ? "#B45309" : "#15803D", bg: t.diasRestantes != null && t.diasRestantes <= 2 ? "#FEF3DF" : "#E5F7EC" };
+              const semaforo = e.vencido ? { tx: `vencido ${Math.abs(t.diasRestantes ?? 0)}d háb.`, cl: "var(--tint-red-tx)", bg: "var(--tint-red-bg)" }
+                : (t.diasRestantes != null && t.diasRestantes <= 0) ? { tx: "vence hoy", cl: "var(--tint-amber-tx)", bg: "var(--tint-amber-bg)" }
+                : { tx: `${t.diasRestantes ?? "—"}d háb.`, cl: t.diasRestantes != null && t.diasRestantes <= 2 ? "var(--tint-amber-tx)" : "var(--tint-green-tx)", bg: t.diasRestantes != null && t.diasRestantes <= 2 ? "var(--tint-amber-bg)" : "var(--tint-green-bg)" };
               return (
                 <div key={i} style={{
                   display: "flex", flexDirection: "column", gap: 6, padding: "10px 12px", borderRadius: 8,
-                  background: "var(--card2)", border: "1px solid var(--bd)", borderLeft: `4px solid ${e.vencido ? "#C0392B" : "#C9821B"}`,
+                  background: "var(--card2)", border: "1px solid var(--bd)", borderLeft: `4px solid ${e.vencido ? "var(--red)" : "var(--amber)"}`,
                 }}>
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 8, flexWrap: "wrap" }}>
                     <div style={{ minWidth: 0, flex: 1 }}>
@@ -160,19 +160,19 @@ export default function Calendario({ tickets = [], recByCode = {}, perfil, setSe
                       </div>
                     </div>
                     <span style={{
-                      fontSize: 10.5, fontWeight: 700, color: "#fff", background: urgColorTicket(t), borderRadius: 999, padding: "2px 9px", alignSelf: "flex-start",
+                      fontSize: 10.5, fontWeight: 700, color: textOn(urgColorTicket(t)), background: urgColorTicket(t), borderRadius: 999, padding: "2px 9px", alignSelf: "flex-start",
                     }}>{urgLabel(t)}</span>
                   </div>
 
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                     <span style={{
-                      width: 22, height: 22, borderRadius: "50%", background: "#1E5FAF", color: "#fff", fontSize: 10, fontWeight: 700,
+                      width: 22, height: 22, borderRadius: "50%", background: "var(--acc)", color: "#fff", fontSize: 10, fontWeight: 700,
                       display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                     }}>{iniciales(e.responsable)}</span>
                     <span style={{ fontSize: 11.5, color: "var(--tx)" }}>{e.responsable || "—"}</span>
                     <span style={{ fontSize: 11, fontWeight: 700, color: semaforo.cl, background: semaforo.bg, borderRadius: 999, padding: "2px 8px" }}>{semaforo.tx}</span>
                     {t.exposicion > 0 && (
-                      <span style={{ fontSize: 11, fontWeight: 700, color: "#B45309" }}>S/ {t.exposicion.toLocaleString("es-PE")}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "var(--tint-amber-tx)" }}>S/ {t.exposicion.toLocaleString("es-PE")}</span>
                     )}
                   </div>
 

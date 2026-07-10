@@ -69,16 +69,16 @@ export default function Evidencias({ misReclamos, evidencias, onAdd, respId, per
       <div style={{display:"flex",alignItems:"center",gap:10}}>
         <h3 style={{margin:0}}>Subir evidencia del día · {etapa}</h3>
         <button onClick={()=>setVerInfo(v=>!v)} title="¿Qué es esta etapa según las bases?"
-          style={{width:24,height:24,borderRadius:"50%",border:"1px solid #1F4E8C",background:verInfo?"#1F4E8C":"transparent",
+          style={{width:24,height:24,borderRadius:"50%",border:"1px solid var(--acc)",background:verInfo?"var(--acc)":"transparent",
                   color:verInfo?"#fff":"var(--linkTx)",fontWeight:700,fontStyle:"italic",cursor:"pointer",lineHeight:1,fontFamily:"Georgia,serif"}}>i</button>
       </div>
       {verInfo && infoEtapa && (
-        <div className="note" style={{background:"var(--hoverBg)",border:"1px solid #1F4E8C",color:"var(--tx)",margin:"10px 0"}}>
+        <div className="note" style={{background:"var(--hoverBg)",border:"1px solid var(--acc)",color:"var(--tx)",margin:"10px 0"}}>
           <div style={{fontWeight:700,marginBottom:6,color:"var(--linkTx)"}}>«{etapa}» — según las bases (Directiva OSINERGMIN 269-2014)</div>
           <div className="kv"><b>Qué es</b><span>{infoEtapa.que_es}</span></div>
           <div className="kv"><b>Por qué importa</b><span>{infoEtapa.importa}</span></div>
           <div className="kv"><b>Plazo</b><span>{infoEtapa.plazo}</span></div>
-          <div className="kv"><b>Penalidad en juego</b><span style={{color:infoEtapa.pen==="—"?"var(--mut)":"#DC2626"}}>
+          <div className="kv"><b>Penalidad en juego</b><span style={{color:infoEtapa.pen==="—"?"var(--mut)":"var(--tint-red-tx)"}}>
             {infoEtapa.pen}{esGerente && infoEtapa.penMonto ? "  ·  "+infoEtapa.penMonto : ""}
           </span></div>
           {!esGerente && infoEtapa.pen!=="—" && <div className="muted" style={{fontSize:11,marginTop:4}}>El importe en S/ lo gestiona Gerencia.</div>}
@@ -101,7 +101,7 @@ export default function Evidencias({ misReclamos, evidencias, onAdd, respId, per
         <input ref={inputRef} type="file" multiple hidden onChange={e=>handleFiles(e.target.files)}/>
       </div>
 
-      {meta?.guia && <div className="note" style={{background:"var(--hoverBg)",border:"1px solid #1F4E8C",color:"var(--tx)",marginTop:14}}>
+      {meta?.guia && <div className="note" style={{background:"var(--hoverBg)",border:"1px solid var(--acc)",color:"var(--tx)",marginTop:14}}>
         <div style={{fontWeight:600,marginBottom:8}}>Qué subir en «{etapa}» — guía según las bases</div>
         <div className="kv"><b>Documentos</b><span>{meta.evi.join(" · ")}</span></div>
         <div className="kv"><b>Formato admitido</b><span>{meta.guia.formatos}</span></div>
@@ -112,7 +112,7 @@ export default function Evidencias({ misReclamos, evidencias, onAdd, respId, per
       <div style={{marginTop:14}}>
         <div style={{fontWeight:600,fontSize:12,color:"var(--tx)",marginBottom:6}}>Estado de la evidencia en «{etapa}»</div>
         {checklist.length? checklist.map((c,i)=>(
-          <div key={i} className="chk"><span style={{color:c.ok?"#15803D":"#DC2626"}}>{c.ok?"✓":"pendiente"}</span> {c.ev}</div>
+          <div key={i} className="chk"><span style={{color:c.ok?"var(--tint-green-tx)":"var(--tint-red-tx)"}}>{c.ok?"✓":"pendiente"}</span> {c.ev}</div>
         )) : <div className="muted" style={{fontSize:12}}>Etapa sin evidencia obligatoria.</div>}
         <a className="link" style={{fontSize:12}} href={DRIVE_URL} target="_blank" rel="noreferrer">Abrir carpeta en Drive ↗</a>
       </div>
@@ -144,7 +144,7 @@ export default function Evidencias({ misReclamos, evidencias, onAdd, respId, per
         {puedeDatos && (
           <div style={{marginTop:12,display:"flex",alignItems:"center",gap:10}}>
             <button onClick={guardarDatos} disabled={savingDatos} className="btn-primary"
-              style={{background:"#1F4E8C",color:"#fff",border:0,borderRadius:8,padding:"8px 16px",fontSize:13,cursor:"pointer",fontWeight:600}}>
+              style={{background:"var(--acc)",color:"#fff",border:0,borderRadius:8,padding:"8px 16px",fontSize:13,cursor:"pointer",fontWeight:600}}>
               {savingDatos?"Guardando…":"Guardar datos de la etapa"}
             </button>
             <span className="muted" style={{fontSize:11}}>Se guardan en la base y luego prellenan los documentos de esta fase.</span>

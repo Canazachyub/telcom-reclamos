@@ -75,9 +75,9 @@ function Fila({ label, value, campo, onEditar }) {
           onKeyDown={e => { if (e.key === "Enter") guardar(); if (e.key === "Escape") cancelar(); }}
           style={{ flex: 1, fontSize: 12.5, color: "var(--tx)", border: "1px solid var(--acc)", borderRadius: 6, padding: "2px 6px", fontFamily: "inherit" }} />
         <button onClick={guardar} disabled={guardando} title="Guardar"
-          style={{ flexShrink: 0, background: "transparent", border: "1px solid var(--bd)", color: "#15803D", borderRadius: 6, padding: "1px 6px", fontSize: 11, cursor: guardando ? "wait" : "pointer" }}>✓</button>
+          style={{ flexShrink: 0, background: "transparent", border: "1px solid var(--bd)", color: "var(--tint-green-tx)", borderRadius: 6, padding: "1px 6px", fontSize: 11, cursor: guardando ? "wait" : "pointer" }}>✓</button>
         <button onClick={cancelar} disabled={guardando} title="Cancelar"
-          style={{ flexShrink: 0, background: "transparent", border: "1px solid var(--bd)", color: "#DC2626", borderRadius: 6, padding: "1px 6px", fontSize: 11, cursor: "pointer" }}>✕</button>
+          style={{ flexShrink: 0, background: "transparent", border: "1px solid var(--bd)", color: "var(--tint-red-tx)", borderRadius: 6, padding: "1px 6px", fontSize: 11, cursor: "pointer" }}>✕</button>
       </div>
     );
   }
@@ -300,4 +300,4 @@ export default function FichaSielse({ exp, datos, evidencias, onClose, onEditar 
   );
 }
 
-const wrap = { width: "96vw", maxWidth: 1400, height: "92vh", background: "var(--card)", border: "1px solid var(--bd)", borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 20px 60px rgba(22,41,75,.15)" };
+const wrap = { width: "96vw", maxWidth: 1400, height: "92vh", background: "var(--card)", border: "1px solid var(--bd)", borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "var(--shadow-modal)" };

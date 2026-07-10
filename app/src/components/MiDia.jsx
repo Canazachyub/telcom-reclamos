@@ -49,14 +49,14 @@ export default function MiDia({ perfil, misReclamos, data = [], tickets = [], re
         <span style={{ fontSize: 12, fontWeight: 500, opacity: .85 }}>(anota un evento como en tu Excel)</span>
       </button>
       {onEscanear && <button onClick={onEscanear} title="Escanea el QR pegado en el libro para abrir el caso"
-        style={{ flex: "1 1 160px", padding: "16px", borderRadius: 14, border: "2px solid var(--navy)", background: "var(--card,#fff)", color: "var(--navy)", fontSize: 16, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+        style={{ flex: "1 1 160px", padding: "16px", borderRadius: 14, border: "2px solid var(--acc)", background: "var(--card)", color: "var(--tx)", fontSize: 16, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, minHeight: 44 }}>
         📷 Escanear QR
       </button>}
     </div>
 
     {/* ¿QUÉ HAGO AHORA? — una sola tarea prioritaria */}
     {prio ? (
-      <Card style={{ marginBottom: 14, borderLeft: `4px solid ${prio.vencido ? "#C0392B" : "#C9821B"}` }}>
+      <Card style={{ marginBottom: 14, borderLeft: `4px solid ${prio.vencido ? "var(--red)" : "var(--amber)"}` }}>
         <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".06em", color: "var(--mut)", fontWeight: 700, marginBottom: 8 }}>
           Tu próxima tarea {prio.vencido ? "· ⚠ vencida" : ""}
         </div>
@@ -71,9 +71,10 @@ export default function MiDia({ perfil, misReclamos, data = [], tickets = [], re
           {recDe(prio)?.solicitante ? " · " + recDe(prio).solicitante : ""}
           {prio.penalidadItem && prio.penalidadItem !== "—" && <> · ⚠ penalidad {prio.penalidadItem} (plazo {prio.plazoHabiles} días háb.)</>}
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button className="btn sm" style={{ background: "var(--navy)", color: "#fff", border: 0, fontWeight: 600 }} onClick={() => abrir(prio)}>Abrir y trabajar</button>
-          {prio.estado !== "hecho" && <button className="btn sm" onClick={() => onEstadoTicket?.(prio, "hecho")}>Marcar etapa hecha</button>}
+        {/* Abrir = navegación (acento); Marcar hecha = acción POSITIVA → éxito, NUNCA riesgo */}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button className="btn sm" onClick={() => abrir(prio)}>Abrir y trabajar</button>
+          {prio.estado !== "hecho" && <button className="btn sm ok" onClick={() => onEstadoTicket?.(prio, "hecho")}>Marcar etapa hecha</button>}
         </div>
       </Card>
     ) : (
@@ -84,12 +85,13 @@ export default function MiDia({ perfil, misReclamos, data = [], tickets = [], re
       </Card>
     )}
 
-    {/* mini-KPIs (sin montos) */}
-    <div className="grid g4">
-      <Kpi label="Abiertas" value={ab.length} sub="en mi bandeja" s="verde" />
-      <Kpi label="Por vencer (≤2d)" value={pv.length} sub="atención" s={pv.length ? "ambar" : "verde"} />
-      <Kpi label="Vencidas" value={venc.length} sub="urgente" s={venc.length ? "rojo" : "verde"} />
-      <Kpi label="Expedientes" value={misReclamos.length} sub="míos" s="verde" />
+    {/* mini-KPIs (sin montos) — grid único, informativos en neutro; solo Vencidas lleva acento
+        de riesgo (y Por vencer, ámbar) cuando de verdad hay algo que atender. */}
+    <div className="kpigrid">
+      <Kpi label="Abiertas" value={ab.length} sub="en mi bandeja" />
+      <Kpi label="Por vencer (≤2d)" value={pv.length} sub="atención" s={pv.length ? "ambar" : null} />
+      <Kpi label="Vencidas" value={venc.length} sub="urgente" s={venc.length ? "rojo" : null} />
+      <Kpi label="Expedientes" value={misReclamos.length} sub="míos" />
     </div>
 
     {/* tickets por etapa, colapsables — solo la etapa urgente abierta por defecto */}
@@ -106,12 +108,12 @@ function GrupoEtapa({ g, perfil, recByCode, onEstado, onAbrir, defAbierto }) {
     <Card style={{ padding: 0 }}>
       <div onClick={() => setOpen(o => !o)} style={{
         display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", cursor: "pointer",
-        borderLeft: `4px solid ${g.urgente ? "#C9821B" : "var(--navy)"}`,
+        borderLeft: `4px solid ${g.urgente ? "var(--amber)" : "var(--acc)"}`,
       }}>
         <span style={{ color: "var(--mut)", width: 14 }}>{open ? "▾" : "▸"}</span>
         <b style={{ color: "var(--titulo)", fontSize: 13 }}>{g.etapa}</b>
         <span className="muted" style={{ fontSize: 11 }}>{g.abiertos} abierta(s)</span>
-        {g.urgente && <span style={{ marginLeft: "auto", fontSize: 11, color: "#B45309" }}>⚠ urgente</span>}
+        {g.urgente && <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--tint-amber-tx)" }}>⚠ urgente</span>}
       </div>
       {open && (
         <div style={{ padding: "0 12px 12px", display: "grid", gap: 8 }}>
