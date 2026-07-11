@@ -19,10 +19,10 @@
 // Toda la red pasa por saveDatos (viene del contexto → lib/api.js guardarDatos, cero actions
 // nuevas). LECCIÓN del review de Herencia: el suministro identifica al MEDIDOR, no al caso — un
 // suministro con varios reclamos NUNCA se resuelve solo; va a "ambiguos" para elegir a mano.
-import { useMemo, useRef, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
 import { Card, Kpi, toast } from "./ui.jsx";
 import { SemaforoPlazo } from "./Ticket.jsx";
-import { fmtFecha } from "../lib/model.js";
+import { fmtFecha, parseFecha } from "../lib/model.js";
 import { imprimirQRs } from "../lib/qr.js";
 
 const hoyISO = () => new Date().toISOString().slice(0, 10);
@@ -43,6 +43,23 @@ function exportarCSV(nombre, headers, filas) {
 // Clave EXACTA que arma el bundle de datos_etapa (App.jsx: setDatos({[exp+"|"+etapa]:...})).
 const tieneFisico = (datos, codigo) => (datos && datos[codigo + "|Recepción"]?.FISICO_OFICINA) === "sí";
 const fisicoInfo = (datos, codigo) => (datos && datos[codigo + "|Recepción"]) || {};
+
+// rango de urgencia de UN caso activo, vía activoByCode (mismo helper que ya usa el resto del
+// panel) — 0=vencido · 1=por vencer (≤2 d.háb.) · 2=en plazo · 3=activo sin ticket todavía.
+// Ordena tanto los GRUPOS (por suministro) como las filas dentro del desplegado.
+const rankActivo = (x, activoByCode) => {
+  const act = activoByCode[String(x.codigo)];
+  if (!act) return 3;
+  if (act.vencido) return 0;
+  if (act.diasRestantes != null && act.diasRestantes <= 2) return 1;
+  return 2;
+};
+
+// chip pequeño reutilizado en la fila-grupo (mismo estilo que los chips de cuadernos en VistaUnificada)
+const Chip = ({ children, muted }) => (
+  <span style={{ fontSize: 10.5, background: muted ? "var(--card)" : "var(--card2)", border: "1px solid var(--bd)",
+    borderRadius: 6, padding: "2px 7px", whiteSpace: "nowrap", color: muted ? "var(--mut2)" : "var(--tx)" }}>{children}</span>
+);
 
 // primer token NUMÉRICO de una línea pegada (tolera columnas de Excel separadas por tab/;/coma;
 // suministros y códigos SIELSE tienen varios dígitos — evita capturar un "1" de numeración).
@@ -71,6 +88,54 @@ export default function OficinaPanel({ data = [], activoByCode = {}, datos = {},
     const qq = q.trim().toLowerCase();
     return marcados.filter(x => `${x.osinerg} ${x.codigo} ${x.solicitante} ${x.suministro}`.toLowerCase().includes(qq));
   }, [marcados, q]);
+
+  // ---- vista AGRUPADA POR SUMINISTRO (pedido del gerente: ver todo el historial de un
+  // suministro junto — activos y cerrados). Universo: suministros con ≥1 caso MARCADO como
+  // físico; el desplegado toma TODOS los reclamos de ese suministro desde `data` (historial
+  // completo), no solo los marcados. Casos sin suministro (dato faltante en SIELSE) quedan cada
+  // uno en su propio "grupo" (clave sintética) para no mezclar expedientes que no comparten medidor.
+  const gruposPorSuministro = useMemo(() => {
+    const bySum = new Map();
+    data.forEach(x => {
+      const key = x.suministro ? String(x.suministro) : `__sin_suministro__${x.codigo}`;
+      if (!bySum.has(key)) bySum.set(key, []);
+      bySum.get(key).push(x);
+    });
+    const out = [];
+    bySum.forEach((casos, key) => {
+      const marcadosDelGrupo = casos.filter(x => tieneFisico(datos, x.codigo));
+      if (!marcadosDelGrupo.length) return; // universo: solo suministros con ≥1 físico marcado
+      const activosDelGrupo = casos.filter(x => x.estado !== "Cerrado");
+      const cerradosDelGrupo = casos.filter(x => x.estado === "Cerrado");
+      // reclamante del caso más reciente (mayor fecha de registro)
+      const masReciente = [...casos].sort((a, b) => (parseFecha(b.fechaReg)?.getTime() || 0) - (parseFecha(a.fechaReg)?.getTime() || 0))[0];
+      // urgencia del grupo = la del activo más urgente (vencido > por vencer > en plazo); sin
+      // activos ⇒ rank 99, "solo-cerrados" al final.
+      let rank = 99, actUrgente = null;
+      activosDelGrupo.forEach(x => {
+        const r = rankActivo(x, activoByCode);
+        if (r < rank) { rank = r; actUrgente = activoByCode[String(x.codigo)] || actUrgente; }
+      });
+      out.push({
+        key, suministro: casos[0].suministro || "—", casos, marcadosDelGrupo, activosDelGrupo, cerradosDelGrupo,
+        reclamante: masReciente?.solicitante || "—", rank, actUrgente,
+      });
+    });
+    out.sort((a, b) => a.rank - b.rank);
+    return out;
+  }, [data, datos, activoByCode]);
+
+  // la búsqueda filtra GRUPOS: si matchea el suministro o CUALQUIER reclamo del historial, el grupo entero aparece.
+  const gruposFiltrados = useMemo(() => {
+    if (!q.trim()) return gruposPorSuministro;
+    const qq = q.trim().toLowerCase();
+    return gruposPorSuministro.filter(g =>
+      String(g.suministro).toLowerCase().includes(qq) ||
+      g.casos.some(x => `${x.osinerg} ${x.codigo} ${x.solicitante}`.toLowerCase().includes(qq)));
+  }, [gruposPorSuministro, q]);
+
+  const [grupoAbiertos, setGrupoAbiertos] = useState(() => new Set()); // suministros con el desplegado abierto (local, no persiste)
+  const toggleGrupo = key => setGrupoAbiertos(prev => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
 
   async function marcarUno(x, valor, fuenteTxt) {
     return saveDatos({ exp: x.codigo, etapa: "Recepción", rol: perfil?.rol, campos: {
@@ -253,40 +318,74 @@ export default function OficinaPanel({ data = [], activoByCode = {}, datos = {},
     </Card>
 
     <Card style={{ marginTop: 14 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-        <h3 style={{ margin: 0 }}>📄 Físicos en oficina ({marcadosFiltrados.length}/{marcados.length})</h3>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, minWidth: 0 }}>
+        <h3 style={{ margin: 0, minWidth: 0 }}>📄 Físicos en oficina — por suministro ({gruposFiltrados.length} suministro{gruposFiltrados.length === 1 ? "" : "s"} · {marcadosFiltrados.length}/{marcados.length} marcados)</h3>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           <input className="flt" placeholder="Buscar código / suministro / reclamante" value={q} onChange={e => setQ(e.target.value)} style={{ minWidth: 220 }} />
           <button className="btn sm" style={{ minHeight: 44 }} onClick={() => imprimirQRs(itemsQR, "Físicos en oficina")} disabled={!marcadosFiltrados.length}>🏷 Imprimir QRs</button>
           <button className="btn sm" style={{ minHeight: 44 }} onClick={exportarMarcados} disabled={!marcados.length}>🧮 Excel</button>
         </div>
       </div>
+      <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>
+        Cada fila es UN suministro (⚡ identifica al medidor, no al caso). Clic para desplegar TODO su historial de reclamos — activos primero, cerrados abajo (muted).
+      </div>
       <div style={{ overflowX: "auto", marginTop: 10 }}>
         <table className="tbl">
-          <thead><tr><th>Código completo</th><th>Suministro</th><th>Reclamante</th><th>Etapa</th><th>Verificado</th><th>Fuente</th><th></th></tr></thead>
+          <thead><tr><th></th><th>Suministro</th><th>Reclamante</th><th>Reclamos</th><th>Físico</th></tr></thead>
           <tbody>
-            {marcadosFiltrados.slice(0, 300).map(x => {
-              const act = activoByCode[String(x.codigo)];
-              const f = fisicoInfo(datos, x.codigo);
-              return (
-                <tr key={x.id} className="clk" onClick={() => setSelExp(x.id)}>
-                  <td className="mono">{x.osinerg}</td>
-                  <td className="mono">{x.suministro || "—"}</td>
-                  <td>{x.solicitante}</td>
-                  <td style={{ whiteSpace: "nowrap" }}>{act ? <>{act.etapa} <SemaforoPlazo t={act} /></> : x.etapa}</td>
-                  <td className="mono" style={{ fontSize: 11.5 }}>{f.FISICO_FECHA ? fmtFecha(f.FISICO_FECHA) : "—"}</td>
-                  <td style={{ fontSize: 11 }}>{f.FISICO_FUENTE || "—"}</td>
-                  <td onClick={e => e.stopPropagation()}>
-                    <button className="btn-ghost" style={{ minHeight: 44, fontSize: 11 }} onClick={() => desmarcar(x)}>✗ Desmarcar</button>
+            {gruposFiltrados.map(g => {
+              const abierto = grupoAbiertos.has(g.key);
+              const activosOrdenados = abierto ? [...g.activosDelGrupo].sort((a, b) => rankActivo(a, activoByCode) - rankActivo(b, activoByCode)) : [];
+              const detalle = abierto ? [...activosOrdenados, ...g.cerradosDelGrupo] : [];
+              return <Fragment key={g.key}>
+                <tr className="clk" onClick={() => toggleGrupo(g.key)} style={abierto ? { background: "var(--card2)" } : undefined}>
+                  <td style={{ color: "var(--mut)", width: 16, textAlign: "center" }}>{abierto ? "▾" : "▸"}</td>
+                  <td className="mono" style={{ minWidth: 0 }}>⚡ {g.suministro}</td>
+                  <td style={{ minWidth: 0, maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{g.reclamante}</td>
+                  <td>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4, alignItems: "center", minWidth: 0 }}>
+                      <Chip>{g.casos.length} reclamo{g.casos.length === 1 ? "" : "s"}</Chip>
+                      {g.activosDelGrupo.length > 0 && <Chip>{g.activosDelGrupo.length} activo{g.activosDelGrupo.length === 1 ? "" : "s"}</Chip>}
+                      {g.actUrgente && <SemaforoPlazo t={g.actUrgente} />}
+                      {g.cerradosDelGrupo.length > 0 && <Chip muted>{g.cerradosDelGrupo.length} cerrado{g.cerradosDelGrupo.length === 1 ? "" : "s"}</Chip>}
+                    </div>
                   </td>
+                  <td className="mono" style={{ whiteSpace: "nowrap" }}>{g.marcadosDelGrupo.length}/{g.casos.length} ✓</td>
                 </tr>
-              );
+                {abierto && <tr><td colSpan={5} style={{ background: "var(--card2)", padding: "6px 10px 12px" }}>
+                  <div style={{ overflowX: "auto" }}>
+                    <table className="tbl" style={{ marginTop: 0 }}>
+                      <thead><tr><th>Código completo</th><th>Osinerg</th><th>Etapa</th><th>Registrado</th><th>Físico</th><th></th></tr></thead>
+                      <tbody>
+                        {detalle.map(x => {
+                          const act = activoByCode[String(x.codigo)];
+                          const marcado = tieneFisico(datos, x.codigo);
+                          const f = fisicoInfo(datos, x.codigo);
+                          const cerrado = x.estado === "Cerrado";
+                          return (
+                            <tr key={x.id} className={cerrado ? "muted" : undefined} style={cerrado ? { opacity: .7 } : undefined}>
+                              <td className="mono">{x.codigo}</td>
+                              <td className="mono">{x.osinerg || "—"}</td>
+                              <td style={{ whiteSpace: "nowrap" }}>{cerrado ? x.etapa : <>{act ? act.etapa : x.etapa} {act && <SemaforoPlazo t={act} />}</>}</td>
+                              <td className="mono" style={{ fontSize: 11.5 }}>{x.fechaReg ? fmtFecha(x.fechaReg) : "—"}</td>
+                              <td style={{ fontSize: 11.5 }}>{marcado ? <>✓{f.FISICO_FECHA ? " · " + fmtFecha(f.FISICO_FECHA) : ""}</> : <span className="muted">—</span>}</td>
+                              <td style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                                <button className="btn-ghost" style={{ minHeight: 44, fontSize: 11 }} onClick={() => setSelExp(x.id)}>↗ Sala</button>
+                                {marcado && <button className="btn-ghost" style={{ minHeight: 44, fontSize: 11 }} onClick={() => desmarcar(x)}>✗ Desmarcar</button>}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </td></tr>}
+              </Fragment>;
             })}
-            {!marcadosFiltrados.length && <tr><td colSpan={7} className="muted" style={{ textAlign: "center", padding: 14 }}>Sin físicos marcados por ahora — usa «📋 Marcar desde lista» arriba.</td></tr>}
+            {!gruposFiltrados.length && <tr><td colSpan={5} className="muted" style={{ textAlign: "center", padding: 14 }}>Sin físicos marcados por ahora — usa «📋 Marcar desde lista» arriba.</td></tr>}
           </tbody>
         </table>
       </div>
-      {marcadosFiltrados.length > 300 && <div className="muted" style={{ fontSize: 11, marginTop: 6 }}>Mostrando 300 de {marcadosFiltrados.length} — exporta a Excel para verlos todos.</div>}
     </Card>
 
     <Card style={{ marginTop: 14 }}>
