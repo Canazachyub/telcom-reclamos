@@ -15,6 +15,11 @@ export const CAMPOS_ETAPA = {
       { k: "MONTO_RECLAMADO", label: "Monto en reclamo (S/)", tipo: "num" },
       // — transcripción SIELSE (§5 memoria)
       { k: "N_SOLICITUD_SIELSE", label: "N° de Solicitud SIELSE", tipo: "text", ph: "el número que SIELSE asigna al Guardar la Solicitud (ej. 2026001…)" },
+      // — 🏢 inventario físico (Expedientes → En oficina): el expediente en papel llega aquí,
+      // por eso vive en Recepción. Cero columnas nuevas: datos_etapa vía guardar_datos.
+      { k: "FISICO_OFICINA", label: "¿Físico en oficina?", tipo: "select", opciones: ["sí", "no"] },
+      { k: "FISICO_FECHA", label: "Fecha de verificación del físico", tipo: "date", ph: "cuándo se confirmó que el expediente físico está en oficina" },
+      { k: "FISICO_FUENTE", label: "Fuente de verificación", tipo: "text", ph: "inventario fotos 10/07/2026 · manual" },
     ],
   },
   "Evaluación": {
@@ -301,4 +306,7 @@ export const AYUDA_CAMPO = {
   N_CARTA_PRUEBA: "N° de la carta/refacturación que se cita como prueba en la resolución.",
   NOTIFICADOR: "Quien diligencia la notificación (notario o notificador); firma la cédula.",
   RELACION_DOCUMENTOS: "Lista de documentos del expediente que se elevan a JARU (Formato 6).",
+  FISICO_OFICINA: "Marca si el expediente EN PAPEL está físicamente en la oficina — inventario verificable, no un dato de SIELSE.",
+  FISICO_FECHA: "Fecha en que se verificó (foto/conteo) que el físico está en oficina.",
+  FISICO_FUENTE: "De dónde salió la verificación — p.ej. el inventario por fotos o una revisión manual.",
 };

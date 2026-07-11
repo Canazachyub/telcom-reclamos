@@ -302,7 +302,7 @@ function Shell({ perfil, onLogout, tema, setTema }){
     abrirExp, verExpediente,
     abrirCuad, onCuadAbierto: () => setAbrirCuad(null), onVolverExp: volverExp!=null ? volverAlExp : null,
     onRecargarCorreos: cargarCorreos, onConvertirCorreo: convertirCorreoEnCaso,
-    delegar, updEstado,
+    delegar, updEstado, saveDatos,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [perfilVista, data, tickets, datos, registros, comentarios, evidencias, correos, correosCargando, abrirCuad, volverExp]);
 

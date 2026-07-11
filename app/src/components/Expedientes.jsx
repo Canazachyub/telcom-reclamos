@@ -7,6 +7,7 @@ import { MiniProgreso, EstadoChip } from "./atoms.jsx";
 import { TEAM, ETAPAS, wColor, wName, daysLeft, fmtFecha, parseFecha, DRIVE_URL } from "../lib/model.js";
 import { urgColorTicket } from "../lib/tickets.js";
 import { useApp } from "../AppContext.jsx";
+import OficinaPanel from "./OficinaPanel.jsx";
 
 const ESTADOS_APP = ["Pendiente","En proceso","Observado","Notificado","Cerrado"];
 
@@ -20,13 +21,15 @@ function esFechaHoy(v){
 export default function ExpedientesTab({ canDelegate }){
   const {
     data, abrirExp: setSelExp, delegar, updEstado, evidencias, activoByCode, progresoDe, registros, comentarios,
+    datos, saveDatos, perfilVista,
   } = useApp();
   const [sub,setSub]=useState("lista");
   return <>
-    <div className="tabs">{[["lista","Expedientes"],["evidencias","Evidencias subidas ("+evidencias.length+")"]].map(t=>
+    <div className="tabs">{[["lista","Expedientes"],["evidencias","Evidencias subidas ("+evidencias.length+")"],["oficina","🏢 En oficina"]].map(t=>
       <button key={t[0]} className={sub===t[0]?"on":""} onClick={()=>setSub(t[0])}>{t[1]}</button>)}</div>
     {sub==="lista" && <Expedientes data={data} setSelExp={setSelExp} delegar={delegar} updEstado={updEstado} canDelegate={canDelegate} activoByCode={activoByCode} progresoDe={progresoDe} registros={registros} comentarios={comentarios}/>}
     {sub==="evidencias" && <EvidenciasAdmin evidencias={evidencias}/>}
+    {sub==="oficina" && <OficinaPanel data={data} activoByCode={activoByCode} datos={datos} saveDatos={saveDatos} perfil={perfilVista} setSelExp={setSelExp}/>}
   </>;
 }
 
