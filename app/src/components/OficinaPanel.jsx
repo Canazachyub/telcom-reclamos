@@ -91,10 +91,17 @@ export default function OficinaPanel({ data = [], activoByCode = {}, datos = {},
     const resueltos = [], ambiguos = [], noEncontrados = [];
     const yaVistos = new Set();
     lineas.forEach(linea => {
-      const token = primerNumero(linea);
-      if (!token) { noEncontrados.push({ linea, token: "" }); return; }
+      // 0) N° OSINERG (RECxxxx…) — identifica al CASO igual que el código; es lo más visible
+      //    en el papel físico (Formato 1), así que se acepta pegado directo. Match EXACTO;
+      //    si no matchea (p.ej. OCR con dígitos de más), se cae al número de la misma línea
+      //    QUITANDO el trozo OSINERG para no capturar sus dígitos internos como suministro.
+      const mOsi = String(linea || "").match(/REC[0-9A-Z]+/i);
+      let rec = mOsi ? data.find(x => String(x.osinerg || "").trim().toUpperCase() === mOsi[0].toUpperCase()) : null;
+      const resto = mOsi ? String(linea).replace(mOsi[0], " ") : String(linea || "");
+      const token = mOsi && rec ? mOsi[0].toUpperCase() : primerNumero(resto);
+      if (!rec && !token) { noEncontrados.push({ linea, token: mOsi ? mOsi[0] : "" }); return; }
       // 1) código de reclamo EXACTO — identifica al CASO, sin ambigüedad posible.
-      let rec = data.find(x => String(x.codigo) === token);
+      if (!rec) rec = data.find(x => String(x.codigo) === token);
       if (!rec) {
         // 2) suministro — SOLO si es ÚNICO. Varios reclamos con ese suministro → nunca se marca
         // solo (el suministro identifica al medidor, no al caso): va a "ambiguos" a elegir a mano.
