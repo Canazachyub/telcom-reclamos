@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card, Kpi, toast } from "./ui.jsx";
 import { TicketCard, SemaforoPlazo, InfoBoton } from "./Ticket.jsx";
 import { abiertos, vencidos, porVencer, tareaPrioritaria, agrupaPorEtapa } from "../lib/tickets.js";
+import { esHerenciaTicket } from "../lib/model.js";
 import RegistrarEvento from "./RegistrarEvento.jsx";
 
 export default function MiDia({ perfil, misReclamos, data = [], tickets = [], recByCode = {}, onEstadoTicket, setSelExp, onCerrarDia, onEscanear }) {
@@ -12,8 +13,13 @@ export default function MiDia({ perfil, misReclamos, data = [], tickets = [], re
   const ab = abiertos(tickets);
   const venc = vencidos(tickets);
   const pv = porVencer(tickets, 2);
-  const prio = tareaPrioritaria(tickets);
-  const grupos = agrupaPorEtapa(ab);
+  // HERENCIA (§HerenciaPanel): "tu próxima tarea" prioriza lo NUESTRO — solo si únicamente le
+  // quedan herencias (vencidas antes del 01/07/2026, contratista anterior) se muestra una, ya
+  // con su chip apagado (SemaforoPlazo la reconoce sola por t.vencido+t.fechaLimite).
+  const prio = tareaPrioritaria(ab.filter(t => !esHerenciaTicket(t))) || tareaPrioritaria(ab.filter(esHerenciaTicket));
+  const prioHerencia = !!(prio && esHerenciaTicket(prio));
+  // dentro de cada etapa, nuestros primero (herencia al final) — mismo orden de urgencia adentro de cada grupo
+  const grupos = agrupaPorEtapa(ab).map(g => ({ ...g, tickets: [...g.tickets].sort((a, b) => Number(esHerenciaTicket(a)) - Number(esHerenciaTicket(b))) }));
   const recDe = t => recByCode[t.reclamo];
   // abre el expediente EN la etapa del ticket: ahí se sube evidencia, se llenan datos y se marca hecho
   const abrir = t => { const r = recDe(t); if (r) setSelExp(r.id, t.etapa); else toast("Este ticket apunta a un expediente que no está en la lista (¿recarga la página?)"); };
@@ -56,9 +62,9 @@ export default function MiDia({ perfil, misReclamos, data = [], tickets = [], re
 
     {/* ¿QUÉ HAGO AHORA? — una sola tarea prioritaria */}
     {prio ? (
-      <Card style={{ marginBottom: 14, borderLeft: `4px solid ${prio.vencido ? "var(--red)" : "var(--amber)"}` }}>
+      <Card style={{ marginBottom: 14, borderLeft: `4px solid ${prioHerencia ? "var(--mut2)" : prio.vencido ? "var(--red)" : "var(--amber)"}` }}>
         <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".06em", color: "var(--mut)", fontWeight: 700, marginBottom: 8 }}>
-          Tu próxima tarea {prio.vencido ? "· ⚠ vencida" : ""}
+          Tu próxima tarea {prioHerencia ? "· ⚖ herencia (contratista anterior)" : prio.vencido ? "· ⚠ vencida" : ""}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <SemaforoPlazo t={prio} big />

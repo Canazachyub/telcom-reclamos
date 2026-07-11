@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, Kpi, textOn, TOKENS } from "./ui.jsx";
 import { TicketCard } from "./Ticket.jsx";
-import { TEAM, teamById, ETAPAS, CRITICAS } from "../lib/model.js";
+import { TEAM, teamById, ETAPAS, CRITICAS, esHerenciaTicket } from "../lib/model.js";
 import { abiertos, vencidos, ordenUrgencia, exposicionTotal, verMontos } from "../lib/tickets.js";
 import { USERS } from "../lib/auth.js";
 
@@ -21,19 +21,27 @@ export function AtenderPrimero({ tickets, perfil, recByCode, onEstado, onReasign
   const [resp, setResp] = useState(() => leerFiltrosGuardados()?.resp || "todos");         // por trabajador (respId) — clave para Gerencia
   const [etapaF, setEtapaF] = useState(() => leerFiltrosGuardados()?.etapaF || "todas");   // por etapa del flujo
   const [q, setQ] = useState(() => leerFiltrosGuardados()?.q || "");                       // búsqueda libre
+  // Segmento HERENCIA (§HerenciaPanel): nuestros | herencia | todos. Default "nuestros" — la
+  // cola del jefe deja de gritar con vencidos de la contratista anterior (pre-01/07/2026).
+  const [segmento, setSegmento] = useState(() => leerFiltrosGuardados()?.segmento || "nuestros");
   useEffect(() => {
-    try { localStorage.setItem(COLA_FILTROS_KEY, JSON.stringify({ filtro, resp, etapaF, q })); } catch (e) {}
-  }, [filtro, resp, etapaF, q]);
+    try { localStorage.setItem(COLA_FILTROS_KEY, JSON.stringify({ filtro, resp, etapaF, q, segmento })); } catch (e) {}
+  }, [filtro, resp, etapaF, q, segmento]);
   const limpiarFiltros = () => {
-    setResp("todos"); setEtapaF("todas"); setQ(""); setFiltro("todos");
+    setResp("todos"); setEtapaF("todas"); setQ(""); setFiltro("todos"); setSegmento("nuestros");
     try { localStorage.removeItem(COLA_FILTROS_KEY); } catch (e) {}
   };
   const ab = abiertos(tickets);
+  // conteos del segmento SOBRE ab (antes de resp/etapa/q) — mismo criterio que respOpts/etapasPresentes abajo.
+  const herenciaCount = ab.filter(esHerenciaTicket).length;
+  const nuestrosCount = ab.length - herenciaCount;
 
-  // Filtros TRANSVERSALES (trabajador · etapa · búsqueda): definen la POBLACIÓN antes de los chips
-  // de urgencia, para que los conteos 🔴🟡🟢 reflejen al trabajador/etapa elegidos.
+  // Filtros TRANSVERSALES (segmento · trabajador · etapa · búsqueda): definen la POBLACIÓN antes
+  // de los chips de urgencia, para que los conteos 🔴🟡🟢 reflejen el recorte elegido.
   const norm = s => String(s || "").toUpperCase();
   let base = ab;
+  if (segmento === "nuestros") base = base.filter(t => !esHerenciaTicket(t));
+  else if (segmento === "herencia") base = base.filter(esHerenciaTicket);
   if (resp !== "todos") base = base.filter(t => String(t.respId) === String(resp));
   if (etapaF !== "todas") base = base.filter(t => t.etapa === etapaF);
   if (q.trim()) { const Q = norm(q); base = base.filter(t => { const r = recByCode[t.reclamo] || {}; return norm((r.osinerg || "") + " " + (r.suministro || "") + " " + (r.solicitante || "") + " " + t.reclamo + " " + t.etapa).includes(Q); }); }
@@ -61,13 +69,31 @@ export function AtenderPrimero({ tickets, perfil, recByCode, onEstado, onReasign
     }}>{txt} <b className="mono">{n}</b></button>
   );
   const selSty = { background: "var(--card2)", color: "var(--tx)", border: "1px solid var(--bd)", borderRadius: 8, padding: "6px 9px", fontSize: 12.5 };
+  const segChip = (k, txt, n, color) => (
+    <button onClick={() => setSegmento(k)} style={{
+      border: `1px solid ${segmento === k ? color : "var(--bd)"}`, background: segmento === k ? color : "transparent",
+      color: segmento === k ? textOn(color) : "var(--tx)", borderRadius: 999, padding: "4px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", minHeight: 30,
+    }}>{txt} <b className="mono">{n}</b></button>
+  );
   return (
     <Card>
       <h3 style={{ marginBottom: 4 }}>{puedeAsignar ? "Asignar tareas — " : ""}Cola del equipo</h3>
       <div className="muted" style={{ fontSize: 12, marginBottom: 10 }}>
         Un caso = una tarea en su etapa actual. Ordenado por urgencia. {puedeAsignar && "Reasigna o "}
-        {puedeAsignar && <>🗄 <b>archiva</b> desde el menú «⋯» de cada fila (los cerrados en la vida real salen de la cola y de las alarmas).</>}
+        {puedeAsignar && <>🗄 <b>archiva</b> desde el menú «⋯» de cada fila (los cerrados en la vida real salen de la cola y de las alarmas). </>}
+        Por defecto se oculta la <b>herencia</b> (vencidos de antes del 01/07/2026 — contratista anterior): cambia a «Todos» o «⚖ Herencia» para verla.
       </div>
+      {/* Segmento HERENCIA: qué población ve el jefe. Default "Nuestros" — no grita con vencidos ajenos. */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+        {segChip("nuestros", "🔵 Nuestros", nuestrosCount, TOKENS.acc)}
+        {segChip("herencia", "⚖ Herencia", herenciaCount, TOKENS.neutral)}
+        {segChip("todos", "Todos", ab.length, TOKENS.purple)}
+      </div>
+      {segmento === "herencia" && (
+        <div className="note" style={{ background: "var(--card2)", border: "1px solid var(--bd)", color: "var(--mut)" }}>
+          ⚖ Casos con plazo vencido ANTES del 01/07/2026 (inicio del servicio TELCOM) — gestión de la contratista anterior. No se auto-cierran: revisa la evidencia en <b>Reportes → ⚖ Herencia</b> antes de archivar.
+        </div>
+      )}
       {/* Filtros del jefe: por TRABAJADOR · por ETAPA · búsqueda. Los chips de urgencia se recalculan al subconjunto. */}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 10 }}>
         <select value={resp} onChange={e => setResp(e.target.value)} style={selSty} title="Filtrar la cola por trabajador">

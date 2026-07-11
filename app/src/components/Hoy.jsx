@@ -8,6 +8,7 @@ import { BienvenidaSinCasos } from "./atoms.jsx";
 import { riesgoSAPGlobal } from "../lib/plazosNormativos.js";
 import { abiertos, vencidos, porVencer, exposicionTotal, verMontos, activos } from "../lib/tickets.js";
 import { puedeDelegar } from "../lib/auth.js";
+import { esHerenciaTicket, esHerencia } from "../lib/model.js";
 import { useApp } from "../AppContext.jsx";
 
 // "Hoy": lo urgente del equipo en una sola vista — KPIs + cola priorizada (+ dinero en riesgo, solo Gerente).
@@ -19,29 +20,41 @@ export default function Hoy({ sinCasos, setTab }){
   } = useApp();
   // mismo dato que Admin le pasaba antes: la etapa ACTIVA de cada caso (no el histórico crudo)
   const tickets = activos(allTickets);
-  const ab=abiertos(tickets), v=vencidos(tickets), pv=porVencer(tickets,2);
+  // HERENCIA (§HerenciaPanel): las 4 alarmas de HOY solo cuentan lo NUESTRO (vencido desde el
+  // 01/07/2026, inicio TELCOM); la herencia de la contratista anterior se resta y se muestra
+  // aparte como "+N herencia" para que el Gerente sepa que existe sin que infle la alarma diaria.
+  const ticketsNuestros = tickets.filter(t => !esHerenciaTicket(t));
+  const ticketsHerencia = tickets.filter(esHerenciaTicket);
+  const ab=abiertos(tickets), v=vencidos(ticketsNuestros), pv=porVencer(ticketsNuestros,2);
+  const vHer=vencidos(ticketsHerencia), pvHer=porVencer(ticketsHerencia,2);
   const ger=verMontos(perfil.rol);
-  const expo=exposicionTotal(tickets);
-  // Riesgo SAP (silencio administrativo positivo, art. 21.1): motor puro en lib/plazosNormativos.js.
-  // Necesita TODOS los tickets del caso (no solo el activo) para leer, p.ej., cuándo se abrió
-  // Apelación; `tickets` aquí ya viene filtrado a activos desde Shell — es la mejor señal disponible.
-  const riesgoSAP = (data && datos) ? riesgoSAPGlobal(data, datos, tickets) : { total:0, casos:[] };
+  const expo=exposicionTotal(ticketsNuestros), expoHer=exposicionTotal(ticketsHerencia);
+  // Riesgo SAP (silencio administrativo positivo, art. 21.1): motor puro en lib/plazosNormativos.js
+  // (NO se toca la función — se le pasan los CASOS ya segmentados). Un caso es herencia si su
+  // reclamo está vencido con FechaLimiteAtencion anterior al corte (mismo criterio que los tickets).
+  const esHerenciaCaso = x => x && x.vencido && esHerencia(x.fechaLim);
+  const casosNuestros = (data||[]).filter(x => !esHerenciaCaso(x));
+  const casosHerencia = (data||[]).filter(esHerenciaCaso);
+  const riesgoSAP = (data && datos) ? riesgoSAPGlobal(casosNuestros, datos, tickets) : { total:0, casos:[] };
+  const riesgoSAPHer = (data && datos) ? riesgoSAPGlobal(casosHerencia, datos, tickets) : { total:0, casos:[] };
+  const subHer = n => n ? ` · +${n} herencia` : "";
   return <>
     {sinCasos && <BienvenidaSinCasos onIrBandeja={()=>setTab && setTab("bandeja")}/>}
     {/* Grid ÚNICO de KPIs (§F2): auto-fit/minmax — 1 fila en desktop, 2×2 en móvil, sin media
         queries frágiles. Los 5 KPI del Gerente (4 + silencio SAP) viven en la MISMA grilla. */}
     <div className="kpigrid">
       <Kpi label="Casos en curso" value={ab.length} sub="uno por expediente (su etapa actual)"/>
-      <Kpi label="Por vencer (≤2d háb.)" value={pv.length} sub="atender hoy" s={pv.length?"ambar":null}/>
-      <Kpi label="Vencidos" value={v.length} sub="su etapa actual fuera de plazo" s={v.length?"rojo":null}/>
-      {ger && <Kpi label="Dinero en riesgo" value={"S/ "+expo.toLocaleString("es-PE")} sub="de las etapas actuales" s={expo?"rojo":null}/>}
-      <Kpi label="Riesgo de silencio +" value={riesgoSAP.total} sub="casos que OSINERGMIN puede dar por GANADOS al usuario (silencio positivo · pen. 5.5)" s={riesgoSAP.total>0?"rojo":null}/>
+      <Kpi label="Por vencer (≤2d háb.)" value={pv.length} sub={"atender hoy"+subHer(pvHer.length)} s={pv.length?"ambar":null}/>
+      <Kpi label="Vencidos" value={v.length} sub={"su etapa actual fuera de plazo"+subHer(vHer.length)} s={v.length?"rojo":null}/>
+      {ger && <Kpi label="Dinero en riesgo" value={"S/ "+expo.toLocaleString("es-PE")} sub={"de las etapas actuales"+(expoHer?` · +S/ ${expoHer.toLocaleString("es-PE")} herencia`:"")} s={expo?"rojo":null}/>}
+      <Kpi label="Riesgo de silencio +" value={riesgoSAP.total} sub={"casos que OSINERGMIN puede dar por GANADOS al usuario (silencio positivo · pen. 5.5)"+subHer(riesgoSAPHer.total)} s={riesgoSAP.total>0?"rojo":null}/>
     </div>
     <div style={{marginTop:14}}>
       <AtenderPrimero tickets={tickets} perfil={perfil} recByCode={recByCode} onEstado={onEstadoTicket} onReasignar={onReasignarTicket} onArchivar={onArchivarCaso} setSelExp={setSelExp}/>
     </div>
     <div style={{marginTop:14}}><ArchivadosPanel data={data} setSelExp={setSelExp} onDesarchivar={onDesarchivar} onArchivarCerrados={puedeDelegar(perfil.rol)||perfil.rol==="GERENTE"?onArchivarCerrados:null}/></div>
-    {ger && <div style={{marginTop:14}}><DineroRiesgo tickets={tickets} perfil={perfil} recByCode={recByCode} setSelExp={setSelExp}/></div>}
+    {/* tabla segmentada igual que el KPI: solo exposición NUESTRA (la herencia vive en Reportes → ⚖ Herencia) */}
+    {ger && <div style={{marginTop:14}}><DineroRiesgo tickets={ticketsNuestros} perfil={perfil} recByCode={recByCode} setSelExp={setSelExp}/></div>}
   </>;
 }
 

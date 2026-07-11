@@ -12,6 +12,8 @@ import { useApp } from "../AppContext.jsx";
 // Cuadernos es una sub-pestaña pesada (incluye qrcode) que no se necesita al entrar a Reportes
 // (abre en "cartera"): en diferido (F4-B).
 const Cuadernos = lazy(() => import("./Cuadernos.jsx"));
+// ⚖ Herencia contractual (casos pre-01/07/2026, contratista anterior): mismo patrón diferido.
+const HerenciaPanel = lazy(() => import("./HerenciaPanel.jsx"));
 
 // Cartera (antes pestaña "Resumen"): ahora vive dentro de Reportes.
 function Cartera({ data, setSelExp }){
@@ -69,7 +71,7 @@ const PU_DEFAULT = { ACT01: 45, ACT02: 60, ACT03: 25, ACT04: 0, ACT05: 18 };
 export default function Reportes(){
   const {
     data, tickets, registros, datos, evidencias, perfilVista: perfil,
-    abrirCuad, onCuadAbierto, onVolverExp, abrirExp: setSelExp,
+    abrirCuad, onCuadAbierto, onVolverExp, abrirExp: setSelExp, refrescar,
   } = useApp();
   const [rtab,setR]=useState("cartera");
   const [config,setConfig]=useState({});
@@ -106,14 +108,14 @@ export default function Reportes(){
   // Gerencia ve todo; el Coordinador solo Cartera + Cuadernos (lo demás lo consolida Gerencia).
   const esGer = perfil?.rol==="GERENTE";
   const subTabs = esGer
-    ? [["cartera","Cartera"],["diario","Diario"],["semanal","Semanal"],["mensual","Valorización (estimada)"],["mensualoficial","Valorización oficial"],["muestra","Muestra ACT-04"],["mejoras","Mejoras TR"],["cuadernos","📒 Cuadernos"]]
-    : [["cartera","Cartera"],["cuadernos","📒 Cuadernos"]];
+    ? [["cartera","Cartera"],["diario","Diario"],["semanal","Semanal"],["mensual","Valorización (estimada)"],["mensualoficial","Valorización oficial"],["muestra","Muestra ACT-04"],["mejoras","Mejoras TR"],["cuadernos","📒 Cuadernos"],["herencia","⚖ Herencia"]]
+    : [["cartera","Cartera"],["cuadernos","📒 Cuadernos"],["herencia","⚖ Herencia"]];
   // si el rol actual no puede ver la sub-pestaña seleccionada, cae a Cartera
   const rtabOk = subTabs.some(x=>x[0]===rtab) ? rtab : "cartera";
   return <>
     <div className="tabs">{subTabs.map(x=><button key={x[0]} className={rtabOk===x[0]?"on":""} onClick={()=>setR(x[0])}>{x[1]}</button>)}</div>
     {!esGer && <div className="note" style={{background:"var(--hoverBg)",border:"1px solid var(--acc)",color:"var(--tx)",fontSize:12,marginBottom:12}}>
-      📊 Las valorizaciones, informes diario/semanal, Muestra ACT-04 y Mejoras TR los consolida y revisa <b>Gerencia</b>. Aquí trabajas tu <b>Cartera</b> y los <b>Cuadernos</b> del equipo.
+      📊 Las valorizaciones, informes diario/semanal, Muestra ACT-04 y Mejoras TR los consolida y revisa <b>Gerencia</b>. Aquí trabajas tu <b>Cartera</b>, los <b>Cuadernos</b> del equipo y la <b>⚖ Herencia</b> contractual.
     </div>}
     {rtabOk==="cartera" && <Cartera data={data} setSelExp={setSelExp}/>}
     {rtabOk==="diario" && <Card><h3>Reporte diario por trabajador</h3><div style={{overflowX:"auto"}}><table className="tbl"><thead><tr><th>Trabajador</th><th>Asignados</th><th>En atención</th><th>Cerrados</th><th>Vencidos</th></tr></thead><tbody>
@@ -156,5 +158,6 @@ export default function Reportes(){
     {rtabOk==="muestra" && <MuestraTrimestral data={data} tickets={tickets} evidencias={evidencias} registros={registros} perfil={perfil} setSelExp={setSelExp}/>}
     {rtabOk==="mejoras" && <MejorasTR data={data} tickets={tickets} datos={datos} registros={registros} perfil={perfil}/>}
     {rtabOk==="cuadernos" && <Suspense fallback={<SkeletonVista/>}><Cuadernos data={data} setSelExp={setSelExp} perfil={perfil} abrir={abrirCuad} onAbierto={onCuadAbierto} onVolver={onVolverExp}/></Suspense>}
+    {rtabOk==="herencia" && <Suspense fallback={<SkeletonVista/>}><HerenciaPanel data={data} tickets={tickets} perfil={perfil} refrescar={refrescar}/></Suspense>}
   </>;
 }

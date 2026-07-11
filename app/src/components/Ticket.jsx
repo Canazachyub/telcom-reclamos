@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { urgColorTicket, urgLabel, verMontos } from "../lib/tickets.js";
 import { INFO_ETAPA } from "../lib/camposEtapa.js";
-import { metaEtapa } from "../lib/model.js";
+import { metaEtapa, esHerenciaTicket } from "../lib/model.js";
+// color de acento de un ticket: HERENCIA (vencido antes del 01/07/2026, contratista anterior)
+// nunca es rojo — "el rojo se gana" y la herencia no es responsabilidad de TELCOM. Único punto
+// de control: todo lo que pinta un ticket (semáforo, borde de la tarjeta) pasa por aquí.
+const colorDeTicket = t => esHerenciaTicket(t) ? "var(--mut2)" : urgColorTicket(t);
 
 const ESTADOS = ["pendiente", "en_proceso", "hecho", "observado"];
 // Etiquetas humanas para los values internos (el backend/estado sigue viajando en minúscula/snake_case).
@@ -9,8 +13,21 @@ const ESTADO_TICKET_LABEL = { pendiente: "Pendiente", en_proceso: "En proceso", 
 // "2026-04-10" -> "10/04/2026"
 const fmtDia = iso => { const m = String(iso || "").match(/(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[3]}/${m[2]}/${m[1]}` : (iso || ""); };
 
-// Píldora de semáforo de plazo (días hábiles restantes).
+// Píldora de semáforo de plazo (días hábiles restantes). HERENCIA (vencido antes del 01/07/2026):
+// estilo APAGADO (neutro, --mut2 — no --red/--amber de alarma real) con etiqueta y title propios.
 export function SemaforoPlazo({ t, big = false }) {
+  const herencia = esHerenciaTicket(t);
+  if (herencia) {
+    return (
+      <span title="Plazo vencido ANTES del inicio del servicio TELCOM (01/07/2026) — gestión de la contratista anterior. Verifica evidencia en Reportes → ⚖ Herencia." style={{
+        display: "inline-flex", alignItems: "center", gap: 5, background: "var(--card2)", color: "var(--mut)",
+        border: "1px solid var(--bd)", borderRadius: 999, padding: big ? "4px 12px" : "2px 9px", fontSize: big ? 13 : 11.5, fontWeight: 700,
+      }}>
+        <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--mut)", opacity: .6 }} />
+        ⚖ herencia · vencido {Math.abs(t.diasRestantes ?? 0)}d
+      </span>
+    );
+  }
   const c = urgColorTicket(t);
   return (
     <span title={`Límite ${t.fechaLimite || "—"}`} style={{
@@ -144,7 +161,8 @@ export function TicketCard({ t, rec, perfil, onEstado, onAbrir, onReasignar, tea
   const propio = t.respId === perfil?.resp_id;
   const puedeEditar = !!onEstado && (propio || rol === "GERENTE" || rol === "COORDINADOR");
   const verResp = rol === "GERENTE" || rol === "COORDINADOR";
-  const c = urgColorTicket(t);
+  const c = colorDeTicket(t);
+  const herTk = esHerenciaTicket(t);
   const hayMenu = puedeEditar || (onReasignar && teamOptions) || onArchivar;
   const nombre = rec?.solicitante || "";
   return (
@@ -167,9 +185,9 @@ export function TicketCard({ t, rec, perfil, onEstado, onAbrir, onReasignar, tea
           {verResp && <span className="muted" style={{ fontSize: 11 }}>· 👤 {t.responsable}</span>}
         </div>
         {t.penalidadItem && t.penalidadItem !== "—" && t.penalidadItem !== "mora" && (
-          <div style={{ marginTop: 5, fontSize: 11, color: t.vencido ? "var(--red)" : "var(--tx)" }}>
+          <div style={{ marginTop: 5, fontSize: 11, color: t.vencido && !herTk ? "var(--red)" : herTk ? "var(--mut2)" : "var(--tx)" }}>
             ⚠ penalidad <b>{t.penalidadItem}</b> · plazo {t.plazoHabiles} días háb.
-            {verMontos(rol) && t.exposicion ? <> · <b className="mono" style={{ color: "var(--red)" }}>S/ {t.exposicion.toLocaleString("es-PE")}</b></> : ""}
+            {verMontos(rol) && t.exposicion ? <> · <b className="mono" style={{ color: herTk ? "var(--mut2)" : "var(--red)" }}>S/ {t.exposicion.toLocaleString("es-PE")}</b></> : ""}
           </div>
         )}
       </div>

@@ -219,6 +219,28 @@ export function mapReclamo(r, i){
 export const PEN_TOPE_PCT = 10;
 export const MONTO_CONTRATO = 1250000;
 
+// ===== HERENCIA CONTRACTUAL =====
+// TELCOM tomó el contrato CP-026-2026-ELSE el 01/07/2026 (se importó el histórico completo de
+// SIELSE ene→10 jul, ~4,341 casos). Los casos cuyo plazo venció ANTES de este corte son gestión
+// de la contratista ANTERIOR — no se presumen cerrados (jamás auto-cerrar por antigüedad: riesgo
+// penalidad 5.5 si en verdad seguían en trámite), pero SÍ se segmentan de las alarmas de HOY
+// para no inflarlas con vencidos que no son responsabilidad de TELCOM. Ver HerenciaPanel.jsx
+// (Reportes → ⚖ Herencia) para el archivado en lote CON evidencia de resolución.
+export const CORTE_TELCOM = "2026-07-01";
+// ¿Esta fecha límite (cualquier formato que entienda parseFecha) es ANTERIOR al corte? Un plazo
+// aún corriendo, o que vence el mismo corte o después, NUNCA es herencia — aunque venza mañana.
+export function esHerencia(fechaLimite){
+  const d = parseFecha(fechaLimite);
+  if(!d) return false;
+  return d < parseFecha(CORTE_TELCOM);
+}
+// Conveniencia para tickets (t.vencido + t.fechaLimite, ver lib/tickets.js mapTicket): solo un
+// ticket YA VENCIDO cuyo plazo cayó antes del corte es herencia. Un vencido posterior al 01/07
+// es NUESTRO (TELCOM ya tenía el servicio) — nunca es herencia aunque esté fuera de plazo.
+export function esHerenciaTicket(t){
+  return !!(t && t.vencido && esHerencia(t.fechaLimite));
+}
+
 // ============================================================================
 // ===== SINCRONIZACIÓN CON EL BACKEND (GET dominio → Dominio.publico()) =====
 // ============================================================================
