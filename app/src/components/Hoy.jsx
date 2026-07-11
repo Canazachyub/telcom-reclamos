@@ -35,8 +35,11 @@ export default function Hoy({ sinCasos, setTab }){
   const esHerenciaCaso = x => x && x.vencido && esHerencia(x.fechaLim);
   const casosNuestros = (data||[]).filter(x => !esHerenciaCaso(x));
   const casosHerencia = (data||[]).filter(esHerenciaCaso);
-  const riesgoSAP = (data && datos) ? riesgoSAPGlobal(casosNuestros, datos, tickets) : { total:0, casos:[] };
-  const riesgoSAPHer = (data && datos) ? riesgoSAPGlobal(casosHerencia, datos, tickets) : { total:0, casos:[] };
+  const riesgoSAP = (data && datos) ? riesgoSAPGlobal(casosNuestros, datos, tickets) : { total:0, porVencer:0, consumados:0, casos:[] };
+  const riesgoSAPHer = (data && datos) ? riesgoSAPGlobal(casosHerencia, datos, tickets) : { total:0, porVencer:0, consumados:0, casos:[] };
+  // SAP consumado (plazo ya vencido) = ya NO es evitable por la contratista: no es alarma, es
+  // arrastre a gestionar/documentar. La alarma real es SOLO lo por vencer (prevenible).
+  const sapConsumados = (riesgoSAP.consumados||0) + (riesgoSAPHer.consumados||0) + (riesgoSAPHer.porVencer||0);
   const subHer = n => n ? ` · +${n} herencia` : "";
   return <>
     {sinCasos && <BienvenidaSinCasos onIrBandeja={()=>setTab && setTab("bandeja")}/>}
@@ -47,7 +50,7 @@ export default function Hoy({ sinCasos, setTab }){
       <Kpi label="Por vencer (≤2d háb.)" value={pv.length} sub={"atender hoy"+subHer(pvHer.length)} s={pv.length?"ambar":null}/>
       <Kpi label="Vencidos" value={v.length} sub={"su etapa actual fuera de plazo"+subHer(vHer.length)} s={v.length?"rojo":null}/>
       {ger && <Kpi label="Dinero en riesgo" value={"S/ "+expo.toLocaleString("es-PE")} sub={"de las etapas actuales"+(expoHer?` · +S/ ${expoHer.toLocaleString("es-PE")} herencia`:"")} s={expo?"rojo":null}/>}
-      <Kpi label="Riesgo de silencio +" value={riesgoSAP.total} sub={"casos que OSINERGMIN puede dar por GANADOS al usuario (silencio positivo · pen. 5.5)"+subHer(riesgoSAPHer.total)} s={riesgoSAP.total>0?"rojo":null}/>
+      <Kpi label="Riesgo de silencio +" value={riesgoSAP.porVencer||0} sub={"aún PREVENIBLES (plazo SAP por vencer · pen. 5.5)"+(sapConsumados?` · ${sapConsumados.toLocaleString("es-PE")} ya consumados (arrastre — gestionar/documentar, no evitables)`:"")} s={(riesgoSAP.porVencer||0)>0?"rojo":null}/>
     </div>
     <div style={{marginTop:14}}>
       <AtenderPrimero tickets={tickets} perfil={perfil} recByCode={recByCode} onEstado={onEstadoTicket} onReasignar={onReasignarTicket} onArchivar={onArchivarCaso} setSelExp={setSelExp}/>

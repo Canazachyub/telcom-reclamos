@@ -231,12 +231,20 @@ export function relojesDelCaso({ exp, datos, tickets }){
 // ===== KPI global: riesgo de silencio administrativo positivo en toda la cartera =====
 // casos: array de reclamos (modelo App.jsx). datos/tickets: los mismos objetos completos.
 export function riesgoSAPGlobal(casos, datos, tickets){
-  const out = { total:0, casos:[] };
+  // Semántica (2026-07-10, decisión gerencia): un SAP con plazo YA VENCIDO no es "riesgo" —
+  // el silencio positivo opera por ley al vencer el plazo y la contratista ya no puede
+  // evitarlo (queda gestionarlo/documentarlo). El RIESGO accionable es solo lo POR VENCER.
+  // `total` conserva su significado histórico (vencidos) por compatibilidad; consumidores
+  // nuevos usan `porVencer` (alarma real) y `consumados` (arrastre a gestionar).
+  const out = { total:0, porVencer:0, consumados:0, casos:[] };
   (casos||[]).forEach(exp=>{
     const relojes = relojesDelCaso({ exp, datos, tickets });
     const criticos = relojes.filter(r=>r.esSAP && (r.estado==="vencido" || r.estado==="por_vencer"));
     if(criticos.length){
-      out.total += criticos.filter(r=>r.estado==="vencido").length;
+      const venc = criticos.filter(r=>r.estado==="vencido").length;
+      out.total += venc;
+      out.consumados += venc;
+      out.porVencer += criticos.length - venc;
       out.casos.push({ codigo: exp.codigo, osinerg: exp.osinerg, relojes: criticos });
     }
   });
