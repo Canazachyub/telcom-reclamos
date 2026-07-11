@@ -25,7 +25,9 @@ function defaultVista(perfil){
     const guardada = localStorage.getItem(LS_VISTA);
     if(guardada==="simple" || guardada==="detalles") return guardada;
   }catch(e){}
-  return esOperativo(perfil?.rol) ? "simple" : "detalles";
+  // decisión gerencia 2026-07-11: la vista SENCILLA es el default para TODOS los roles;
+  // quien prefiera la clásica pulsa «Ver detallado» y su elección queda recordada.
+  return "simple";
 }
 
 // ===================== Sala del expediente (v4, patrón courier) =====================
@@ -168,7 +170,7 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
             <button className="btn-ghost" onClick={()=>setVerFicha(true)} title="Ver el registro SIELSE completo del caso, lo trabajado por fase y sus documentos">📋 Ficha SIELSE</button>
             <button className="btn-ghost" onClick={toggleVista}
               title={vista==="simple" ? "Ver toda la información de la Sala (relojes, correos, feed, ficha SIELSE completa)" : "Volver a la vista fácil"}>
-              {vista==="simple" ? "🔍 Detalles" : "← Vista simple"}
+              {vista==="simple" ? "🔍 Ver detallado" : "← Vista sencilla"}
             </button>
             {perfil?.rol==="GERENTE" && onEliminar && (
               <button className="btn-ghost" style={{color:"var(--tint-red-tx)",borderColor:"var(--tint-red-bd)"}}
@@ -189,7 +191,7 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
              qué sigue, botón grande de trabajar, progreso simple, último cuaderno, QR chico ===== */}
         {vista==="simple" && (
           <SalaSimple exp={exp} act={act} etapaActual={etapaActual} flujoInfo={flujoInfo}
-            cerrado={cerrado} hechas={hechas} totalEtapas={ETAPAS.length} cuadRegs={cuadRegs} qrImg={qrImg}
+            cerrado={cerrado} hechas={hechas} totalEtapas={ETAPAS.length} propios={propios} cuadRegs={cuadRegs} qrImg={qrImg}
             onTrabajar={onTrabajar} onIrADetalles={irADetalles} />
         )}
 

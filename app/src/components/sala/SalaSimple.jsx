@@ -43,8 +43,19 @@ function ultimoCuaderno(cuadRegs){
 }
 
 export default function SalaSimple({ exp, act, etapaActual, flujoInfo, cerrado, hechas, totalEtapas,
-  cuadRegs, qrImg, onTrabajar, onIrADetalles }){
+  propios, cuadRegs, qrImg, onTrabajar, onIrADetalles }){
   const total = totalEtapas || ETAPAS.length;
+  // todas las etapas en simple (pedido gerencia 2026-07-11): ✓ hechas · ▶ actual · ○ pendientes.
+  // Con tickets del caso (propios) se usa su estado real; sin tickets (respaldo v1) se deriva
+  // de la posición de la etapa actual en el flujo.
+  const idxActual = ETAPAS.indexOf(etapaActual);
+  const estadoEtapa = (et, i) => {
+    const t = (propios||[]).find(x => x.etapa === et);
+    if (t) return t.hecho ? "hecha" : (et === etapaActual && !cerrado ? "actual" : "pendiente");
+    if (cerrado) return "hecha";
+    if (i < idxActual) return "hecha";
+    return i === idxActual ? "actual" : "pendiente";
+  };
   const est = estadoSimple(act, cerrado);
   const ultimo = ultimoCuaderno(cuadRegs);
 
@@ -98,13 +109,30 @@ export default function SalaSimple({ exp, act, etapaActual, flujoInfo, cerrado, 
           </button>
         )}
 
-        {/* ===== progreso minimalista ===== */}
+        {/* ===== TODAS las etapas, en simple (✓ hecha · ▶ actual · ○ pendiente) ===== */}
         <div style={S.bloque}>
-          <div style={S.etiqueta}>Avance</div>
-          <div style={S.dots}>
-            {Array.from({length: total}).map((_,i)=><span key={i} style={S.dot(i<hechas)}/>)}
+          <div style={S.etiqueta}>Avance — {hechas} de {total} etapas hechas</div>
+          <div style={{display:"grid", gap:4, marginTop:6}}>
+            {ETAPAS.map((et,i)=>{
+              const st = estadoEtapa(et, i);
+              const esActual = st==="actual";
+              return (
+                <div key={et} style={{display:"flex", alignItems:"center", gap:10, minHeight:30,
+                  padding:"3px 10px", borderRadius:8,
+                  background: esActual ? "var(--tint-acc-bg)" : "transparent",
+                  border: esActual ? "1px solid var(--tint-acc-bd)" : "1px solid transparent"}}>
+                  <span style={{width:20, textAlign:"center", fontSize:14,
+                    color: st==="hecha" ? "var(--green)" : esActual ? "var(--acc)" : "var(--mut2)"}}>
+                    {st==="hecha" ? "✓" : esActual ? "▶" : "○"}
+                  </span>
+                  <span style={{fontSize:13.5, fontWeight: esActual ? 800 : 500,
+                    color: st==="hecha" ? "var(--tx2)" : esActual ? "var(--titulo)" : "var(--mut)"}}>
+                    {i+1}. {et}{esActual && !cerrado ? "  ← aquí está" : ""}
+                  </span>
+                </div>
+              );
+            })}
           </div>
-          <div style={{fontSize:12.5, color:"var(--mut)", marginTop:4}}>{hechas} de {total} etapas hechas</div>
         </div>
 
         {/* ===== último paso en cuadernos (1 línea, clic abre Detalles) ===== */}
