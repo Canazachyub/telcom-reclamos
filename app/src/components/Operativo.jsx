@@ -6,6 +6,7 @@ import { useEffect, useState, lazy, Suspense } from "react";
 import { Card, urgColor, toast, SkeletonVista } from "./ui.jsx";
 import { BienvenidaSinCasos, EstadoChip, MiniProgreso } from "./atoms.jsx";
 import MiDia from "./MiDia.jsx";
+import OficinaSimple from "./oficina/OficinaSimple.jsx";
 import FlujoCards from "./FlujoCards.jsx";
 import TrabajoEquipo from "./TrabajoEquipo.jsx";
 import Calendario from "./Calendario.jsx";
@@ -27,7 +28,7 @@ export default function Operativo({ onEscanear }){
     perfilVista: perfil, data, tickets: allTickets, activoByCode={}, progresoDe, recByCode,
     onEstadoTicket, onTomarTarea, abrirCuad, onCuadAbierto, onVolverExp,
     correos, correosCargando, onRecargarCorreos, onConvertirCorreo, verExpediente,
-    abrirExp: setSelExp,
+    abrirExp: setSelExp, datos, saveDatos,
   } = useApp();
   // igual que antes: Shell le pasaba a Operativo los tickets YA filtrados a la etapa activa
   // de cada caso (`activos(tickets)`) — aquí se recalcula del `tickets` crudo del contexto.
@@ -41,9 +42,9 @@ export default function Operativo({ onEscanear }){
   const nPozo = abiertos(tickets||[]).filter(t=>ETAPA_ROL[t.etapa]===perfil.rol && t.respId!==perfil.resp_id).length;
   // A4: 4 secciones de primer nivel. «Mi día» es un HUB con sub-vistas (Hoy · Mis expedientes · Equipo · Calendario),
   // para que el trabajador no se pierda entre 7 pestañas. Los bloques de render siguen filtrando por `tab`.
-  const MIDIA_GROUP=["midia","expedientes","equipo","calendario"];
+  const MIDIA_GROUP=["midia","oficina","expedientes","equipo","calendario"];
   const tabs=[["midia","🏠 Mi día"],["cuadernos","📒 Cuadernos"],["bandeja","📧 Bandeja"],["guia","📖 Mi guía"]];
-  const subtabs=[["midia","Hoy"],["expedientes","📁 Mis expedientes"+(mine.length?" ("+mine.length+")":"")],
+  const subtabs=[["midia","Hoy"],["oficina","🗂 Oficina"],["expedientes","📁 Mis expedientes"+(mine.length?" ("+mine.length+")":"")],
     ["equipo","🌐 Equipo"+(nPozo?" ("+nPozo+")":"")],["calendario","📅 Calendario"]];
   return <>
     <div className="tabs">{tabs.map(t=><button key={t[0]} className={(t[0]==="midia"?MIDIA_GROUP.includes(tab):tab===t[0])?"on":""} onClick={()=>setTab(t[0])}>{t[1]}{t[0]==="midia"&&nPozo?" ("+nPozo+")":""}</button>)}</div>
@@ -51,6 +52,7 @@ export default function Operativo({ onEscanear }){
     {tab==="midia" && data.length===0 && <BienvenidaSinCasos onIrBandeja={()=>setTab("bandeja")}/>}
     {tab==="midia" && <MiDia perfil={perfil} misReclamos={mine} data={data} tickets={misTk} recByCode={recByCode} onEstadoTicket={onEstadoTicket} setSelExp={setSelExp} onEscanear={onEscanear}
       onCerrarDia={()=>postAction("reporte",{rol:perfil.rol, asignados:mine.length, en_atencion:abiertos(misTk).length, cerrados:misTk.filter(t=>t.hecho).length, vencidos:vencidos(misTk).length})}/>}
+    {tab==="oficina" && <OficinaSimple data={data} activoByCode={activoByCode} datos={datos} saveDatos={saveDatos} perfil={perfil} setSelExp={setSelExp} onEscanear={onEscanear}/>}
     {tab==="equipo" && <TrabajoEquipo perfil={perfil} tickets={tickets} recByCode={recByCode} onTomar={onTomarTarea} onEstado={onEstadoTicket} setSelExp={setSelExp}/>}
     {tab==="cuadernos" && <Suspense fallback={<SkeletonVista/>}><Cuadernos data={data} setSelExp={setSelExp} perfil={perfil} abrir={abrirCuad} onAbierto={onCuadAbierto} onVolver={onVolverExp}/></Suspense>}
     {tab==="bandeja" && <Suspense fallback={<SkeletonVista/>}><Bandeja perfil={perfil} correos={correos} cargando={correosCargando} noDisponible={correos===null && !correosCargando} onRecargar={onRecargarCorreos} existentes={data} onConvertir={onConvertirCorreo} verExpediente={verExpediente}/></Suspense>}

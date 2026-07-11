@@ -24,8 +24,8 @@ import { Card, Kpi, toast } from "./ui.jsx";
 import { SemaforoPlazo } from "./Ticket.jsx";
 import { fmtFecha, parseFecha } from "../lib/model.js";
 import { imprimirQRs } from "../lib/qr.js";
+import { hoyISO, tieneFisico, fisicoInfo, rankActivo } from "./oficina/util.js";
 
-const hoyISO = () => new Date().toISOString().slice(0, 10);
 const FUENTE_DEFAULT = "inventario fotos 10/07/2026";
 
 // exportarCSV — MISMO patrón que Cuadernos.jsx/HerenciaPanel.jsx (BOM + ";" + comillas escapadas).
@@ -40,20 +40,7 @@ function exportarCSV(nombre, headers, filas) {
   toast("Exportado — ábrelo en Excel");
 }
 
-// Clave EXACTA que arma el bundle de datos_etapa (App.jsx: setDatos({[exp+"|"+etapa]:...})).
-const tieneFisico = (datos, codigo) => (datos && datos[codigo + "|Recepción"]?.FISICO_OFICINA) === "sí";
-const fisicoInfo = (datos, codigo) => (datos && datos[codigo + "|Recepción"]) || {};
-
-// rango de urgencia de UN caso activo, vía activoByCode (mismo helper que ya usa el resto del
-// panel) — 0=vencido · 1=por vencer (≤2 d.háb.) · 2=en plazo · 3=activo sin ticket todavía.
-// Ordena tanto los GRUPOS (por suministro) como las filas dentro del desplegado.
-const rankActivo = (x, activoByCode) => {
-  const act = activoByCode[String(x.codigo)];
-  if (!act) return 3;
-  if (act.vencido) return 0;
-  if (act.diasRestantes != null && act.diasRestantes <= 2) return 1;
-  return 2;
-};
+// tieneFisico/fisicoInfo/rankActivo/hoyISO → oficina/util.js (compartidos con OficinaSimple).
 
 // chip pequeño reutilizado en la fila-grupo (mismo estilo que los chips de cuadernos en VistaUnificada)
 const Chip = ({ children, muted }) => (

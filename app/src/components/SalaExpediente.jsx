@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { ETAPAS, FLUJO, fmtFecha, wColor, TEAM, puedeTomar, teamById } from "../lib/model.js";
+import { esOperativo } from "../lib/auth.js";
 import { toast } from "./ui.jsx";
 import { GuiaSielseBox } from "../lib/guiaSielse.jsx";
 import FichaSielse from "./FichaSielse.jsx";
@@ -13,6 +14,19 @@ import { TarjetaQR } from "./sala/TarjetaQR.jsx";
 import { FichasCaso } from "./sala/FichasCaso.jsx";
 import { CorreosCaso } from "./sala/CorreosCaso.jsx";
 import { ActividadFeed } from "./sala/ActividadFeed.jsx";
+import SalaSimple from "./sala/SalaSimple.jsx";
+
+// clave de localStorage donde se recuerda la última vista elegida por el usuario (simple/detalles) —
+// pedido del gerente: por defecto FÁCIL para roles operativos, DETALLES para Gerencia/Coordinación,
+// pero la elección manual del usuario manda desde la 2ª apertura en adelante.
+const LS_VISTA = "sala_vista_v1";
+function defaultVista(perfil){
+  try{
+    const guardada = localStorage.getItem(LS_VISTA);
+    if(guardada==="simple" || guardada==="detalles") return guardada;
+  }catch(e){}
+  return esOperativo(perfil?.rol) ? "simple" : "detalles";
+}
 
 // ===================== Sala del expediente (v4, patrón courier) =====================
 // Vista de SEGUIMIENTO y colaboración de un caso: dónde está, quién lo tiene, cuánto plazo
@@ -27,6 +41,15 @@ export const humanizarRegistro = humanizarRegistro_;
 export default function SalaExpediente({ exp, tickets, evidencias, registros, comentarios, perfil, datos, correos, onComentar, onTrabajar, onClose, onEditar, onEstadoTicket, onReasignarTicket, onTomarTarea, onAbrirCuaderno, onEliminar, ladoALado }){
   const [texto, setTexto] = useState("");
   const [verFicha, setVerFicha] = useState(false);
+  const [vista, setVista] = useState(()=>defaultVista(perfil));  // "simple" (fácil, default operativos) | "detalles" (Sala clásica)
+  // atajo de navegación (p.ej. "último paso en cuadernos" en la vista simple): solo cambia la
+  // vista de ESTA apertura, NO reescribe la preferencia guardada — esa solo la toca toggleVista.
+  const irADetalles = () => setVista("detalles");
+  const toggleVista = () => {
+    const nueva = vista==="simple" ? "detalles" : "simple";
+    setVista(nueva);
+    try{ localStorage.setItem(LS_VISTA, nueva); }catch(e){}
+  };
   const [etapaSel, setEtapaSel] = useState(null);   // etapa clickeada en la línea de tiempo
   const [verTodaAct, setVerTodaAct] = useState(false); // feed comprimido (5) vs completo
   const [cuadRegs, setCuadRegs] = useState(null);   // registros de CUADERNOS de este caso (2ª fuente)
@@ -141,8 +164,12 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
             <h2 style={{margin:0,fontSize:17,color:"var(--titulo)"}}>Sala del expediente</h2>
             <div className="muted" style={{fontSize:11.5}}>seguimiento y colaboración — para trabajar la etapa usa el botón rojo</div>
           </div>
-          <div style={{display:"flex",gap:8}}>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             <button className="btn-ghost" onClick={()=>setVerFicha(true)} title="Ver el registro SIELSE completo del caso, lo trabajado por fase y sus documentos">📋 Ficha SIELSE</button>
+            <button className="btn-ghost" onClick={toggleVista}
+              title={vista==="simple" ? "Ver toda la información de la Sala (relojes, correos, feed, ficha SIELSE completa)" : "Volver a la vista fácil"}>
+              {vista==="simple" ? "🔍 Detalles" : "← Vista simple"}
+            </button>
             {perfil?.rol==="GERENTE" && onEliminar && (
               <button className="btn-ghost" style={{color:"var(--tint-red-tx)",borderColor:"var(--tint-red-bd)"}}
                 title="Eliminar este expediente (solo Gerencia; motivo obligatorio; la bitácora conserva el rastro)"
@@ -158,6 +185,16 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
           </div>
         </div>
 
+        {/* ===== vista FÁCIL (default operativos/celular) — pedido gerencia: reclamante, dónde está,
+             qué sigue, botón grande de trabajar, progreso simple, último cuaderno, QR chico ===== */}
+        {vista==="simple" && (
+          <SalaSimple exp={exp} act={act} etapaActual={etapaActual} flujoInfo={flujoInfo}
+            cerrado={cerrado} hechas={hechas} totalEtapas={ETAPAS.length} cuadRegs={cuadRegs} qrImg={qrImg}
+            onTrabajar={onTrabajar} onIrADetalles={irADetalles} />
+        )}
+
+        {/* ===== vista DETALLES — Sala clásica completa, sin cambios de contenido ===== */}
+        {vista==="detalles" && (<>
         {/* ===== hero de estado ===== */}
         <div style={S.hero}>
           <div style={{display:"flex",flexWrap:"wrap",gap:13,alignItems:"flex-start"}}>
@@ -345,6 +382,7 @@ export default function SalaExpediente({ exp, tickets, evidencias, registros, co
 
         <ActividadFeed actividad={actividad} actividadTodo={actividadTodo} verTodaAct={verTodaAct} setVerTodaAct={setVerTodaAct}
           texto={texto} setTexto={setTexto} onEnviar={enviarComentario} />
+        </>)}
       </div>
 
       {/* ===== Modal: Ficha SIELSE (registro del caso + trabajado por fase + documentos) ===== */}
